@@ -5,6 +5,8 @@
 * [Component fields](#component-fields)
 * [Builtin conditions and utilities](#builtin-conditions-and-utilities)
 * [Recipes](#recipes)
+    * [Getting started](#getting-started)
+    * [Define some colors](#define-some-colors)
     * [ViMode](#vimode)
     * [FileName, FileType, FileModified, and firends](#filename)
     * [Ruler](#ruler)
@@ -63,7 +65,7 @@ local statusline = {
 ## Component fields
 
 So, what should be the content of a component table? Well it's fairly simple,
-don't get discouraged by the detailed description! Just keep one thing in mind:
+don't let the detailed description discourage you! Just keep one thing in mind:
 whenever you see a function, know that the function is executed in the context
 of the buffer and window the statusline belongs to. (The indices of the actual
 buffer and window you're in are stored in the default vim global variables
@@ -71,7 +73,7 @@ buffer and window you're in are stored in the default vim global variables
 
 Note that all functions described below are actual methods of the component
 itself, which can be accessed via the `self` parameter. Because of inheritance,
-Children will look for unknown keys within their own parent fields.
+children will look for unknown keywords within their own parent fields.
 
 Each component may contain _any_ of the following fields: 
 * `provider`:
@@ -106,7 +108,7 @@ Each component may contain _any_ of the following fields:
     * Description: This function is called whenever a component is evaluated
       and can be used to modify the state of the component itself, like
       creating some variable(s) that will be shared among the component's
-      heirs, or even modify other fields like `provider` and `hl`.
+      heirs, or that will be used by other functions like `provider` and `hl`.
 * `block`:
     * Type: `bool`
     * Description: If a component has any child, their evaluation will stop at
@@ -125,7 +127,7 @@ Confused yet? Don't worry, everything will come together in the [Recipes](#recip
 
 While heirline does not provide any default component, it defines a few useful
 test and utility functions to aid in writing components and their conditions.
-These functions are accessible via `require'heirline.conditions` and
+These functions are accessible via `require'heirline.conditions'` and
 `require'heirline.utils'`
 
 **Built-in conditions**: 
@@ -135,7 +137,7 @@ These functions are accessible via `require'heirline.conditions` and
   corresponding list.
     * `patterns`: table of the form `{filetype = {...}, buftype = {...}, bufname = {...}}`
     where each field is a list of lua patterns.
-* `width_percent_below(N, threshold)`: returns true if `(N / current_window_width) <= threshold`.)
+* `width_percent_below(N, threshold)`: returns true if `(N / current_window_width) <= threshold`
 * `is_git_repo()`: returns true if the file is within a git repo (uses [gitsigns]())
 * `has_diagnostics()`: returns true if there is any diagnostic for the buffer.
 * `lsp_attavhed():` returns true if an LSP is attached to the buffer.
@@ -156,3 +158,130 @@ These functions are accessible via `require'heirline.conditions` and
 
 ## Recipes
 
+### Getting started
+
+Ideally, the following code snippets should go within a configuration file, say
+`~/.config/nvim/lua/plugins/heirline.lua`, that can be required in your
+`init.lua` (or from packer `config`) using `require'plugins.heirline'`.
+
+Your configuration file will start like this:
+
+```lua
+local conditions = require("heirline.conditions")
+local utils = require("heirline.utils")
+```
+
+### Define some colors
+
+You will probably need a way to define some colors. This is not required, you
+don't even have to use them if you don't want, but let's say you like colors.
+
+This will pick up colors from the highlight groups defined by your colorscheme.
+```lua
+local colors = {
+    red = utils.get_highlight("DiagnosticError").fg,
+    green = utils.get_highlight("String").fg,
+    blue = utils.get_highlight("Function").fg,
+    gray = utils.get_highlight("NonText").fg,
+    orange = utils.get_highlight("DiagnosticWarn").fg,
+    purple = utils.get_highlight("Statement").fg,
+    cyan = utils.get_highlight("Special").fg,
+    diag = {
+        warn = utils.get_highlight("DiagnosticWarn").fg,
+        error = utils.get_highlight("DiagnosticError").fg,
+        hint = utils.get_highlight("DiagnosticHint").fg,
+        info = utils.get_highlight("DiagnosticInfo").fg,
+    },
+    git = {
+        del = utils.get_highlight("diffDeleted").fg,
+        add = utils.get_highlight("diffAdded").fg,
+        change = utils.get_highlight("diffChanged").fg,
+    },
+}
+```
+Or maybe, your favourite colorscheme already has some way to get colors?
+```lua
+local colors = require'kanagawa.colors'.setup() -- wink
+```
+
+### ViMode
+
+No statusline is worth its weight in fancyness without an appropriate mode indicator.
+
+```lua
+local ViMode = {
+    init = function(self)
+        self.mode = vim.fn.mode(1)
+    end,
+    provider = function(self)
+        -- let's be honest, if you're here, do you really need the mode name to be verbose?
+        local mode_names = {
+            n = "N", no = "N?", nov = "N?", noV = "N?", ["no"] = "N?", niI =
+            "Ni", niR = "Nr", niV = "Nv", nt = "Nt", v = "V", vs = "Vs", V =
+            "V_", Vs = "Vs", [""] = "^V", ["s"] = "^V", s = "S", S = "S_",
+            [""] = "^S", i = "I", ic = "Ic", ix = "Ix", R = "R", Rc = "Rc",
+            Rx = "Rx", Rv = "Rv", Rvc = "Rv", Rvx = "Rv", c = "C", cv = "Ex", r
+            = "...", rm = "M", ["r?"] = "?", ["!"] = "!", t = "T", }
+        return mode_names[self.mode]
+    end,
+    hl = function(self)
+        local short_mode = self.mode:sub(1, 1)
+        local mode_colors = {
+            n = { color = colors.red },
+            i = { color = colors.green },
+            v = { color = colors.cyan },
+            V = { color = colors.cyan },
+            [""] = { color = colors.cyan },
+            c = { color = colors.orange },
+            s = { color = colors.purple },
+            S = { color = colors.purple },
+            [""] = { color = colors.purple },
+            R = { color = colors.orange },
+            r = { color = colors.orange },
+            ["!"] = { color = colors.red },
+            t = { color = colors.red },
+        }
+        return {
+            fg = mode_colors[short_mode].color,
+            style = "bold",
+        }
+    end,
+}
+```
+### FileName, FileType, FileModified, and firends
+
+```lua
+local FileName = {
+    init = function(self)
+        self.filename = vim.api.nvim_buf_get_name(0)
+        self.extension = vim.fn.fnamemodify(self.filename, ":e")
+    end,
+    {
+        init = function(self)
+            self.icon, self.icon_color = require("nvim-web-devicons").get_icon_color(
+                self.filename,
+                self.extension,
+                { default = true }
+            )
+        end,
+        provider = function(self)
+            return self.icon and (self.icon .. " ")
+        end,
+        hl = function(self)
+            return { fg = self.icon_color, link = false }
+        end,
+    },
+    {
+        provider = function(self)
+            return vim.fn.fnamemodify(self.filename, ":.")
+        end,
+        hl = { fg = utils.get_highlight("Directory").fg },
+    },
+    {
+        provider = function()
+            return "%m"
+        end,
+        hl = { fg = utils.get_highlight("String").fg },
+    },
+}
+```
