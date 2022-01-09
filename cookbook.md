@@ -3,8 +3,7 @@
 ## Index
 * [Main concepts](#main-concepts)
 * [Component fields](#component-fields)
-* [Builtin conditions](#builtin-conditions)
-* [Utilities](#utilities)
+* [Builtin conditions and utilities](#builtin-conditions-and-utilities)
 * [Recipes](#recipes)
     * [ViMode](#vimode)
     * [FileName, FileType, FileModified, and firends](#filename)
@@ -93,8 +92,9 @@ Each component may contain _any_ of the following fields:
           `none`. (eg.: `"bold,italic"`)
     * Description: `hl` controls the colors of what is printed by the
       component's `provider`, or by any of its descendants. Whenever a `child`
-      inherits its parent's `hl`, this gets updated with the child's `hl`, if
-      specified, the fields in the child `hl` will always take precedence.
+      inherits its parent's `hl` (whether a function or table), this gets
+      updated with the child's `hl`, so that, when specified, the fields in the
+      child `hl` will always take precedence.
 * `condition`:
     * Type: `function(self) -> any`
     * Description: This function controls whether the component should be
@@ -109,6 +109,50 @@ Each component may contain _any_ of the following fields:
       heirs, or even modify other fields like `provider` and `hl`.
 * `block`:
     * Type: `bool`
-    * Description: If a component has any child, the component evaluation will
-      stop at the first of its children in the succession line who does not return an
-      empty string.
+    * Description: If a component has any child, their evaluation will stop at
+      the first child in the succession line who does not return an empty
+      string. This field is not inherited by the component's progeny. Use this
+      in combination with children conditions to create buffer-specific
+      statuslines! (Or do whatever you can think of!)
+* `{...}`:
+    * Type: `list`
+    * Description: The component progeny. Each item of the list is a component
+      itself and may contain any of the above fields.
+
+Confused yet? Don't worry, everything will come together in the [Recipes](#recipes) examples.
+
+## Builtin conditions and utilities
+
+While heirline does not provide any default component, it defines a few useful
+test and utility functions to aid in writing components and their conditions.
+These functions are accessible via `require'heirline.conditions` and
+`require'heirline.utils'`
+
+**Built-in conditions**: 
+* `is_active()`: returns true if the statusline's window is the active window.
+* `buffer_matches(patterns)`: Returns true whenever a buffer attribute
+  (`filetype`,`buftype` or `bufname`) matches any of the lua patterns in the
+  corresponding list.
+    * `patterns`: table of the form `{filetype = {...}, buftype = {...}, bufname = {...}}`
+    where each field is a list of lua patterns.
+* `width_percent_below(N, threshold)`: returns true if `(N / current_window_width) <= threshold`.)
+* `is_git_repo()`: returns true if the file is within a git repo (uses [gitsigns]())
+* `has_diagnostics()`: returns true if there is any diagnostic for the buffer.
+* `lsp_attavhed():` returns true if an LSP is attached to the buffer.
+
+**Utility functions**: 
+* `get_highlight(hl_name)`: returns a table of the attributes of the provided
+  highlight name. The returned table contains the `hl` fields described above.
+* `clone(component, with)`: returns a new component which is a copy of the
+  supplied one, updated with the fields in the `with` table.
+* `surround(delimiters, color, component)`: returns a new component, which
+  contains a copy of the supplied one, surrounded by the left and right
+  delimiters supplied by the `delimiters` table.
+  * `delimiters`: table of the form `{"right_delimiter", "left_delimiter}`
+  * `color`: string of color hex code or builtin color name. This color will be
+    the foreground color of the delimiters and the background color of the
+    component.
+  * `component`: the component to be surrounded.
+
+## Recipes
+
