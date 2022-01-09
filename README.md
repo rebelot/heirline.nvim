@@ -11,7 +11,7 @@ recursive inheritance to be exceptionally **fast** and **versatile**.
 Heirline **does not** provide any default statusline, in fact, heirline can be
 thought of as a statusline API.
 
-    > **Why another statusline plugin?**
+> **Why another statusline plugin?**
 
 Heirline picks up from other popular customizable statusline plugins like
 [galaxyline]() and [feline]() but removes all the hard-coded bloat and offers
