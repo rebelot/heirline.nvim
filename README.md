@@ -29,7 +29,7 @@ Heirline is _not_ for everyone, heirline is for people who like tailoring their 
 * You **must** write your own statusline
 
 But don't you worry! Along with the inheritance comes [THE FEATUREFUL COOKBOOK](cookbook.md) 📖
-of a distant relative. Your dream 🪄statusline is a
+of a distant relative. Your dream 🪄 statusline is a
 copypaste away!
 
 ## Installation
@@ -48,3 +48,4 @@ No defaults, no options, no-nonsense. You choose.
 local statusline = {...}
 require'heirline'.setup(statusline)
 ```
+Calling `setup` will load your statusline. To learn how to write a StatusLine, see the [docs](cookbook.md).
