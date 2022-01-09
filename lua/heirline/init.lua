@@ -5,26 +5,22 @@ M.defined_highlights = {}
 M.statusline = {}
 
 function M.eval_hl(hl)
-    hl = M.hl_with_name(hl)
-    if not M.defined_highlights[hl.name] then
-        M.make_hl(hl)
+    local hl_name = M.name_hl(hl)
+    if not M.defined_highlights[hl_name] then
+        M.make_hl(hl_name, hl)
     end
-    return "%#" .. hl.name .. "#", "" --"%*"
+    return "%#" .. hl_name .. "#", "" --"%*"
 end
 
-function M.make_hl(hl)
-    if hl.link then
-        vim.cmd("highlight! link " .. hl.name .. " " .. hl.link)
-    else
-        local fg = hl.fg and "guifg=" .. hl.fg .. " " or ""
-        local bg = hl.bg and "guibg=" .. hl.bg .. " " or ""
-        local style = hl.style and "gui=" .. hl.style .. " " or ""
-        local guisp = hl.guisp and "guisp=" .. hl.guisp .. " " or ""
-        if fg or bg or style or guisp then
-            vim.cmd("highlight " .. hl.name .. " " .. fg .. bg .. style .. guisp)
-        end
+function M.make_hl(hl_name, hl)
+    local fg = hl.fg and "guifg=" .. hl.fg .. " " or ""
+    local bg = hl.bg and "guibg=" .. hl.bg .. " " or ""
+    local style = hl.style and "gui=" .. hl.style .. " " or ""
+    local guisp = hl.guisp and "guisp=" .. hl.guisp .. " " or ""
+    if fg or bg or style or guisp then
+        vim.cmd("highlight " .. hl_name .. " " .. fg .. bg .. style .. guisp)
     end
-    M.defined_highlights[hl.name] = true
+    M.defined_highlights[hl_name] = true
 end
 
 function M.name_hl(hl)
@@ -35,9 +31,9 @@ function M.name_hl(hl)
         .. (hl.guisp and hl.guisp:gsub(",", "") or "")
 end
 
-function M.hl_with_name(hl)
-    return vim.tbl_extend('force', hl, {name = M.name_hl(hl)})
-end
+-- function M.hl_with_name(hl)
+--     return vim.tbl_extend('force', hl, {name = M.name_hl(hl)})
+-- end
 
 function M.load()
     vim.g.qf_disable_statusline = true
