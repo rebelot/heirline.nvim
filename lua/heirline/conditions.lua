@@ -6,20 +6,35 @@ function M.is_active()
     return winid == curwin
 end
 
-function M.buffer_matches(list)
-    local buf = vim.api.nvim_get_current_buf()
-    for k, v in pairs(list) do
-        if k == 'filetype' or k == 'buftype' then
-            local opt = vim.api.nvim_buf_get_option(buf, k)
-            if vim.tbl_contains(v, opt) then
-                return true
+local function pattern_list_match(str, pattern_list)
+    for _, pattern in ipairs(pattern_list) do
+        if str:find(pattern) then
+            return true
         end
-        elseif k == 'bufname' then
-            local bufname = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":t")
-            for _, pattern in ipairs(v) do
-                local match = bufname:find(pattern)
-                if match then return true end
-            end
+    end
+    return false
+end
+
+local buf_matchers = {
+    filetype = function(pattern_list)
+        local ft = vim.bo.filetype
+        return pattern_list_match(ft, pattern_list)
+    end,
+    buftype = function(pattern_list)
+        local bt = vim.bo.buftype
+        return pattern_list_match(bt, pattern_list)
+    end,
+    bufname = function(pattern_list)
+        local bn = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":t")
+        return pattern_list_match(bn, pattern_list)
+    end,
+}
+
+
+function M.buffer_matches(patterns)
+    for kind, pattern_list in pairs(patterns) do
+        if buf_matchers[kind](pattern_list) then
+            return true
         end
     end
     return false
