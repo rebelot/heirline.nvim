@@ -8,14 +8,18 @@
     * [Getting started](#getting-started)
     * [Define some colors](#define-some-colors)
     * [ViMode](#vimode)
-    * [FileName, FileType, FileModified, and firends](#filename)
+    * [FileName, FileType, FileModified, and firends](#filename-filetype-filemodified-and-firends)
     * [Ruler](#ruler)
     * [FileSize](#filesize)
     * [LSP](#lsp)
-    * [Git](#git)
     * [Diagnostics](#diagnostics)
+    * [Git](#git)
     * [Debugger](#debugger)
     * [Tests](#tests)
+    * [Working Directory](#working-directory)
+    * [Terminal Name](#terminal-name)
+    * [Helpfile Name](#helpfil-name)
+    * [Snippets Indicator](#snippets-indicator)
     * [Conditional Statuslines](#conditional-statuslines)
 * [Putting it all together](#putting-it-all-together)
 
@@ -231,11 +235,11 @@ local ViMode = {
             i = { color = colors.green },
             v = { color = colors.cyan },
             V = { color = colors.cyan },
-            [""] = { color = colors.cyan },
+            [""] = { color = colors.cyan }, -- this is an actual ^V, type <C-v><C-v> in insert mode
             c = { color = colors.orange },
             s = { color = colors.purple },
             S = { color = colors.purple },
-            [""] = { color = colors.purple },
+            [""] = { color = colors.purple }, -- this is an actual ^S, type <C-v><C-s> in insert mode
             R = { color = colors.orange },
             r = { color = colors.orange },
             ["!"] = { color = colors.red },
@@ -256,6 +260,7 @@ local FileName = {
         self.filename = vim.api.nvim_buf_get_name(0)
         self.extension = vim.fn.fnamemodify(self.filename, ":e")
     end,
+    -- the following component will be the file icon!
     {
         init = function(self)
             self.icon, self.icon_color = require("nvim-web-devicons").get_icon_color(
@@ -271,12 +276,14 @@ local FileName = {
             return { fg = self.icon_color, link = false }
         end,
     },
+    -- this is the actual file name, relative to the current directory
     {
         provider = function(self)
             return vim.fn.fnamemodify(self.filename, ":.")
         end,
         hl = { fg = utils.get_highlight("Directory").fg },
     },
+    -- this is the default modified [+] or readonly [-] state
     {
         provider = function()
             return "%m"
@@ -284,4 +291,339 @@ local FileName = {
         hl = { fg = utils.get_highlight("String").fg },
     },
 }
+
+local FileType = {
+    provider = function()
+        return string.upper(vim.bo.filetype)
+    end,
+    hl = { fg = utils.get_highlight("Type").fg },
+}
+```
+
+### Ruler
+
+```lua
+local Ruler = {
+    provider = "%(%l/%3L%):%2c",
+}
+```
+
+### FileSize
+wip
+
+### LSP
+```lua
+
+local LSPActive = {
+    condition = function()
+        return next(vim.lsp.buf_get_clients(0)) ~= nil
+    end,
+    provider = " [LSP]",
+    hl = { fg = colors.green, style = "bold" },
+}
+
+local LSPMessages = {
+    provider = function()
+        local status = require("lsp-status").status()
+        if status ~= " " then
+            return status
+        end
+    end,
+    hl = { fg = colors.gray },
+}
+
+local Gps = {
+    condition = function()
+        return require("nvim-gps").is_available()
+    end,
+
+    provider = function()
+        return require("nvim-gps").get_location()
+    end,
+    hl = { fg = colors.gray },
+}
+```
+
+### Diagnostics
+```lua
+local Diagnostics = {
+
+    condition = function()
+        return #vim.diagnostic.get(0) > 0
+    end,
+
+    {
+        provider = "![",
+    },
+    {
+        provider = function()
+            local count = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.ERROR })
+            local icon = vim.fn.sign_getdefined("DiagnosticSignError")[1].text
+            return count > 0 and (icon .. count .. " ")
+        end,
+        hl = { fg = colors.diag.error },
+    },
+    {
+        provider = function()
+            local count = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.WARN })
+            local icon = vim.fn.sign_getdefined("DiagnosticSignWarn")[1].text
+            return count > 0 and (icon .. count .. " ")
+        end,
+        hl = { fg = colors.diag.warn },
+    },
+    {
+        provider = function()
+            local count = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.INFO })
+            local icon = vim.fn.sign_getdefined("DiagnosticSignInfo")[1].text
+            return count > 0 and (icon .. count .. " ")
+        end,
+        hl = { fg = colors.diag.info },
+    },
+    {
+        provider = function()
+            local count = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.HINT })
+            local icon = vim.fn.sign_getdefined("DiagnosticSignHint")[1].text
+            return count > 0 and (icon .. count)
+        end,
+        hl = { fg = colors.diag.hint },
+    },
+    {
+        provider = "]",
+    },
+}
+```
+
+### Git
+```lua
+local Git = {
+    condition = function()
+        return vim.b.gitsigns_status_dict or vim.b.gitsigns_head
+    end,
+
+    init = function(self)
+        self.dict = vim.b.gitsigns_status_dict
+    end,
+
+    hl = { fg = utils.get_highlight("WarningMsg").fg },
+
+    {
+        provider = function(self)
+            return " " .. self.dict.head .. "("
+        end,
+    },
+    {
+        provider = function(self)
+            local count = self.dict.added or 0
+            return count > 0 and ("+" .. count)
+        end,
+        hl = { fg = colors.git.add },
+    },
+    {
+        provider = function(self)
+            local count = self.dict.removed or 0
+            return count > 0 and ("-" .. count)
+        end,
+        hl = { fg = colors.git.del },
+    },
+    {
+        provider = function(self)
+            local count = self.dict.changed or 0
+            return count > 0 and ("~" .. count)
+        end,
+        hl = { fg = colors.git.change },
+    },
+    {
+        provider = ")",
+    },
+}
+```
+
+### Debugger
+```lua
+local DAPMessages = {
+    condition = function()
+        local session = require("dap").session()
+        if session then
+            local filename = vim.api.nvim_buf_get_name(0)
+            if session.config then
+                local progname = session.config.program
+                return filename == progname
+            end
+        end
+    end,
+    provider = function()
+        return " " .. require("dap").status()
+    end,
+    hl = { fg = "red" },
+}
+```
+
+### Tests
+```lua
+local UltTest = {
+    condition = function()
+        return vim.api.nvim_call_function("ultest#is_test_file", {}) ~= 0
+    end,
+    init = function(self)
+        self.passed_icon = vim.fn.sign_getdefined("test_pass")[1].text
+        self.failed_icon = vim.fn.sign_getdefined("test_fail")[1].text
+        self.passed_hl = { fg = utils.get_highlight("UltestPass").fg }
+        self.failed_hl = { fg = utils.get_highlight("UltestFail").fg }
+        self.status = vim.api.nvim_call_function("ultest#status", {})
+    end,
+    {
+        provider = function(self)
+            return self.passed_icon .. self.status.passed .. " "
+        end,
+        hl = function(self)
+            return self.passed_hl
+        end,
+    },
+    {
+        provider = function(self)
+            return self.failed_icon .. self.status.failed .. " "
+        end,
+        hl = function(self)
+            return self.failed_hl
+        end,
+    },
+    {
+        provider = function(self)
+            return "of " .. self.status.tests - 1
+        end,
+    },
+}
+```
+
+### Working Directory
+```lua
+local WorkDir = {
+    provider = function()
+        local icon = (vim.fn.haslocaldir(0) == 1 and "l" or "g") .. " " .. " "
+        local cwd = vim.fn.getcwd(0)
+        cwd = vim.fn.fnamemodify(cwd, ":~")
+        cwd = vim.fn.pathshorten(cwd)
+        return icon .. cwd .. "/"
+    end,
+    hl = { fg = colors.blue },
+}
+```
+
+### Terminal Name
+```lua
+local TerminalName = {
+    provider = function()
+        local tname, _ = vim.api.nvim_buf_get_name(0):gsub(".*:", "")
+        return " " .. tname
+    end,
+    hl = { fg = colors.blue, style = "bold" },
+}
+```
+
+### Helpfile Name
+```lua
+local HelpFilename = {
+    condition = function()
+        return vim.bo.filetype == "help"
+    end,
+    provider = function()
+        local filename = vim.api.nvim_buf_get_name(0)
+        return vim.fn.fnamemodify(filename, ":t")
+    end,
+    hl = { fg = colors.blue },
+}
+```
+
+### Snippets Indicator
+```lua
+local Snippets = {
+    provider = function()
+        local fwd = ""
+        local bwd = ""
+        if vim.fn["UltiSnips#CanJumpForwards"]() == 1 then fwd = "" end
+        if vim.fn["UltiSnips#CanJumpBackwards"]() == 1 then bwd = " " end
+        return vim.tbl_contains({ "s", "i" }, vim.fn.mode()) and (bwd .. fwd) or ""
+    end,
+    hl = { fg = "red", syle = "bold" },
+}
+```
+
+## Putting it all together
+
+```lua
+
+local DefaultStl = {
+    -- hl = { bg = "blue" },
+    utils.surround({ "", "" }, utils.get_highlight("NonText").fg, { ViMode, Snippets })
+    {provider = ' '},
+    FileName,
+    {provider = ' '},
+    {provider = '%<'},
+    Git,
+    {provider = ' '},
+    Diagnostics,
+    {provider = '%='},
+
+    Gps,
+    {provider = ' '},
+    DAPMessages,
+    {provider = '%='},
+
+    LSPActive,
+    {provider = ' '},
+    LSPMessages,
+    {provider = ' '},
+    UltTest,
+    {provider = ' '},
+    FileType,
+    {provider = ' '},
+    Ruler,
+}
+
+local SpecialStl = {
+    condition = function()
+        return conditions.buffer_matches({
+            buftype = { "nofile", "help", "quickfix" },
+            filetype = { "^git.*", "fugitive" },
+        })
+    end,
+    FileTypeBlock,
+    {provider = ' '},
+    HelpFilename,
+}
+
+local TerminalStl = {
+    condition = function()
+        return conditions.buffer_matches({ buftype = { "terminal" } })
+    end,
+    hl = { bg = utils.get_highlight("DiffDelete").bg },
+    {
+        condition = conditions.is_active,
+        ViMode,
+    },
+    {provider = ' '},
+    FileTypeBlock,
+    {provider = ' '},
+    TerminalName,
+}
+
+local InactiveStl = {
+    condition = function()
+        return not conditions.is_active()
+    end,
+    FileTypeBlock,
+    {provider = ' '},
+    FileNameBlock,
+}
+
+local statuslines = {
+    stop = true,
+    SpecialStl,
+    TerminalStl,
+    InactiveStl,
+    DefaultStl,
+}
+
+require("heirline").setup(statuslines)
+-- we're done.
 ```
