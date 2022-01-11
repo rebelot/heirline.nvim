@@ -261,7 +261,7 @@ local ViMode = {
     -- corresponding string and color. We can put these into `static` to compute
     -- them at initialisation time.
     static = {
-        mode_names = {
+        mode_names = { -- change the strings if yow like it vvvvverbose!
             n = "N", no = "N?", nov = "N?", noV = "N?", ["no"] = "N?", niI =
             "Ni", niR = "Nr", niV = "Nv", nt = "Nt", v = "V", vs = "Vs", V =
             "V_", Vs = "Vs", [""] = "^V", ["s"] = "^V", s = "S", S = "S_",
@@ -298,10 +298,7 @@ local ViMode = {
     -- Same goes for the highlight. Now the foreground will change according to the current mode.
     hl = function(self)
         local mode = self.mode:sub(1, 1) -- get only the first mode character
-        return {
-            fg = self.mode_colors[mode],
-            style = "bold",
-        }
+        return { fg = self.mode_colors[mode], style = "bold", }
     end,
 }
 ```
@@ -371,31 +368,19 @@ wip
 ```lua
 
 local LSPActive = {
-    condition = function()
-        return next(vim.lsp.buf_get_clients(0)) ~= nil
-    end,
+    condition = conditions.lsp_attached,
     provider = " [LSP]",
     hl = { fg = colors.green, style = "bold" },
 }
 
 local LSPMessages = {
-    provider = function()
-        local status = require("lsp-status").status()
-        if status ~= " " then
-            return status
-        end
-    end,
+    provider = require("lsp-status").status,
     hl = { fg = colors.gray },
 }
 
 local Gps = {
-    condition = function()
-        return require("nvim-gps").is_available()
-    end,
-
-    provider = function()
-        return require("nvim-gps").get_location()
-    end,
+    condition = require("nvim-gps").is_available,
+    provider = require("nvim-gps").get_location,
     hl = { fg = colors.gray },
 }
 ```
@@ -405,47 +390,42 @@ local Gps = {
 ```lua
 local Diagnostics = {
 
-    condition = function()
-        return #vim.diagnostic.get(0) > 0
-    end,
+    condition = conditions.has_diagnostics,
+
+    static = {
+        error_icon = vim.fn.sign_getdefined("DiagnosticSignError")[1].text,
+        warn_icon = vim.fn.sign_getdefined("DiagnosticSignWarn")[1].text,
+        info_icon = vim.fn.sign_getdefined("DiagnosticSignInfo")[1].text,
+        hint_icon = vim.fn.sign_getdefined("DiagnosticSignHint")[1].text,
+    },
 
     {
-        provider = "![",
-    },
-    {
-        provider = function()
+        provider = function(self)
             local count = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.ERROR })
-            local icon = vim.fn.sign_getdefined("DiagnosticSignError")[1].text
-            return count > 0 and (icon .. count .. " ")
+            return count > 0 and (self.error_icon .. count .. " ")
         end,
         hl = { fg = colors.diag.error },
     },
     {
-        provider = function()
+        provider = function(self)
             local count = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.WARN })
-            local icon = vim.fn.sign_getdefined("DiagnosticSignWarn")[1].text
-            return count > 0 and (icon .. count .. " ")
+            return count > 0 and (self.warn_icon .. count .. " ")
         end,
         hl = { fg = colors.diag.warn },
     },
     {
-        provider = function()
+        provider = function(self)
             local count = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.INFO })
-            local icon = vim.fn.sign_getdefined("DiagnosticSignInfo")[1].text
-            return count > 0 and (icon .. count .. " ")
+            return count > 0 and (self.info_icon .. count .. " ")
         end,
         hl = { fg = colors.diag.info },
     },
     {
-        provider = function()
+        provider = function(self)
             local count = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.HINT })
-            local icon = vim.fn.sign_getdefined("DiagnosticSignHint")[1].text
-            return count > 0 and (icon .. count)
+            return count > 0 and (self.hint_icon .. count)
         end,
         hl = { fg = colors.diag.hint },
-    },
-    {
-        provider = "]",
     },
 }
 ```
@@ -454,9 +434,7 @@ local Diagnostics = {
 
 ```lua
 local Git = {
-    condition = function()
-        return vim.b.gitsigns_status_dict or vim.b.gitsigns_head
-    end,
+    condition = conditions.is_git_repo,
 
     init = function(self)
         self.dict = vim.b.gitsigns_status_dict
@@ -466,8 +444,11 @@ local Git = {
 
     {
         provider = function(self)
-            return " " .. self.dict.head .. "("
+            return " " .. self.dict.head
         end,
+    },
+    {
+        provider = ')'
     },
     {
         provider = function(self)
@@ -524,11 +505,13 @@ local UltTest = {
     condition = function()
         return vim.api.nvim_call_function("ultest#is_test_file", {}) ~= 0
     end,
+    static = {
+        passed_icon = vim.fn.sign_getdefined("test_pass")[1].text,
+        failed_icon = vim.fn.sign_getdefined("test_fail")[1].text,
+        passed_hl = { fg = utils.get_highlight("UltestPass").fg },
+        failed_hl = { fg = utils.get_highlight("UltestFail").fg },
+    },
     init = function(self)
-        self.passed_icon = vim.fn.sign_getdefined("test_pass")[1].text
-        self.failed_icon = vim.fn.sign_getdefined("test_fail")[1].text
-        self.passed_hl = { fg = utils.get_highlight("UltestPass").fg }
-        self.failed_hl = { fg = utils.get_highlight("UltestFail").fg }
         self.status = vim.api.nvim_call_function("ultest#status", {})
     end,
     {

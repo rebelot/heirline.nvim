@@ -20,9 +20,10 @@ don't get to tell you what your statusline should do. You're in charge! With
 Heirline, you have a framework to easily implement whatever you can imagine,
 from simple to complex rules!
 
-Heirline was deigned with two main features in mind:
-* You can easily set up different statuslines for any kind of buffer
-* You can reutilize components that will behave according to their position in the genealogical tree.
+Heirline was deigned with these main features in mind:
+* Active/inactive and buffer/filetype custom statuslines.
+* Modularity: statusline components can be reutilised and will behave according to their position in the genealogical tree.
+* Seamless surrounding and coloring of specific components.
 
 Heirline is _not_ for everyone, heirline is for people who like tailoring their own tools (and also like lua):
 * **No** default statusline is provided 
