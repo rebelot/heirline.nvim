@@ -24,25 +24,25 @@ function M.clone(block, with)
     return vim.tbl_deep_extend("force", block, with or {})
 end
 
-function M.surround(delimiters, color, wrapped)
-    wrapped = M.clone(wrapped)
-    wrapped.hl = wrapped.hl or {}
-    if type(wrapped.hl) == 'function' then
-        local old_hl_func = wrapped.hl
-        wrapped.hl = function(self)
-            local hl = old_hl_func(self)
+function M.surround(delimiters, color, component)
+    component = M.clone(component)
+    component.hl = component.hl or {}
+    if type(component.hl) == 'function' then
+        local old_hl_func = component.hl
+        component.hl = function(obj)
+            local hl = old_hl_func(obj)
             hl.bg = color
             return hl
         end
     else
-        wrapped.hl.bg = color
+        component.hl.bg = color
     end
     return {
         {
             provider = delimiters[1],
             hl = { fg = color }
         },
-        wrapped,
+        component,
         {
             provider = delimiters[2],
             hl = { fg = color }
