@@ -10,9 +10,9 @@
   - [Colors, colors, more colors!](#colors-colors-more-colors)
   - [Crash course: the ViMode](#crash-course-the-vimode)
   - [Crash course part II: FileName and friends](#crash-course-part-ii-filename-and-friends)
-  - [FileType, FileSize, FileEncoding and FileFormat](#filetype-filesize-fileencoding-and-fileformat)
-  - [Ruler](#ruler)
-  - [FileSize](#filesize)
+  - [FileType, FileEncoding and FileFormat](#filetype-filesize-fileencoding-and-fileformat)
+  - [FileSize and FileLastModified](#filesize-and-filelastmodified)
+  - [Cursor position: Ruler and ScrollBar ](#cursor-position-ruler-and-scrollbar)
   - [LSP](#lsp)
   - [Diagnostics](#diagnostics)
   - [Git](#git)
@@ -80,14 +80,14 @@ buffer and window you're in are stored in the default vim global variables
 
 Each component may contain _any_ of the following fields:
 
-> Note that all functions described below are actual ***methods*** of the component
+> Note that all functions described below are actual **_methods_** of the component
 > itself, which can be accessed via the `self` parameter. Because of inheritance,
 > children will look for unknown attributes within their own parent fields.
 
 **Basic fields**:
 
 - `provider`:
-  - Type: `string` or `function(self) -> string|nil`
+  - Type: `string` or `function(self) -> string|number|nil`
   - Description: This is the string that gets printed in the statusline. No
     escaping is performed, so it may contain sequences that have a special
     meaning within the statusline, such as `%f` (filename), `%p` (percentage
@@ -103,7 +103,7 @@ Each component may contain _any_ of the following fields:
       `bold`, `underline`, `undercurl`, `reverse`, `nocombine` or `none`. (eg.:
       `"bold,italic"`)
     - `force`: Control whether the parent's `hl` fields will override child's hl.
-    Type: `bool`.
+      Type: `bool`.
   - Description: `hl` controls the colors of what is printed by the component's
     `provider`, or by any of its descendants. At evaluation time, the `hl` of
     any component gets merged with the `hl` of its parent (whether it is a
@@ -154,8 +154,7 @@ Each component may contain _any_ of the following fields:
     the defaults. By default, the following fields are private to the
     component: `stop_at_first`, `init`, `provider`, `condition` and `restrict`.
     Attention: modifying the defaults could dramatically affect the behavior of
-    the component! (eg: `restrict = { my_private_var = true, provider = false
-    }`)
+    the component! (eg: `restrict = { my_private_var = true, provider = false }`)
 
 **The StatusLine life cycle**
 
@@ -207,6 +206,8 @@ These functions are accessible via `require'heirline.conditions'` and
     color will be the foreground color of the delimiters and the background
     color of the component.
   - `component`: the component to be surrounded.
+- `insert(parent, ...)`: return a copy of `parent` component where each `child`
+  in `...` (variable arguments) is appended to its children (if any).
 
 ## Recipes
 
@@ -337,13 +338,13 @@ an icon person.
 local FileNameBlock = {
     -- let's first set up some attributes needed by this component and it's children
     init = function(self)
-        self.filename = vim.api.nvim_buf_get_name(0) 
+        self.filename = vim.api.nvim_buf_get_name(0)
     end,
 }
--- We can now define some children separately and assemble them later
+-- We can now define some children separately and add them later
 
 local FileIcon = {
-    init = function(self) 
+    init = function(self)
         local filename = self.filename
         local extension = vim.fn.fnamemodify(filename, ":e")
         self.icon, self.icon_color = require("nvim-web-devicons").get_icon_color(filename, extension, { default = true })
@@ -374,7 +375,7 @@ local FileFlags = {
     {
         provider = function() if vim.bo.modified then return "[+]" end,
         hl = { fg = colors.green }
-                
+
     }, {
         provider = function() if (not vim.bo.modifiable) or vim.bo.readonly then return "" end,
         hl = { fg = colors.orange }
@@ -396,15 +397,18 @@ local FileNameModifer = {
 }
 
 -- let's add the children to our FileNameBlock component
-FileNameBlock[1] = FileIcon
-FileNameBlock[2] = utils.append(FileNameModifer, FileName) -- a new table where FileName is a child of FileNameModifier
-FileNameBlock[3] = FileFlags
-FileNameBlock[4] = { provider = '%<'} -- this means that the statusline is cut
-                                      -- here when there's not enough space
+FileNameBlock = utils.insert(FileNameBlock,
+    FileIcon,
+    utils.insert(FileNameModifer, FileName), -- a new table where FileName is a child of FileNameModifier
+    table.unpack(FileFlags), -- A small optimisation, since their parent does nothing
+    { provider = '%<'} -- this means that the statusline is cut here when there's not enough space
+)
 
 ```
 
-## FileType, FileSize, FileEncoding and FileFormat
+## FileType, FileEncoding and FileFormat
+
+These ones are pretty straightforward.
 
 ```lua
 local FileType = {
@@ -415,15 +419,86 @@ local FileType = {
 }
 ```
 
-### Ruler
+```lua
+local FileEncoding = {
+    provider = function()
+        local enc = (vim.bo.fenc ~= '' and vim.bo.fenc) or vim.o.enc -- :h 'enc'
+        return enc ~= 'utf-8' and enc:upper()
+    end
+}
+```
 
 ```lua
+local FileFormat = {
+    provider = function()
+        local fmt = return vim.bo.fileformat
+        return fmt ~= 'unix' and fmt:upper()
+}
+```
+
+### FileSize and FileLastModified
+
+Now let's get a little exotic!
+
+```lua
+local FileSize = {
+    provider = function()
+        -- stackoverflow, compute human readable file size
+        local suffix = { 'b', 'k', 'M', 'G', 'T', 'P', 'E' }
+        local fsize = vim.fn.getfsize(vim.api.nvim_buf_get_name(0))
+        fsize = (fsize < 0 and 0) or fsize
+        if fsize <= 0 then
+            return "0"..suffix[1]
+        end
+        local i = math.floor((math.log(fsize) / math.log(1024)))
+        return string.format("%.2g%s", fsize / math.pow(1024, i), suffix[i])
+    end
+}
+```
+
+```lua
+local FileLastModified = {
+    -- did you know? Vim is full of functions!
+    provider = function()
+        local ftime = vim.fn.getftime(vim.api.nvim_buf_gett_name(0))
+        return (ftime > 0) and os.date("%c", ftime)
+}
+```
+
+### Cursor position: Ruler and ScrollBar 
+
+Here's some classics!
+
+```lua
+-- We're getting minimalists here!
 local Ruler = {
-    provider = "%(%l/%3L%):%2c",
+    -- %l = current line number
+    -- %L = number of lines in the buffer
+    -- %c = column number
+    -- %P = percentage through file of displayed window
+    provider = "%7(%l/3L%):%2c %P",
+}
+```
+
+```lua
+-- I take no credits for this! :lion:
+local ScrollBar ={
+    static = {
+        sbar = { '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█' }
+    },
+    provider = function(self)
+        local curr_line = api.nvim_win_get_cursor(0)[1]
+        local lines = api.nvim_buf_line_count(0)
+        local i = math.floor(curr_line / lines * (#self.sbar - 1)) + 1
+        return string.rep(self.sbar[i], 2)
+    end
 }
 ```
 
 ### LSP
+
+Nice work! You ~~scrolled down~~made it to the main courses! The finest rice is
+here.
 
 ```lua
 
@@ -433,11 +508,14 @@ local LSPActive = {
     hl = { fg = colors.green, style = "bold" },
 }
 
+-- I personally use it only to display progress messages!
+-- See lsp-status/README.md for configuration options.
 local LSPMessages = {
     provider = require("lsp-status").status,
     hl = { fg = colors.gray },
 }
 
+-- Awesome plugin
 local Gps = {
     condition = require("nvim-gps").is_available,
     provider = require("nvim-gps").get_location,
@@ -446,6 +524,8 @@ local Gps = {
 ```
 
 ### Diagnostics
+
+See how much you've messed up...
 
 ```lua
 local Diagnostics = {
