@@ -66,7 +66,12 @@ function StatusLine:eval()
 
     local hl = type(self.hl) == "function" and self:hl() or self.hl -- self raw hl
     local cur_hl = getmetatable(self).__index(self, "cur_hl") -- the parent hl
-    self.cur_hl = vim.tbl_extend("force", cur_hl, hl) -- merged hl
+
+    if cur_hl.force then
+        self.cur_hl = vim.tbl_extend("force", hl, cur_hl) -- merged hl
+    else
+        self.cur_hl = vim.tbl_extend("force", cur_hl, hl) -- merged hl
+    end
 
     if self.provider then
         local provider_str = type(self.provider) == "function" and (self:provider() or "") or (self.provider or "")
@@ -81,6 +86,8 @@ function StatusLine:eval()
             break
         end
     end
+
+    -- self.cur_hl.force = nil
 
     return table.concat(stl, "")
 end
