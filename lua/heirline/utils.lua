@@ -50,4 +50,15 @@ function M.surround(delimiters, color, component)
 
     }
 end
+
+function M.insert(destination, ...)
+    local children = {...}
+    local new = M.clone(destination)
+    for i, child in ipairs(children) do
+        local new_child = M.clone(child)
+        table.insert(new, new_child)
+    end
+    return new
+end
+
 return M
