@@ -7,9 +7,10 @@
 - [Builtin conditions and utilities](#builtin-conditions-and-utilities)
 - [Recipes](#recipes)
   - [Getting started](#getting-started)
-  - [Colors, colors, more colors](#colors-colors-more-colors)
-  - [ViMode](#vimode)
-  - [FileName, FileType, FileModified, and firends](#filename-filetype-filemodified-and-firends)
+  - [Colors, colors, more colors!](#colors-colors-more-colors)
+  - [Crash course: the ViMode](#crash-course-the-vimode)
+  - [Crash course part II: FileName and friends](#crash-course-part-ii-filename-and-friends)
+  - [FileType, FileSize, FileEncoding and FileFormat](#filetype-filesize-fileencoding-and-fileformat)
   - [Ruler](#ruler)
   - [FileSize](#filesize)
   - [LSP](#lsp)
@@ -22,6 +23,7 @@
   - [Helpfile Name](#helpfil-name)
   - [Snippets Indicator](#snippets-indicator)
   - [Conditional Statuslines](#conditional-statuslines)
+  - [Theming](#theming)
 - [Putting it all together](#putting-it-all-together)
 
 ## Main concepts
@@ -49,22 +51,22 @@ require'heirline'.setup(statusline)
 ```
 
 Writing nested tables can be tiresome, so the best approach is to define simple
-components and then assemble those.
+components and then assemble them. For example:
 
 ```lua
-local Component1 = {
-    ...
-}
+local Component1 = { ... }
 
-local Component2 = {
-    ...
-}
+local Sub1 = { ... }
+
+local Component2 = { ... }
 
 local statusline = {
     ...,
-    Component1,
+    {Component1, Sub1},
     Component2,
 }
+
+require'heirline'.setup(statusline)
 ```
 
 ## Component fields
@@ -76,11 +78,11 @@ of the buffer and window the statusline belongs to. (The indices of the actual
 buffer and window you're in are stored in the default vim global variables
 `vim.g.actual_curbuf` and `vim.g.acutal_curwin`.)
 
-> Note that all functions described below are actual methods of the component
-> itself, which can be accessed via the `self` parameter. Because of inheritance,
-> children will look for unknown keywords within their own parent fields.
-
 Each component may contain _any_ of the following fields:
+
+> Note that all functions described below are actual ***methods*** of the component
+> itself, which can be accessed via the `self` parameter. Because of inheritance,
+> children will look for unknown attributes within their own parent fields.
 
 **Basic fields**:
 
@@ -97,20 +99,23 @@ Each component may contain _any_ of the following fields:
       builtin color name (eg.: `"#FFFFFF"`, `"red"`).
     - `bg`: The background color. Type: as above.
     - `guisp`: The underline/undercurl color, if any. Type: as above.
-    - `style`: Any of the supported comma-separated highlight styles:
-      `italic`, `bold`, `underline`, `undercurl`, `reverse`, `nocombine` or
-      `none`. (eg.: `"bold,italic"`)
-  - Description: `hl` controls the colors of what is printed by the
-    component's `provider`, or by any of its descendants. At evaluation time,
-    whenever a `child` inherits its parent's `hl` (whether a function or
-    table), this gets updated with the child's `hl`, so that, when specified,
-    the fields in the child `hl` will always take precedence.
+    - `style`: Any of the supported comma-separated highlight styles: `italic`,
+      `bold`, `underline`, `undercurl`, `reverse`, `nocombine` or `none`. (eg.:
+      `"bold,italic"`)
+    - `force`: Control whether the parent's `hl` fields will override child's hl.
+    Type: `bool`.
+  - Description: `hl` controls the colors of what is printed by the component's
+    `provider`, or by any of its descendants. At evaluation time, the `hl` of
+    any component gets merged with the `hl` of its parent (whether it is a
+    function or table), so that, when specified, the fields in the child `hl`
+    will always take precedence unless `force` is `true`.
 - `condition`:
   - Type: `function(self) -> any`
   - Description: This function controls whether the component should be
-    evaluated or not. The truth of the return value is tested, so any value
-    besides `nil` and `false` will evaluate to true. Of course, this will
-    affect all of the component's progeny.
+    evaluated or not. It is the first function to be executed at evaluation
+    time. The truth of the return value is tested, so any value besides `nil`
+    and `false` will evaluate to true. Of course, this will affect all of the
+    component's progeny.
 - `{...}`:
   - Type: `list`
   - Description: The component progeny. Each item of the list is a component
@@ -121,34 +126,46 @@ Each component may contain _any_ of the following fields:
 - `stop_at_first`:
   - Type: `bool`
   - Description: If a component has any child, their evaluation will stop at
-    the first child in the succession line who does not return an empty
-    string. This field is not inherited by the component's progeny. Use this
-    in combination with children conditions to create buffer-specific
-    statuslines! (Or do whatever you can think of!)
+    the first child in the succession line who does not return an empty string.
+    This field is not inherited by the component's progeny. Use this in
+    combination with children conditions to create buffer-specific statuslines!
+    (Or do whatever you can think of!)
 - `init`:
   - Type: `function(self) -> any`
   - Description: This function is called whenever a component is evaluated
-    and can be used to modify the state of the component itself via the
-    `self` parameter. For example, you can compute some values that will be
-    accessed from other functions within the component genealogy.
+    (right after `condition` but before `hl` and `provider`), and can be used
+    to modify the state of the component itself via the `self` parameter. For
+    example, you can compute some values that will be accessed from other
+    functions within the component genealogy (even "global" statusline
+    variables).
 - `static`:
   - Type: `table`
   - Description: This is a container for static variables, that is, variables
-    that are known when you define the component. This is useful to organize
-    data that should be shared among children, like icons or dictionaries.
-    Any keyword defined within this table can be accessed by the component
-    and its children as a direct attribute using the `self` parameter passed
-    to the functions described here. (eg: `static = { x = ... }` can be
-    accessed as `self.x` somewhere else).
+    that are computed only once at component definition. This is useful to
+    organize data that should be shared among children, like icons or
+    dictionaries. Any keyword defined within this table can be accessed by the
+    component and its children methods as a direct attribute using the `self`
+    parameter. (eg: `static = { x = ... }` can be accessed as `self.x`
+    somewhere else).
 - `restrict`:
   - Type: `table[keyword = bool]`
   - Description: Set-like table to control which component fields can be
-    accessed by the component's progeny. The supplied table gets merged with
+    inherited by the component's progeny. The supplied table gets merged with
     the defaults. By default, the following fields are private to the
-    component: `stop_at_first`, `init`, `provider`, `condition` and
-    `restrict`. Attention: modifying the defaults could dramatically affect
-    the behavior of the component!
-    (eg: `restrict = { my_private_var = true, provider = false }`)
+    component: `stop_at_first`, `init`, `provider`, `condition` and `restrict`.
+    Attention: modifying the defaults could dramatically affect the behavior of
+    the component! (eg: `restrict = { my_private_var = true, provider = false
+    }`)
+
+**The StatusLine life cycle**
+
+There are two distinct phases in the life of a StatusLine object component: its
+_creation_ (instantiation) and its _evaluation_. When creating the "blueprint"
+tables, the user instructs the actual constructor on the attributes and methods
+of the component. The fields `static` and `restrict` will have a meaning only
+during the instantiation phase, while `condition`, `init`, `hl`, `provider` and
+`stop_at_first` are evaluated (in this order) every time the statusline is
+refreshed.
 
 Confused yet? Don't worry, everything will come together in the [Recipes](#recipes) examples.
 
@@ -184,7 +201,7 @@ These functions are accessible via `require'heirline.conditions'` and
   delimiters supplied by the `delimiters` table. This action will override the
   `bg` field of the component `hl`.
   - `delimiters`: table of the form `{left_delimiter, right_delimiter}`.
-    Because these are actually just providers, delimiters could also be
+    Because they are actually just providers, delimiters could also be
     functions!
   - `color`: `nil` or `string` of color hex code or builtin color name. This
     color will be the foreground color of the delimiters and the background
@@ -211,8 +228,11 @@ local utils = require("heirline.utils")
 You will probably want to define some colors. This is not required, you don't
 even have to use them if you don't like it, but let's say you like colors.
 
-If you want your statusline to blend nicely with your colorscheme, the utility
-function `get_highlight()` is your friend.
+Colors can be specified directly in components, but it is probably more
+convenient to organize them in some kind of table. If you want your statusline
+to blend nicely with your colorscheme, the utility function `get_highlight()`
+is your friend. To create themes and have your colors updated on-demand, see
+[Theming](#theming).
 
 ```lua
 local colors = {
@@ -243,17 +263,17 @@ Perhaps, your favourite colorscheme already provides a way to get the theme colo
 local colors = require'kanagawa.colors'.setup() -- wink
 ```
 
-### ViMode
+### Crash course: the ViMode
 
 No statusline is worth its weight in _fancyness_ :star2: without an appropriate
-mode indicator. So let's write ours! Also, this snippet will show you a lot of
-heirline advanced capabilities.
+mode indicator. So let's cook ours! Also, this snippet will introduce you to a
+lot of heirline advanced capabilities.
 
 ```lua
 local ViMode = {
     -- get vim current mode, this information will be required by the provider
-    -- and the highlight, so we compute it only once per component evaluation
-    -- and store it as a component attribute
+    -- and the highlight functions, so we compute it only once per component
+    -- evaluation and store it as a component attribute
     init = function(self)
         self.mode = vim.fn.mode(1) -- :h mode()
     end,
@@ -287,8 +307,8 @@ local ViMode = {
     },
     -- We can now access the value of mode() that, by now, would have been
     -- computed by `init()` and use it to index our strings dictionary.
-    -- note how `static` fields become regular attributes once the component is
-    -- instantiated.
+    -- note how `static` fields become just regular attributes once the
+    -- component is instantiated.
     -- To be extra meticulous, we can also add some vim statusline syntax to
     -- control the padding and make sure our string is always at least 2
     -- characters long
@@ -303,46 +323,90 @@ local ViMode = {
 }
 ```
 
-### FileName, FileType, FileModified, and firends
+### Crash course part II: FileName and friends
+
+Perhaps one of the most important components is the one that shows which file
+you are editing. In this second recipe, we will revisit some heirline concepts
+and explore new ways to assemble components. We will also learn a few useful
+vim lua API functions. Because we are all crazy about icons, we'll require
+[nvim-web-devicons](), but you are absolutely free to omit that if you're not
+an icon person.
 
 ```lua
-local FileName = {
+
+local FileNameBlock = {
+    -- let's first set up some attributes needed by this component and it's children
     init = function(self)
-        self.filename = vim.api.nvim_buf_get_name(0)
-        self.extension = vim.fn.fnamemodify(self.filename, ":e")
+        self.filename = vim.api.nvim_buf_get_name(0) 
     end,
-    -- the following component will be the file icon!
-    {
-        init = function(self)
-            self.icon, self.icon_color = require("nvim-web-devicons").get_icon_color(
-                self.filename,
-                self.extension,
-                { default = true }
-            )
-        end,
-        provider = function(self)
-            return self.icon and (self.icon .. " ")
-        end,
-        hl = function(self)
-            return { fg = self.icon_color, link = false }
-        end,
-    },
-    -- this is the actual file name, relative to the current directory
-    {
-        provider = function(self)
-            return vim.fn.fnamemodify(self.filename, ":.")
-        end,
-        hl = { fg = utils.get_highlight("Directory").fg },
-    },
-    -- this is the default modified [+] or readonly [-] state
-    {
-        provider = function()
-            return "%m"
-        end,
-        hl = { fg = utils.get_highlight("String").fg },
-    },
+}
+-- We can now define some children separately and assemble them later
+
+local FileIcon = {
+    init = function(self) 
+        local filename = self.filename
+        local extension = vim.fn.fnamemodify(filename, ":e")
+        self.icon, self.icon_color = require("nvim-web-devicons").get_icon_color(filename, extension, { default = true })
+    end,
+    provider = function(self)
+        return self.icon and (self.icon .. " ")
+    end,
+    hl = function(self)
+        return { fg = self.icon_color }
+    end
 }
 
+local FileName = {
+    provider = function(self)
+        -- first, trim the pattern relative to the current directory. For other
+        -- options, see :h filename-modifers
+        local filename = vim.fn.fnamemodify(self.filename, ":.")
+        -- now, if the filename would occupy more than 1/4th of the available
+        -- space, we trim the file path to its initials
+        if not conditions.width_percent_below(#filename, 0.25) then
+            filename = vim.fn.pathshorten(filename)
+        end
+    end,
+    hl = { fg = utils.get_highlight("Directory").fg },
+}
+
+local FileFlags = {
+    {
+        provider = function() if vim.bo.modified then return "[+]" end,
+        hl = { fg = colors.green }
+                
+    }, {
+        provider = function() if (not vim.bo.modifiable) or vim.bo.readonly then return "" end,
+        hl = { fg = colors.orange }
+    }
+}
+
+-- Now, let's say that we want the filename color to change if the buffer is
+-- modified. Of course, we could do that directly using the FileName.hl field,
+-- but we'll see how easy it is to alter existing components using a "modifier"
+-- component
+
+local FileNameModifer = {
+    hl = function()
+        if vim.bo.modified then
+            -- use `force` because we need to override the child's hl foreground
+            return { fg = colors.cyan, style = 'bold', force=true }
+        end
+    end,
+}
+
+-- let's add the children to our FileNameBlock component
+FileNameBlock[1] = FileIcon
+FileNameBlock[2] = utils.append(FileNameModifer, FileName) -- a new table where FileName is a child of FileNameModifier
+FileNameBlock[3] = FileFlags
+FileNameBlock[4] = { provider = '%<'} -- this means that the statusline is cut
+                                      -- here when there's not enough space
+
+```
+
+## FileType, FileSize, FileEncoding and FileFormat
+
+```lua
 local FileType = {
     provider = function()
         return string.upper(vim.bo.filetype)
@@ -358,10 +422,6 @@ local Ruler = {
     provider = "%(%l/%3L%):%2c",
 }
 ```
-
-### FileSize
-
-wip
 
 ### LSP
 
