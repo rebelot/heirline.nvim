@@ -598,6 +598,14 @@ actual count. Just replace the children with something like this.
 ...
 ```
 
+Delimiters are subject to the Diagnostics component `condition`; if you'd like
+them to be always visible, just wrap the component in them or use the `surround()`
+utility!
+
+```lua
+Diagnostics = utils.surround({"![", "]"}, nil, Diagnostics)
+```
+
 ### Git
 
 ```lua
