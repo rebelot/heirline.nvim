@@ -50,7 +50,7 @@ function M.is_git_repo()
 end
 
 function M.has_diagnostics()
-    return #vim.diagnostics.get(0) > 0
+    return #vim.diagnostic.get(0) > 0
 end
 
 function M.lsp_attached()
