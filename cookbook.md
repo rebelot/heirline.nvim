@@ -373,11 +373,11 @@ local FileName = {
 
 local FileFlags = {
     {
-        provider = function() if vim.bo.modified then return "[+]" end,
+        provider = function() if vim.bo.modified then return "[+]" end end,
         hl = { fg = colors.green }
 
     }, {
-        provider = function() if (not vim.bo.modifiable) or vim.bo.readonly then return "" end,
+        provider = function() if (not vim.bo.modifiable) or vim.bo.readonly then return "" end end,
         hl = { fg = colors.orange }
     }
 }
@@ -497,7 +497,7 @@ local ScrollBar ={
 
 ### LSP
 
-Nice work! You ~~scrolled down~~made it to the main courses! The finest rice is
+Nice work! You made it ~~jumped right~~ to the main courses! The finest rice is
 here.
 
 ```lua
@@ -539,35 +539,63 @@ local Diagnostics = {
         hint_icon = vim.fn.sign_getdefined("DiagnosticSignHint")[1].text,
     },
 
+    init = function(self)
+        self.errors = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.ERROR })
+        self.warnings = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.WARN })
+        self.hints = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.HINT })
+        self.info = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.INFO })
+    end,
+
+    {
+        provider = "![",
+    },
     {
         provider = function(self)
-            local count = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.ERROR })
-            return count > 0 and (self.error_icon .. count .. " ")
+            return self.errors > 0 and (self.error_icon .. self.errors .. " ")
         end,
         hl = { fg = colors.diag.error },
     },
     {
         provider = function(self)
-            local count = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.WARN })
-            return count > 0 and (self.warn_icon .. count .. " ")
+            return self.warnings > 0 and (self.warn_icon .. self.warnings .. " ")
         end,
         hl = { fg = colors.diag.warn },
     },
     {
         provider = function(self)
-            local count = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.INFO })
-            return count > 0 and (self.info_icon .. count .. " ")
+            return self.info > 0 and (self.info_icon .. self.info .. " ")
         end,
         hl = { fg = colors.diag.info },
     },
     {
         provider = function(self)
-            local count = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.HINT })
-            return count > 0 and (self.hint_icon .. count)
+            return self.hints > 0 and (self.hint_icon .. self.hints)
         end,
         hl = { fg = colors.diag.hint },
     },
+    {
+        provider = "]",
+    },
 }
+```
+
+Let's say that you'd like to have only the diagnostic icon colored, not the
+actual count. Just replace the children with something like this.
+
+
+```lua
+...
+    {
+        condition = function(self) return self.errors > 0 end,
+        {
+            provider = function(self) return self.error_icon end,
+            hl = { fg = colors.diag.error },
+        },
+        {
+            provider = function(self) return self.errors .. " " end,
+        }
+    },
+...
 ```
 
 ### Git
