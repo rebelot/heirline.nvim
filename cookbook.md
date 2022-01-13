@@ -68,6 +68,13 @@ local statusline = {
 require'heirline'.setup(statusline)
 ```
 
+After calling `require'heirline'.setup(statusline)`, your `StatusLine` object
+is created and you can find its handle at `require'heirline'.statusline`.
+Any modification to the object itself will reflect in real time on your statusline!
+
+Note that no reference is shared between the table objects used as blueprints (the
+ones you pass to `setup()`) and the final object, as all data is deep-copied.
+
 ## Component fields
 
 So, what should be the content of a component table? Well it's fairly simple,
@@ -954,6 +961,7 @@ function M.setup()
 require("heirline").setup(StatusLines)
 end
 
+-- setup the autocommand
 vim.cmd[[
 augroup heirline
     autocmd!
@@ -961,15 +969,16 @@ augroup heirline
 augroup END
 ]]
 
-M.setup()
+M.setup() -- call setup when the file is required the first time
 return M
+
 -- end of your heirline config file
 ```
 
 2) Using `:luafile` to reload your config.
 
 ```lua
--- beginning of your heirline config file
+-- beginning of your heirline config file, no need to wrap anything
 
 ...
 
@@ -984,3 +993,7 @@ require("heirline").setup(statuslines)
 
 -- end of your heirline config file
 ```
+
+<p align='center'>
+    <h2>Fin.</h2>
+</p>
