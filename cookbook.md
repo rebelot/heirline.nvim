@@ -518,14 +518,18 @@ local LSPActive = {
     end,
     hl = { fg = colors.green, style = "bold" },
 }
+```
 
+```lua
 -- I personally use it only to display progress messages!
 -- See lsp-status/README.md for configuration options.
 local LSPMessages = {
     provider = require("lsp-status").status,
     hl = { fg = colors.gray },
 }
+```
 
+```lua
 -- Awesome plugin
 local Gps = {
     condition = require("nvim-gps").is_available,
@@ -815,7 +819,7 @@ local Snippets = {
 }
 ```
 
-## Conditional Statuslines
+## Putting it all together: Conditional Statuslines
 
 With heirline you can setup custom statuslines depending on some condition.
 Let's say you'd like to have something like this:
@@ -825,27 +829,34 @@ Let's say you'd like to have something like this:
 * a statusline for special buffers, like the quickfix, helpfiles, nvim-tree, or other windowed plugins.
 * a dedicated statuslines for terminals
 
+Let's define some utility components to create aligned sections and spacing.
+
 ```lua
 local Align = { provier = "%="}
 local Space = { provider = " "}
+```
 
+Assembling your favorite components is easy!
+
+```lua
 local DefaultStatusline = { 
-    ... -- your components
+    ViMode, Space, FileName, Space, Git, Space, Diagnostics, Align,
+    Gps, DAPMessages, Align,
+    LSPActive, Space, LSPMessages, Space, UltTest, Space, FileType, Ruler, Space, ScrollBar
 }
+```
 
+```lua
 local InactiveStatusline = {
     condition = function()
         return not conditions.is_active()
     end,
 
-    hl = {
-        fg = utils.get_highlight("StatusLineNC").fg,
-        bg = utils.get_highlight("StatusLineNC").bg
-    },
-
     FileType, Space, FileName, Align,
 }
+```
 
+```lua
 local SpecialStatusline = {
     condition = function()
         return conditions.buffer_matches({
@@ -854,9 +865,11 @@ local SpecialStatusline = {
         })
     end,
 
-    FileType, HelpFileName, Align
+    FileType, Space, HelpFileName, Align
 }
+```
 
+```lua
 local TerminalStatusline = {
 
     condition = function()
@@ -865,33 +878,41 @@ local TerminalStatusline = {
 
     hl = { bg = colors.dark_red },
 
-    {
-        condition = conditions.is_active,
-        ViMode,
-    },
-    Spacer, FileType, Space, TerminalName, Align,
+    -- Quickly add a condition to the ViMode to only show it when buffer is active!
+    { condition = conditions.is_active, ViMode, Space }, FileType, Space, TerminalName, Align,
 }
+```
 
+That's it! We now sparkle a bit of conditional default colors to affect all the
+statuslines at once and set the flag `stop_at_first` to stop the evaluation at
+the first component that returns something printable!
+
+```lua
 local StatusLines = {
 
-    hl = {
-        fg = utils.get_highlight("StatusLine").fg,
-        bg = utils.get_highlight("StatusLine").bg
-    },
+    hl = function()
+        if conditions.is_active() then
+            return {
+                fg = utils.get_highlight("StatusLine").fg,
+                bg = utils.get_highlight("StatusLine").bg
+            }
+        else
+            return {
+                fg = utils.get_highlight("StatusLineNC").fg,
+                bg = utils.get_highlight("StatusLineNC").bg
+            }
+        end
+    end,
 
     stop_at_first = true,
 
-    SpecialStatusline,
-    TerminalStatusline,
-    InactiveStatusline,
-    DefaultStatusline
+    SpecialStl, TerminalStl, InactiveStl, DefaultStl,
 }
-
 ```
-
-## Putting it all together
 
 ```lua
 require("heirline").setup(StatusLines)
 -- we're done.
 ```
+
+## Theming
