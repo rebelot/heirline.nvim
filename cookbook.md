@@ -827,7 +827,12 @@ Let's say you'd like to have something like this:
 - a statusline for special buffers, like the quickfix, helpfiles, nvim-tree, or other windowed plugins.
 - a dedicated statuslines for terminals
 
-Let's define some utility components to create aligned sections and spacing.
+Because there's no actual distinction between a statusline and any of its
+components, we can just use the `condition` field to affect a whole series of
+components (our statusline).
+
+Let's first define some trivial components to readily create aligned sections
+and spacing where we want.
 
 ```lua
 local Align = { provider = "%=" }
@@ -847,7 +852,7 @@ local DefaultStatusline = {
 }
 ```
 
-**Pro-tip**: Always end a short statusline with `"%=` (the Align component) to
+**Pro-tip**: Always end a short statusline with `%=` (the Align component) to
 fill the whole statusline with the same color!
 
 ```lua
@@ -891,6 +896,10 @@ That's it! We now sparkle a bit of conditional default colors to affect all the
 statuslines at once and set the flag `stop_at_first` to stop the evaluation at
 the first component that returns something printable!
 
+**IMPORTANT**: Statuslines conditions are evaluate sequentially, so make sure
+that their order makes sense! Ideally, you should order them from stricter to
+looser conditions.
+
 ```lua
 local StatusLines = {
 
@@ -917,8 +926,8 @@ local StatusLines = {
 Just a bunch of nested tables with trivial fields, yet, such complex behavior!
 
 You have learned how to define components avoiding a lot of redundancy, how you
-can reutilize components, group them and tweak them easily. ***You are ready to
-build your own dream StatusLine(s)!***
+can reutilize components, group them and tweak them easily. **_You are ready to
+build your own dream StatusLine(s)!_**
 
 ```lua
 require("heirline").setup(StatusLines)
