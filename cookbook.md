@@ -935,3 +935,52 @@ require("heirline").setup(StatusLines)
 ```
 
 ## Theming
+
+You can change the colors of the statusline automatically whenever you change
+your colorscheme. To do so, just setup a `ColorScheme` event autocommand that
+will reset heirline highlights and re-source your config!
+
+You can achieve that in two ways:
+
+1) Wrapping the generation of the statusline blueprints (components) into a function
+
+```lua
+-- beginning of your heirline config file
+local M = {}
+function M.setup()
+
+... -- wrap everything into a function
+
+require("heirline").setup(StatusLines)
+end
+
+vim.cmd[[
+augroup heirline
+    autocmd!
+    autocmd ColorScheme * lua require'heirline'.reset_highlights(); require'plugins.heirline'.setup()
+augroup END
+]]
+
+M.setup()
+return M
+-- end of your heirline config file
+```
+
+2) Using `:luafile` to reload your config.
+
+```lua
+-- beginning of your heirline config file
+
+...
+
+vim.cmd[[
+augroup heirline
+    autocmd!
+    autocmd ColorScheme * lua require'heirline'.reset_highlights(); vim.cmd('luafile <path-to-this-file>')
+augroup END
+]]
+
+require("heirline").setup(statuslines)
+
+-- end of your heirline config file
+```
