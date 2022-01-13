@@ -22,9 +22,8 @@
   - [Terminal Name](#terminal-name)
   - [Help FileName](#help-filename)
   - [Snippets Indicator](#snippets-indicator)
-- [Conditional Statuslines](#conditional-statuslines)
+- [Putting it all together: Conditional Statuslines](#putting-it-all-together-conditional-statuslines)
 - [Theming](#theming)
-- [Putting it all together](#putting-it-all-together)
 
 ## Main concepts
 
@@ -836,9 +835,12 @@ local Align = { provier = "%="}
 local Space = { provider = " "}
 ```
 
-Assembling your favorite components is easy!
+Assembling your favorite components and doing last-minute adjustmens is easy!
 
 ```lua
+
+ViMode = utils.surround({ "", "" }, colors.bright_bg, { ViMode, Snippets })
+
 local DefaultStatusline = { 
     ViMode, Space, FileName, Space, Git, Space, Diagnostics, Align,
     Gps, DAPMessages, Align,
@@ -909,6 +911,8 @@ local StatusLines = {
     SpecialStl, TerminalStl, InactiveStl, DefaultStl,
 }
 ```
+
+Just a bunch of nested tables with trivial fields, yet, such complex behavior!
 
 ```lua
 require("heirline").setup(StatusLines)
