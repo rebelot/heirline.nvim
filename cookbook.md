@@ -464,7 +464,7 @@ local FileLastModified = {
 }
 ```
 
-### Cursor position: Ruler and ScrollBar 
+### Cursor position: Ruler and ScrollBar
 
 Here's some classics!
 
@@ -597,7 +597,6 @@ local Diagnostics = {
 Let's say that you'd like to have only the diagnostic icon colored, not the
 actual count. Just replace the children with something like this.
 
-
 ```lua
 ...
     {
@@ -675,8 +674,8 @@ local Git = {
 ```
 
 ### Debugger
- 
-Display informations from [nvim-dap]! 
+
+Display informations from [nvim-dap]!
 
 ```lua
 local DAPMessages = {
@@ -765,7 +764,7 @@ local WorkDir = {
 ### Terminal Name
 
 Special handling of the built-in terminal bufname. See [conditional
-statuslines](#conditional-statuslines) below to see an example of 
+statuslines](#conditional-statuslines) below to see an example of
 dedicated statusline for terminals!
 
 ```lua
@@ -823,16 +822,16 @@ local Snippets = {
 With heirline you can setup custom statuslines depending on some condition.
 Let's say you'd like to have something like this:
 
-* a default statusline to be shown whenever you edit a regular file,
-* a statusline for regular inactive buffers
-* a statusline for special buffers, like the quickfix, helpfiles, nvim-tree, or other windowed plugins.
-* a dedicated statuslines for terminals
+- a default statusline to be shown whenever you edit a regular file,
+- a statusline for regular inactive buffers
+- a statusline for special buffers, like the quickfix, helpfiles, nvim-tree, or other windowed plugins.
+- a dedicated statuslines for terminals
 
 Let's define some utility components to create aligned sections and spacing.
 
 ```lua
-local Align = { provier = "%="}
-local Space = { provider = " "}
+local Align = { provider = "%=" }
+local Space = { provider = " " }
 ```
 
 Assembling your favorite components and doing last-minute adjustmens is easy!
@@ -841,12 +840,15 @@ Assembling your favorite components and doing last-minute adjustmens is easy!
 
 ViMode = utils.surround({ "", "" }, colors.bright_bg, { ViMode, Snippets })
 
-local DefaultStatusline = { 
+local DefaultStatusline = {
     ViMode, Space, FileName, Space, Git, Space, Diagnostics, Align,
     Gps, DAPMessages, Align,
     LSPActive, Space, LSPMessages, Space, UltTest, Space, FileType, Ruler, Space, ScrollBar
 }
 ```
+
+**Pro-tip**: Always end a short statusline with `"%=` (the Align component) to
+fill the whole statusline with the same color!
 
 ```lua
 local InactiveStatusline = {
@@ -913,6 +915,10 @@ local StatusLines = {
 ```
 
 Just a bunch of nested tables with trivial fields, yet, such complex behavior!
+
+You have learned how to define components avoiding a lot of redundancy, how you
+can reutilize components, group them and tweak them easily. ***You are ready to
+build your own dream StatusLine(s)!***
 
 ```lua
 require("heirline").setup(StatusLines)
