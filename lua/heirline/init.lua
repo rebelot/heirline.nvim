@@ -10,12 +10,6 @@ end
 function M.load()
     vim.g.qf_disable_statusline = true
     vim.cmd("set statusline=%{%v:lua.require'heirline'.eval()%}")
-    vim.cmd([[
-    augroup heirline
-        autocmd!
-        autocmd ColorScheme * lua require'heirline'.reset_highlights()
-    augroup END
-    ]])
 end
 
 function M.setup(statusline)
