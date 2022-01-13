@@ -20,10 +20,10 @@
   - [Tests](#tests)
   - [Working Directory](#working-directory)
   - [Terminal Name](#terminal-name)
-  - [Helpfile Name](#helpfil-name)
+  - [Help FileName](#help-filename)
   - [Snippets Indicator](#snippets-indicator)
-  - [Conditional Statuslines](#conditional-statuslines)
-  - [Theming](#theming)
+- [Conditional Statuslines](#conditional-statuslines)
+- [Theming](#theming)
 - [Putting it all together](#putting-it-all-together)
 
 ## Main concepts
@@ -295,11 +295,11 @@ local ViMode = {
             i = colors.green,
             v = colors.cyan,
             V =  colors.cyan,
-            [""] =  colors.cyan, -- this is an actual ^V, type <C-v><C-v> in insert mode
+            ["^V"] =  colors.cyan, -- this is an actual ^V, type <C-v><C-v> in insert mode
             c =  colors.orange,
             s =  colors.purple,
             S =  colors.purple,
-            [""] =  colors.purple, -- this is an actual ^S, type <C-v><C-s> in insert mode
+            ["^S"] =  colors.purple, -- this is an actual ^S, type <C-v><C-s> in insert mode
             R =  colors.orange,
             r =  colors.orange,
             ["!"] =  colors.red,
@@ -400,7 +400,7 @@ local FileNameModifer = {
 FileNameBlock = utils.insert(FileNameBlock,
     FileIcon,
     utils.insert(FileNameModifer, FileName), -- a new table where FileName is a child of FileNameModifier
-    table.unpack(FileFlags), -- A small optimisation, since their parent does nothing
+    unpack(FileFlags), -- A small optimisation, since their parent does nothing
     { provider = '%<'} -- this means that the statusline is cut here when there's not enough space
 )
 
@@ -504,7 +504,18 @@ here.
 
 local LSPActive = {
     condition = conditions.lsp_attached,
-    provider = " [LSP]",
+
+    -- You can keep it simple,
+    -- provider = " [LSP]",
+
+    -- Or complicate things a bit and get the servers names
+    provider  = function(self)
+        local names = {}
+        for i, server in ipairs(vim.lsp.buf_get_clients(0)) do
+            table.insert(names, server)
+        end
+        return " [" .. table.concat(names, " ") .. "]"
+    end,
     hl = { fg = colors.green, style = "bold" },
 }
 
@@ -551,6 +562,7 @@ local Diagnostics = {
     },
     {
         provider = function(self)
+            -- 0 is just another output, we can decide to print it or not!
             return self.errors > 0 and (self.error_icon .. self.errors .. " ")
         end,
         hl = { fg = colors.diag.error },
@@ -610,41 +622,45 @@ Diagnostics = utils.surround({"![", "]"}, nil, Diagnostics)
 
 ### Git
 
+For the ones who're not (too) afraid of changes!
+
 ```lua
 local Git = {
     condition = conditions.is_git_repo,
 
     init = function(self)
-        self.dict = vim.b.gitsigns_status_dict
+        self.status_dict = vim.b.gitsigns_status_dict
     end,
 
-    hl = { fg = utils.get_highlight("WarningMsg").fg },
+    hl = { fg = colors.orange },
 
-    {
+    {   -- git branch name
         provider = function(self)
-            return " " .. self.dict.head
+            return " " .. self.status_dict.head
         end,
+        hl = {style = 'bold'}
     },
+    -- You could handle delimiters, icons and counts similar to Diagnostics
     {
-        provider = ')'
+        provider = "("
     },
     {
         provider = function(self)
-            local count = self.dict.added or 0
+            local count = self.status_dict.added or 0
             return count > 0 and ("+" .. count)
         end,
         hl = { fg = colors.git.add },
     },
     {
         provider = function(self)
-            local count = self.dict.removed or 0
+            local count = self.status_dict.removed or 0
             return count > 0 and ("-" .. count)
         end,
         hl = { fg = colors.git.del },
     },
     {
         provider = function(self)
-            local count = self.dict.changed or 0
+            local count = self.status_dict.changed or 0
             return count > 0 and ("~" .. count)
         end,
         hl = { fg = colors.git.change },
@@ -656,9 +672,12 @@ local Git = {
 ```
 
 ### Debugger
+ 
+Display informations from [nvim-dap]! 
 
 ```lua
 local DAPMessages = {
+    -- display the dap messages only on the debugged file
     condition = function()
         local session = require("dap").session()
         if session then
@@ -678,10 +697,12 @@ local DAPMessages = {
 
 ### Tests
 
+This requires the great [ultest]().
+
 ```lua
 local UltTest = {
     condition = function()
-        return vim.api.nvim_call_function("ultest#is_test_file", {}) ~= 0
+        return vim .api.nvim_call_function("ultest#is_test_file", {}) ~= 0
     end,
     static = {
         passed_icon = vim.fn.sign_getdefined("test_pass")[1].text,
@@ -692,6 +713,9 @@ local UltTest = {
     init = function(self)
         self.status = vim.api.nvim_call_function("ultest#status", {})
     end,
+
+    -- again, if you'd like icons and numbers to be colored differently,
+    -- just split the component in two
     {
         provider = function(self)
             return self.passed_icon .. self.status.passed .. " "
@@ -702,6 +726,7 @@ local UltTest = {
     },
     {
         provider = function(self)
+    -- You could handle delimiters, icons and counts similar to Diagnostics
             return self.failed_icon .. self.status.failed .. " "
         end,
         hl = function(self)
@@ -718,6 +743,9 @@ local UltTest = {
 
 ### Working Directory
 
+Always know your global or local working directory. This component, together
+with FileName, will provide the full path to the edited file.
+
 ```lua
 local WorkDir = {
     provider = function()
@@ -727,14 +755,20 @@ local WorkDir = {
         cwd = vim.fn.pathshorten(cwd)
         return icon .. cwd .. "/"
     end,
-    hl = { fg = colors.blue },
+    hl = { fg = colors.blue, style = "bold" },
 }
 ```
 
 ### Terminal Name
 
+Special handling of the built-in terminal bufname. See [conditional
+statuslines](#conditional-statuslines) below to see an example of 
+dedicated statusline for terminals!
+
 ```lua
 local TerminalName = {
+    -- we could add a condition to check that buftype == 'terminal'
+    -- or we could do that later (see #conditional-statuslines below)
     provider = function()
         local tname, _ = vim.api.nvim_buf_get_name(0):gsub(".*:", "")
         return " " .. tname
@@ -743,10 +777,12 @@ local TerminalName = {
 }
 ```
 
-### Helpfile Name
+### Help FileName
+
+See the name of the helpfile you're viewing.
 
 ```lua
-local HelpFilename = {
+local HelpFileName = {
     condition = function()
         return vim.bo.filetype == "help"
     end,
@@ -760,95 +796,102 @@ local HelpFilename = {
 
 ### Snippets Indicator
 
+This requires ultisnips, but the same logic could be applied to many other
+snippet plugins! Get an indicator of when you're inside a snippet and can jump
+to the previous and/or forward tag.
+
 ```lua
 local Snippets = {
+    -- check that we are in insert or select mode
+    condition = function()
+        return vim.tbl_contains({'s', 'i'}, vim.fn.mode())
+    end,
     provider = function()
-        local fwd = ""
-        local bwd = ""
-        if vim.fn["UltiSnips#CanJumpForwards"]() == 1 then fwd = "" end
-        if vim.fn["UltiSnips#CanJumpBackwards"]() == 1 then bwd = " " end
-        return vim.tbl_contains({ "s", "i" }, vim.fn.mode()) and (bwd .. fwd) or ""
+        local forward = (vim.fn["UltiSnips#CanJumpForwards"]() == 1) and "" or ""
+        local backward = (vim.fn["UltiSnips#CanJumpBackwards"]() == 1) and " " or ""
+        return backward .. forward
     end,
     hl = { fg = "red", syle = "bold" },
 }
 ```
 
-## Putting it all together
+## Conditional Statuslines
+
+With heirline you can setup custom statuslines depending on some condition.
+Let's say you'd like to have something like this:
+
+* a default statusline to be shown whenever you edit a regular file,
+* a statusline for regular inactive buffers
+* a statusline for special buffers, like the quickfix, helpfiles, nvim-tree, or other windowed plugins.
+* a dedicated statuslines for terminals
 
 ```lua
+local Align = { provier = "%="}
+local Space = { provider = " "}
 
-local DefaultStl = {
-    -- hl = { bg = "blue" },
-    utils.surround({ "", "" }, utils.get_highlight("NonText").fg, { ViMode, Snippets })
-    {provider = ' '},
-    FileName,
-    {provider = ' '},
-    {provider = '%<'},
-    Git,
-    {provider = ' '},
-    Diagnostics,
-    {provider = '%='},
-
-    Gps,
-    {provider = ' '},
-    DAPMessages,
-    {provider = '%='},
-
-    LSPActive,
-    {provider = ' '},
-    LSPMessages,
-    {provider = ' '},
-    UltTest,
-    {provider = ' '},
-    FileType,
-    {provider = ' '},
-    Ruler,
+local DefaultStatusline = { 
+    ... -- your components
 }
 
-local SpecialStl = {
+local InactiveStatusline = {
+    condition = function()
+        return not conditions.is_active()
+    end,
+
+    hl = {
+        fg = utils.get_highlight("StatusLineNC").fg,
+        bg = utils.get_highlight("StatusLineNC").bg
+    },
+
+    FileType, Space, FileName, Align,
+}
+
+local SpecialStatusline = {
     condition = function()
         return conditions.buffer_matches({
-            buftype = { "nofile", "help", "quickfix" },
-            filetype = { "^git.*", "fugitive" },
+            buftype = {"nofile", "help", "quickfix"},
+            filetype = {"^git.*", "fugitive"}
         })
     end,
-    FileType,
-    {provider = ' '},
-    HelpFilename,
+
+    FileType, HelpFileName, Align
 }
 
-local TerminalStl = {
+local TerminalStatusline = {
+
     condition = function()
         return conditions.buffer_matches({ buftype = { "terminal" } })
     end,
-    hl = { bg = utils.get_highlight("DiffDelete").bg },
+
+    hl = { bg = colors.dark_red },
+
     {
         condition = conditions.is_active,
         ViMode,
     },
-    {provider = ' '},
-    FileType,
-    {provider = ' '},
-    TerminalName,
+    Spacer, FileType, Space, TerminalName, Align,
 }
 
-local InactiveStl = {
-    condition = function()
-        return not conditions.is_active()
-    end,
-    FileType,
-    {provider = ' '},
-    FileName,
+local StatusLines = {
+
+    hl = {
+        fg = utils.get_highlight("StatusLine").fg,
+        bg = utils.get_highlight("StatusLine").bg
+    },
+
+    stop_at_first = true,
+
+    SpecialStatusline,
+    TerminalStatusline,
+    InactiveStatusline,
+    DefaultStatusline
 }
 
-local statuslines = {
-    stop = true,
-    SpecialStl,
-    TerminalStl,
-    InactiveStl,
-    DefaultStl,
-}
+```
 
-require("heirline").setup(statuslines)
+## Putting it all together
+
+```lua
+require("heirline").setup(StatusLines)
 -- we're done.
 ```
