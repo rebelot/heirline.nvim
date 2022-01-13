@@ -1,6 +1,9 @@
 <p align="center">
   <h2 align="center">heirline.nvim</h2>
 </p>
+<p align="center">
+  <img src="heirline.png" width="600" >
+</p>
 <p align="center">The ultimate Neovim Statusline for tinkerers</p>
 
 ## About
