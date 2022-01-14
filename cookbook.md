@@ -276,6 +276,9 @@ No statusline is worth its weight in _fancyness_ :star2: without an appropriate
 mode indicator. So let's cook ours! Also, this snippet will introduce you to a
 lot of heirline advanced capabilities.
 
+**Attention**: `^V` and `^S` characters are real special characters. Type
+`<C-v><C-v>` or `<C-v><C-s>` in insert mode to write them!
+
 ```lua
 local ViMode = {
     -- get vim current mode, this information will be required by the provider
@@ -289,23 +292,51 @@ local ViMode = {
     -- them at initialisation time.
     static = {
         mode_names = { -- change the strings if yow like it vvvvverbose!
-            n = "N", no = "N?", nov = "N?", noV = "N?", ["no"] = "N?", niI =
-            "Ni", niR = "Nr", niV = "Nv", nt = "Nt", v = "V", vs = "Vs", V =
-            "V_", Vs = "Vs", [""] = "^V", ["s"] = "^V", s = "S", S = "S_",
-            [""] = "^S", i = "I", ic = "Ic", ix = "Ix", R = "R", Rc = "Rc",
-            Rx = "Rx", Rv = "Rv", Rvc = "Rv", Rvx = "Rv", c = "C", cv = "Ex", r
-            = "...", rm = "M", ["r?"] = "?", ["!"] = "!", t = "T",
+            n = "N",
+            no = "N?",
+            nov = "N?",
+            noV = "N?",
+            ["no^V"] = "N?",
+            niI = "Ni",
+            niR = "Nr",
+            niV = "Nv",
+            nt = "Nt",
+            v = "V",
+            vs = "Vs",
+            V = "V_",
+            Vs = "Vs",
+            ["^V"] = "^V",
+            ["^Vs"] = "^V",
+            s = "S",
+            S = "S_",
+            ["^S"] = "^S",
+            i = "I",
+            ic = "Ic",
+            ix = "Ix",
+            R = "R",
+            Rc = "Rc",
+            Rx = "Rx",
+            Rv = "Rv",
+            Rvc = "Rv",
+            Rvx = "Rv",
+            c = "C",
+            cv = "Ex",
+            r = "...",
+            rm = "M",
+            ["r?"] = "?",
+            ["!"] = "!",
+            t = "T",
         },
         mode_colors = {
             n = colors.red ,
             i = colors.green,
             v = colors.cyan,
             V =  colors.cyan,
-            ["^V"] =  colors.cyan, -- this is an actual ^V, type <C-v><C-v> in insert mode
+            ["^V"] =  colors.cyan,
             c =  colors.orange,
             s =  colors.purple,
             S =  colors.purple,
-            ["^S"] =  colors.purple, -- this is an actual ^S, type <C-v><C-s> in insert mode
+            ["^S"] =  colors.purple,
             R =  colors.orange,
             r =  colors.orange,
             ["!"] =  colors.red,
@@ -318,9 +349,9 @@ local ViMode = {
     -- component is instantiated.
     -- To be extra meticulous, we can also add some vim statusline syntax to
     -- control the padding and make sure our string is always at least 2
-    -- characters long
+    -- characters long. Plus a nice Icon.
     provider = function(self)
-        return "%-2("..self.mode_names[self.mode].."%)"
+        return " %2("..self.mode_names[self.mode].."%)"
     end,
     -- Same goes for the highlight. Now the foreground will change according to the current mode.
     hl = function(self)
