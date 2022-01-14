@@ -65,12 +65,12 @@ function StatusLine:eval()
     local stl = {}
 
     local hl = type(self.hl) == "function" and (self:hl() or {}) or self.hl -- self raw hl
-    local cur_hl = getmetatable(self).__index(self, "cur_hl") -- the parent hl
+    local prev_hl = getmetatable(self).__index(self, "cur_hl") -- the parent hl
 
-    if cur_hl.force then
-        self.cur_hl = vim.tbl_extend("keep", cur_hl, hl) -- merged hl
+    if prev_hl.force then
+        self.cur_hl = vim.tbl_extend("keep", prev_hl, hl) -- merged hl
     else
-        self.cur_hl = vim.tbl_extend("force", cur_hl, hl) -- merged hl
+        self.cur_hl = vim.tbl_extend("force", prev_hl, hl) -- merged hl
     end
 
     if self.provider then
@@ -87,7 +87,6 @@ function StatusLine:eval()
         end
     end
 
-    -- self.cur_hl.force = nil
 
     return table.concat(stl, "")
 end
