@@ -17,11 +17,12 @@ thought of as a statusline API.
 > **Why another statusline plugin?**
 
 Heirline picks up from other popular customizable statusline plugins like
-[galaxyline]() and [feline]() but removes all the hard-coded bloat and offers
-you thousands times more freedom. But freedom has a price: responsibility. I
-don't get to tell you what your statusline should do. You're in charge! With
-Heirline, you have a framework to easily implement whatever you can imagine,
-from simple to complex rules!
+[galaxyline](https://github.com/NTBBloodbath/galaxyline.nvim) and
+[feline](https://github.com/feline-nvim/feline.nvim) but removes all the
+hard-coded bloat and offers you thousands times more freedom. But freedom has a
+price: responsibility. I don't get to tell you what your statusline should do.
+You're in charge! With Heirline, you have a framework to easily implement
+whatever you can imagine, from simple to complex rules!
 
 Heirline was deigned with these main features in mind:
 * Active/inactive and buffer/filetype custom statuslines.

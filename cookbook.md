@@ -190,7 +190,7 @@ These functions are accessible via `require'heirline.conditions'` and
   - `patterns`: table of the form `{filetype = {...}, buftype = {...}, bufname = {...}}` where each field is a list of lua patterns.
 - `width_percent_below(N, threshold)`: returns true if `(N / current_window_width) <= threshold`
   (eg.: `width_percent_below(#mystring, 0.33)`)
-- `is_git_repo()`: returns true if the file is within a git repo (uses [gitsigns]())
+- `is_git_repo()`: returns true if the file is within a git repo (uses [gitsigns](https://github.com/lewis6991/gitsigns.nvim))
 - `has_diagnostics()`: returns true if there is any diagnostic for the buffer.
 - `lsp_attached():` returns true if an LSP is attached to the buffer.
 
@@ -421,7 +421,7 @@ local FileType = {
     provider = function()
         return string.upper(vim.bo.filetype)
     end,
-    hl = { fg = utils.get_highlight("Type").fg },
+    hl = { fg = utils.get_highlight("Type").fg, style = 'bold' },
 }
 ```
 
@@ -437,8 +437,9 @@ local FileEncoding = {
 ```lua
 local FileFormat = {
     provider = function()
-        local fmt = return vim.bo.fileformat
+        local fmt = vim.bo.fileformat
         return fmt ~= 'unix' and fmt:upper()
+    end
 }
 ```
 
@@ -468,6 +469,7 @@ local FileLastModified = {
     provider = function()
         local ftime = vim.fn.getftime(vim.api.nvim_buf_gett_name(0))
         return (ftime > 0) and os.date("%c", ftime)
+    end
 }
 ```
 
@@ -515,16 +517,18 @@ local LSPActive = {
     -- provider = " [LSP]",
 
     -- Or complicate things a bit and get the servers names
-    provider  = function(self)
+    provider  = function()
         local names = {}
         for i, server in ipairs(vim.lsp.buf_get_clients(0)) do
-            table.insert(names, server)
+            table.insert(names, server.name)
         end
         return " [" .. table.concat(names, " ") .. "]"
     end,
     hl = { fg = colors.green, style = "bold" },
 }
 ```
+
+[Lsp Status](https://github.com/nvim-lua/lsp-status.nvim)
 
 ```lua
 -- I personally use it only to display progress messages!
@@ -534,6 +538,8 @@ local LSPMessages = {
     hl = { fg = colors.gray },
 }
 ```
+
+[Nvim Gps](https://github.com/SmiteshP/nvim-gps)
 
 ```lua
 -- Awesome plugin
@@ -631,7 +637,8 @@ Diagnostics = utils.surround({"![", "]"}, nil, Diagnostics)
 
 ### Git
 
-For the ones who're not (too) afraid of changes!
+For the ones who're not (too) afraid of changes! Uses
+[gitsigns](https://github.com/lewis6991/gitsigns.nvim).
 
 ```lua
 local Git = {
@@ -639,9 +646,11 @@ local Git = {
 
     init = function(self)
         self.status_dict = vim.b.gitsigns_status_dict
+        self.has_changes = self.status_dict.added ~= 0 or self.status_dict.removed ~= 0 or self.status_dict.changed ~= 0
     end,
 
     hl = { fg = colors.orange },
+
 
     {   -- git branch name
         provider = function(self)
@@ -651,6 +660,9 @@ local Git = {
     },
     -- You could handle delimiters, icons and counts similar to Diagnostics
     {
+        condition = function(self)
+            return self.has_changes
+        end,
         provider = "("
     },
     {
@@ -675,6 +687,9 @@ local Git = {
         hl = { fg = colors.git.change },
     },
     {
+        condition = function(self)
+            return self.has_changes
+        end,
         provider = ")",
     },
 }
@@ -682,7 +697,7 @@ local Git = {
 
 ### Debugger
 
-Display informations from [nvim-dap]!
+Display informations from [nvim-dap](https://github.com/mfussenegger/nvim-dap)!
 
 ```lua
 local DAPMessages = {
@@ -700,13 +715,13 @@ local DAPMessages = {
     provider = function()
         return " " .. require("dap").status()
     end,
-    hl = { fg = "red" },
+    hl = { fg = utils.get_highlight('Debug').fg },
 }
 ```
 
 ### Tests
 
-This requires the great [ultest]().
+This requires the great [ultest](https://github.com/rcarriga/vim-ultest).
 
 ```lua
 local UltTest = {
@@ -735,7 +750,6 @@ local UltTest = {
     },
     {
         provider = function(self)
-    -- You could handle delimiters, icons and counts similar to Diagnostics
             return self.failed_icon .. self.status.failed .. " "
         end,
         hl = function(self)
@@ -805,9 +819,9 @@ local HelpFileName = {
 
 ### Snippets Indicator
 
-This requires ultisnips, but the same logic could be applied to many other
-snippet plugins! Get an indicator of when you're inside a snippet and can jump
-to the previous and/or forward tag.
+This requires [ultisnips](https://github.com/SirVer/ultisnips), but the same
+logic could be applied to many other snippet plugins! Get an indicator of when
+you're inside a snippet and can jump to the previous and/or forward tag.
 
 ```lua
 local Snippets = {
@@ -926,7 +940,7 @@ local StatusLines = {
 
     stop_at_first = true,
 
-    SpecialStl, TerminalStl, InactiveStl, DefaultStl,
+    SpecialStatusline, TerminalStatusline, InactiveStatusline, DefaultStatusline,
 }
 ```
 
@@ -949,7 +963,7 @@ will reset heirline highlights and re-source your config!
 
 You can achieve that in two ways:
 
-1) Wrapping the generation of the statusline blueprints (components) into a function
+1. Wrapping the generation of the statusline blueprints (components) into a function
 
 ```lua
 -- beginning of your heirline config file
@@ -975,7 +989,7 @@ return M
 -- end of your heirline config file
 ```
 
-2) Using `:luafile` to reload your config.
+2. Using `:luafile` to reload your config.
 
 ```lua
 -- beginning of your heirline config file, no need to wrap anything
@@ -994,6 +1008,6 @@ require("heirline").setup(statuslines)
 -- end of your heirline config file
 ```
 
-<p align='center'>
-    <h2>Fin.</h2>
+<p align="center">
+  <h2 align="center">Fin.</h2>
 </p>
