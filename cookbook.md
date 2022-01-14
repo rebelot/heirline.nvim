@@ -904,7 +904,7 @@ ViMode = utils.surround({ "", "" }, colors.bright_bg, { ViMode, Snippets }
 local DefaultStatusline = {
     ViMode, Space, FileName, Space, Git, Space, Diagnostics, Align,
     Gps, DAPMessages, Align,
-    LSPActive, Space, LSPMessages, Space, UltTest, Space, FileType, Ruler, Space, ScrollBar
+    LSPActive, Space, LSPMessages, Space, UltTest, Space, FileType, Space, Ruler, Space, ScrollBar
 }
 ```
 
