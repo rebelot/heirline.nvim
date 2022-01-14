@@ -1044,5 +1044,5 @@ require("heirline").setup(statuslines)
 ```
 
 <p align="center">
-  <h2 align="center">Fin.</h2>
+  <h2 align="center">Fin. :spoon:</h2>
 </p>
