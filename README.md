@@ -25,13 +25,15 @@ You're in charge! With Heirline, you have a framework to easily implement
 whatever you can imagine, from simple to complex rules!
 
 Heirline was deigned with these main features in mind:
-* Active/inactive and buffer/filetype custom statuslines.
-* Modularity: statusline components can be reutilised and will behave according to their position in the genealogical tree.
-* Seamless surrounding and coloring of specific components.
+
+- Active/inactive and buffer/filetype custom statuslines.
+- Modularity: statusline components can be reutilised and will behave according to their position in the genealogical tree.
+- Seamless surrounding and coloring of specific components.
 
 Heirline is _not_ for everyone, heirline is for people who like tailoring their own tools (and also like lua):
-* **No** default statusline is provided 
-* You **must** write your own statusline
+
+- **No** default statusline is provided
+- You **must** write your own statusline
 
 But don't you worry! Along with the inheritance comes [THE FEATUREFUL COOKBOOK](cookbook.md) 📖
 of a distant relative. Your dream 🪄 statusline is a
@@ -39,7 +41,7 @@ copypaste away!
 
 ## Installation
 
-Use your favorite plugin manager 
+Use your favorite plugin manager
 
 ```lua
 use "rebelot/heirline.nvim"
@@ -53,4 +55,5 @@ No defaults, no options, no-nonsense. You choose.
 local statusline = {...}
 require'heirline'.setup(statusline)
 ```
+
 Calling `setup` will load your statusline. To learn how to write a StatusLine, see the [docs](cookbook.md).

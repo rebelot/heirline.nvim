@@ -87,7 +87,6 @@ function StatusLine:eval()
         end
     end
 
-
     return table.concat(stl, "")
 end
 
