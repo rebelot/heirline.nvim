@@ -27,7 +27,7 @@
 
 ## Main concepts
 
-In heirline, everything is a [`StatusLine`](lua/heirline/statusline.lua#L31)
+In heirline, everything is a [`StatusLine`](lua/heirline/statusline.lua#L12)
 object. There is no distinction in the way one defines the final statusline
 from any of its components.
 
