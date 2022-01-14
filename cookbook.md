@@ -368,6 +368,7 @@ local FileName = {
         -- first, trim the pattern relative to the current directory. For other
         -- options, see :h filename-modifers
         local filename = vim.fn.fnamemodify(self.filename, ":.")
+        if filename == "" then return "[No Name]" end
         -- now, if the filename would occupy more than 1/4th of the available
         -- space, we trim the file path to its initials
         if not conditions.width_percent_below(#filename, 0.25) then
@@ -775,8 +776,11 @@ local WorkDir = {
         local icon = (vim.fn.haslocaldir(0) == 1 and "l" or "g") .. " " .. " "
         local cwd = vim.fn.getcwd(0)
         cwd = vim.fn.fnamemodify(cwd, ":~")
-        cwd = vim.fn.pathshorten(cwd)
-        return icon .. cwd .. "/"
+        if not conditions.width_percent_below(#cwd, 0.25) then
+            cwd = vim.fn.pathshorten(cwd)
+        end
+        local trail = cwd:sub(-1) == '/' and '' or "/"
+        return icon .. cwd  .. trail
     end,
     hl = { fg = colors.blue, style = "bold" },
 }
