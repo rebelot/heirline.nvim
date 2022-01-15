@@ -1046,4 +1046,9 @@ require("heirline").setup(statuslines)
 <p align="center">
   <h2 align="center">Fin. :spoon:</h2>
 </p>
+
 <p align="center">Config for heirline.nvim took 0.000786ms</p>
+
+<p align="center">
+  <img width="1156" alt="heirline_statusline" src="https://user-images.githubusercontent.com/36300441/149607860-4d2ac414-e0d4-48bf-991e-6ef3022a1e79.png">
+</p>
