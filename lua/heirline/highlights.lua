@@ -18,8 +18,8 @@ end
 
 function M.name_hl(hl)
     return "Stl"
-        .. (hl.fg and hl.fg:gsub("#", "") or "")
-        .. (hl.bg and hl.bg:gsub("#", "") or "")
+        .. (hl.fg and hl.fg:gsub("#", "") or "_")
+        .. (hl.bg and hl.bg:gsub("#", "") or "_")
         .. (hl.style and hl.style:gsub(",", "") or "")
         .. (hl.guisp and hl.guisp:gsub(",", "") or "")
 end
