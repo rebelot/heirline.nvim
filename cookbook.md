@@ -95,7 +95,7 @@ Each component may contain _any_ of the following fields:
 **Basic fields**:
 
 - `provider`:
-  - Type: `string` or `function(self) -> string|number|nil`
+  - Type: `string|number` or `function(self) -> string|number|nil`
   - Description: This is the string that gets printed in the statusline. No
     escaping is performed, so it may contain sequences that have a special
     meaning within the statusline, such as `%f` (filename), `%p` (percentage
