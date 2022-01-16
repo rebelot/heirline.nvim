@@ -225,14 +225,13 @@ These functions are accessible via `require'heirline.conditions'` and
   supplied one, updated with the fields in the optional `with` table.
 - `surround(delimiters, color, component)`: returns a new component, which
   contains a copy of the supplied one, surrounded by the left and right
-  delimiters supplied by the `delimiters` table. This action will override the
-  `bg` field of the component `hl`.
+  delimiters given by the `delimiters` table.
   - `delimiters`: table of the form `{left_delimiter, right_delimiter}`.
     Because they are actually just providers, delimiters could also be
     functions!
-  - `color`: `nil` or `string` of color hex code or builtin color name. This
-    color will be the foreground color of the delimiters and the background
-    color of the component.
+  - `color`: `string|nil` or `function -> string|nil`. String should refer to
+    RGB hex code or builtin color name. This color will be the foreground color
+    of the delimiters and the background color of the component.
   - `component`: the component to be surrounded.
 - `insert(parent, ...)`: return a copy of `parent` component where each `child`
   in `...` (variable arguments) is appended to its children (if any).

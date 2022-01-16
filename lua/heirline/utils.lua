@@ -5,7 +5,7 @@ function M.get_highlight(hlname)
     local t = {}
     local hex = function(n)
         if n then
-			return string.format("#%06x", n)
+            return string.format("#%06x", n)
         end
     end
     t.fg = hex(hl.foreground)
@@ -39,26 +39,42 @@ end
 
 function M.surround(delimiters, color, component)
     component = M.clone(component)
-    component.hl = component.hl or {}
-    if type(component.hl) == "function" then
-        local old_hl_func = component.hl
-        component.hl = function(obj)
-            local hl = old_hl_func(obj)
-            hl.bg = color
-            return hl
+
+    local surround_color = function(self)
+        if type(color) == "function" then
+            return color(self)
+        else
+            return color
         end
-    else
-        component.hl.bg = color
     end
+
     return {
         {
             provider = delimiters[1],
-            hl = { fg = color },
+            hl = function(self)
+                local s_color = surround_color(self)
+                if s_color then
+                    return { fg = s_color }
+                end
+            end,
         },
-        component,
+        {
+            hl = function(self)
+                local s_color = surround_color(self)
+                if s_color then
+                    return { bg = s_color }
+                end
+            end,
+            component,
+        },
         {
             provider = delimiters[2],
-            hl = { fg = color },
+            hl = function(self)
+                local s_color = surround_color(self)
+                if s_color then
+                    return { fg = s_color }
+                end
+            end,
         },
     }
 end
