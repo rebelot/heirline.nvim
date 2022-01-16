@@ -367,8 +367,8 @@ Perhaps one of the most important components is the one that shows which file
 you are editing. In this second recipe, we will revisit some heirline concepts
 and explore new ways to assemble components. We will also learn a few useful
 vim lua API functions. Because we are all crazy about icons, we'll require
-[nvim-web-devicons](), but you are absolutely free to omit that if you're not
-an icon person.
+[nvim-web-devicons](https://github.com/kyazdani42/nvim-web-devicons), but you
+are absolutely free to omit that if you're not an icon person.
 
 ```lua
 
