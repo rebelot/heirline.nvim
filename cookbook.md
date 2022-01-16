@@ -4,6 +4,8 @@
 
 - [Main concepts](#main-concepts)
 - [Component fields](#component-fields)
+  - [The StatusLine life cycle](#the-statusline-life-cycle)
+  - [StatusLine Base Methods](#statusline-base-methods)
 - [Builtin conditions and utilities](#builtin-conditions-and-utilities)
 - [Recipes](#recipes)
   - [Getting started](#getting-started)
@@ -162,7 +164,7 @@ Each component may contain _any_ of the following fields:
     Attention: modifying the defaults could dramatically affect the behavior of
     the component! (eg: `restrict = { my_private_var = true, provider = false }`)
 
-**The StatusLine life cycle**
+### The StatusLine life cycle
 
 There are two distinct phases in the life of a StatusLine object component: its
 _creation_ (instantiation) and its _evaluation_. When creating the "blueprint"
@@ -173,6 +175,26 @@ during the instantiation phase, while `condition`, `init`, `hl`, `provider` and
 refreshed.
 
 Confused yet? Don't worry, everything will come together in the [Recipes](#recipes) examples.
+
+### StatusLine Base Methods
+
+You'll probably never need those, however, for completeness, it's worth
+explaining the `StatusLine` object base methods:
+
+- `new(self, child)`: This is the constructor that takes in the `child`
+  "blueprint" and returns a new `StatusLine` object. This function is
+  recursive, so if `child` has children, those will be instantiated as `child`
+  subclasses. Also note that all tables in `child` are deep-copied in the
+  returned object.
+- `eval(self)`: Evaluates the `StatusLine` recursively to figure out, for every
+  component and {sub{,sub{,sub{,...}}}} components what's their printable value
+  and color. This function will execute `condition`, `init`, `hl` and
+  `provider` and merges the object's evaluated `hl` with the parent's
+  (depending on the value of its `hl.force`).
+- `nonlocal(self, attr)`: Searches for the keyword `attr` in the parent's
+  `__index`, ignoring any value defined for that keyword in the component
+  itself (`self`). This is useful for children that want to look for their
+  parent's attributes, ignoring what was passed to them by inheritance.
 
 ## Builtin conditions and utilities
 
