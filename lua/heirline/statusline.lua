@@ -53,6 +53,10 @@ function StatusLine:new(child)
     return new
 end
 
+function StatusLine:nonlocal(attr)
+    return getmetatable(self).__index(self, attr)
+end
+
 function StatusLine:eval()
     if self.condition and not self:condition() then
         return ""
@@ -65,7 +69,7 @@ function StatusLine:eval()
     local stl = {}
 
     local hl = type(self.hl) == "function" and (self:hl() or {}) or self.hl -- self raw hl
-    local prev_hl = getmetatable(self).__index(self, "cur_hl") -- the parent hl
+    local prev_hl = self:nonlocal("cur_hl") -- the parent hl
 
     if prev_hl.force then
         self.cur_hl = vim.tbl_extend("keep", prev_hl, hl) -- merged hl
