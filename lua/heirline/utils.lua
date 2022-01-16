@@ -5,7 +5,7 @@ function M.get_highlight(hlname)
     local t = {}
     local hex = function(n)
         if n then
-			return vim.fn.printf("#%06x", n)
+			return string.format("#%06x", n)
         end
     end
     t.fg = hex(hl.foreground)
