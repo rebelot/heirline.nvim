@@ -5,7 +5,6 @@ function M.get_highlight(hlname)
     local t = {}
     local hex = function(n)
         if n then
-            -- return string.format("#%x", n)
 			return vim.fn.printf("#%06x", n)
         end
     end
