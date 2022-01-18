@@ -17,14 +17,16 @@ function M.setup(statusline, events)
     M.load()
 end
 
+local last_out = ""
 function M.eval()
     if M.events.before then
-        M.events.before(M.statusline)
+        M.events.before(M.statusline, last_out)
     end
     local out = M.statusline:eval()
     if M.events.after then
         out = M.events.after(M.statusline, out)
     end
+    last_out = out
     return out
 end
 
