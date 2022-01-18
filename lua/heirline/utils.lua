@@ -90,16 +90,17 @@ function M.insert(destination, ...)
 end
 
 function M.count_chars(str)
+    str = vim.api.nvim_eval_statusline(str:gsub("%%=", ""), { winid = 0 }).str
     local non_ascii_bytes = 0
     local ascii_bytes = 0
-    for c in string.gmatch(str, '.') do
-        if c:byte() > 128 then
+    for c in string.gmatch(str, ".") do
+        if c:byte() > 127 then
             non_ascii_bytes = non_ascii_bytes + 1
         else
             ascii_bytes = ascii_bytes + 1
         end
     end
-    return ascii_bytes + non_ascii_bytes/3
+    return ascii_bytes + non_ascii_bytes / 3
 end
 
 return M
