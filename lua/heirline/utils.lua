@@ -89,4 +89,17 @@ function M.insert(destination, ...)
     return new
 end
 
+function M.count_chars(str)
+    local non_ascii_bytes = 0
+    local ascii_bytes = 0
+    for c in string.gmatch(str, '.') do
+        if c:byte() > 128 then
+            non_ascii_bytes = non_ascii_bytes + 1
+        else
+            ascii_bytes = ascii_bytes + 1
+        end
+    end
+    return ascii_bytes + non_ascii_bytes/3
+end
+
 return M
