@@ -2,7 +2,7 @@ local utils = require("heirline.utils")
 local hi = require("heirline.highlights")
 
 local default_restrict = {
-    stop_at_first = true,
+    stop_when = true,
     init = true,
     provider = true,
     condition = true,
@@ -27,7 +27,7 @@ function StatusLine:new(child)
     new.condition = child.condition
     new.init = child.init
     new.provider = child.provider
-    new.stop_at_first = child.stop_at_first
+    new.stop_when = child.stop_when
     new.restrict = child.restrict and vim.tbl_extend("keep", child.restrict, {})
 
     if child.static then
@@ -86,7 +86,7 @@ function StatusLine:eval()
     for _, child in ipairs(self) do
         local out = child:eval()
         table.insert(stl, out)
-        if self.stop_at_first and out ~= "" then
+        if self.stop_when and self:stop_when(out) then
             break
         end
     end
