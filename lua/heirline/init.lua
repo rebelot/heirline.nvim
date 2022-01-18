@@ -14,6 +14,7 @@ end
 
 function M.setup(statusline)
     M.statusline = StatusLine:new(statusline)
+    M.statusline:make_ids()
     M.load()
 end
 
