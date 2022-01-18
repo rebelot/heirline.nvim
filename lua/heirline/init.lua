@@ -1,8 +1,6 @@
 local M = {}
 local StatusLine = require'heirline.statusline'
 
-M.statusline = {}
-
 function M.reset_highlights()
     return require'heirline.highlights'.reset_highlights()
 end
