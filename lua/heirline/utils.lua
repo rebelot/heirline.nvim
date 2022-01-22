@@ -103,4 +103,114 @@ function M.count_chars(str)
     return ascii_bytes + non_ascii_bytes / 3
 end
 
+function M.set_win_attr(self, attr, val, default)
+    local winnr = vim.api.nvim_win_get_number(0)
+    self[attr] = self[attr] or {}
+    self[attr][winnr] = val or (self[attr][winnr] or default)
+end
+
+function M.get_win_attr(self, attr, default)
+    local winnr = vim.api.nvim_win_get_number(0)
+    self[attr] = self[attr] or {}
+    self[attr][winnr] = self[attr][winnr] or default
+    return self[attr][winnr]
+end
+
+function M.make_elastic_component(priority, providers)
+    local new = {}
+    new.static = {
+        priority = priority,
+        providers = providers,
+        next_p = function(self)
+            local pi = M.get_win_attr(self, "pi") + 1
+            if pi > #self.providers then
+                pi = #self.providers
+            end
+            M.set_win_attr(self, "pi", pi)
+        end,
+    }
+    new.init = function(self)
+        if not self.once then
+            self.elastic_ids[self.priority] = self.elastic_ids[self.priority] or {}
+            table.insert(self.elastic_ids[self.priority], self.id)
+            M.set_win_attr(self, "pi", 1)
+            self.once = true
+        end
+    end
+
+    new.condition = function(self)
+        return not self.deferred
+    end
+
+    new.provider = function(self)
+        local pi = M.get_win_attr(self, "pi")
+        local provider = self.providers[pi]
+        return type(provider) == 'function' and (provider(self) or "") or provider
+    end
+
+    return new
+end
+
+local function elastic_len(statusline, reset)
+    local len = 0
+    for _, ids in ipairs(statusline.elastic_ids) do
+        for _, id in ipairs(ids) do
+            local ec = statusline:get(id)
+            if reset then
+                M.set_win_attr(ec, "pi", 1)
+            end
+            len = len + M.count_chars(ec:eval())
+        end
+    end
+    return len
+end
+
+local function defer(statusline, val)
+    for _, ids in ipairs(statusline.elastic_ids) do
+        for _, id in ipairs(ids) do
+            local ec = statusline:get(id)
+            ec.deferred = val
+        end
+    end
+end
+
+function M.elastic_before(statusline, last_out)
+    local winw = vim.api.nvim_win_get_width(0)
+    statusline.elastic_ids = statusline.elastic_ids or {}
+
+    defer(statusline, true)
+    local avail_wo_elastic = winw - M.count_chars(statusline:eval())
+    defer(statusline, false)
+
+    local avail = avail_wo_elastic - elastic_len(statusline, true) -- resets pi to 1
+
+    if avail < 1 then
+        local stop = false
+        for _, ids in ipairs(statusline.elastic_ids) do
+            local max_count = 0
+            for _, id in ipairs(ids) do
+                local ec = statusline:get(id)
+                max_count = max_count + #ec.providers
+            end
+
+            local i = 0
+            while i <= max_count do
+                for _, id in ipairs(ids) do
+                    local ec = statusline:get(id)
+                    ec:next_p()
+                end
+
+                if avail_wo_elastic - elastic_len(statusline, false) > 0 then
+                    stop = true
+                    break
+                end
+                i = i + 1
+            end
+            if stop then
+                break
+            end
+        end
+    end
+end
+
 return M
