@@ -153,7 +153,7 @@ end
 
 local function elastic_len(statusline, reset)
     local len = 0
-    for _, ids in ipairs(statusline.elastic_ids) do
+    for _, ids in pairs(statusline.elastic_ids) do
         for _, id in ipairs(ids) do
             local ec = statusline:get(id)
             if reset then
@@ -166,7 +166,7 @@ local function elastic_len(statusline, reset)
 end
 
 local function defer(statusline, val)
-    for _, ids in ipairs(statusline.elastic_ids) do
+    for _, ids in pairs(statusline.elastic_ids) do
         for _, id in ipairs(ids) do
             local ec = statusline:get(id)
             ec.deferred = val
@@ -186,7 +186,7 @@ function M.elastic_before(statusline, last_out)
 
     if avail < 1 then
         local stop = false
-        for _, ids in ipairs(statusline.elastic_ids) do
+        for _, ids in pairs(statusline.elastic_ids) do
             local max_count = 0
             for _, id in ipairs(ids) do
                 local ec = statusline:get(id)
