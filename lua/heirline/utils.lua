@@ -116,15 +116,18 @@ function M.get_win_attr(self, attr, default)
     return self[attr][winnr]
 end
 
-function M.make_elastic_component(priority, providers)
+function M.make_elastic_component(priority, ...)
     local new = {}
+    local components = { ... }
+    for i, c in ipairs(components) do
+        new[i] = vim.tbl_deep_extend("keep", c, {})
+    end
     new.static = {
         priority = priority,
-        providers = providers,
         next_p = function(self)
             local pi = M.get_win_attr(self, "pi") + 1
-            if pi > #self.providers then
-                pi = #self.providers
+            if pi > #self then
+                pi = #self
             end
             M.set_win_attr(self, "pi", pi)
         end,
@@ -134,18 +137,19 @@ function M.make_elastic_component(priority, providers)
             self.elastic_ids[self.priority] = self.elastic_ids[self.priority] or {}
             table.insert(self.elastic_ids[self.priority], self.id)
             M.set_win_attr(self, "pi", 1)
+
+            for _, c in ipairs(self) do
+                c.condition = function(self_)
+                    return self_.id[#self_.id] == M.get_win_attr(self_, "pi")
+                end
+            end
+
             self.once = true
         end
     end
 
     new.condition = function(self)
         return not self.deferred
-    end
-
-    new.provider = function(self)
-        local pi = M.get_win_attr(self, "pi")
-        local provider = self.providers[pi]
-        return type(provider) == 'function' and (provider(self) or "") or provider
     end
 
     return new
@@ -190,7 +194,7 @@ function M.elastic_before(statusline, last_out)
             local max_count = 0
             for _, id in ipairs(ids) do
                 local ec = statusline:get(id)
-                max_count = max_count + #ec.providers
+                max_count = max_count + #ec
             end
 
             local i = 0
