@@ -127,37 +127,51 @@ function M.elastic_before(statusline, last_out)
     local winw = vim.api.nvim_win_get_width(0)
 
     statusline.elastic_ids = {}
-    statusline.pre_eval = true
 
+    -- Set the `pre_eval` flag to signal active expandable components they should
+    -- put their `id` into the statusline-global `elastic_ids` table and set their
+    -- child index `pi` to 1.
+    -- The flag is handled by the component's `init` function.
+    statusline.pre_eval = true
+    -- First-pass eval of the statusline: executes the expandable component's `init`
+    -- and gets the maximum length assuming all components are fully expanded.
+    -- Each component stores its last evaluated string in self.stl
     local stl_max_len = M.count_chars(statusline:eval())
 
     statusline.pre_eval = false
 
+    -- if there's not enough space, try contracting components in
+    -- order of priority.
     if stl_max_len > winw then
         local saved_chars = 0
         local get_out = false
-        for _, ids in pairs(statusline.elastic_ids) do
-            local max_count = 0
-            for _, id in ipairs(ids) do
-                local ec = statusline:get(id)
-                max_count = max_count + #ec
-            end
 
-            local i = 0
-            while i <= max_count do
+        -- get the `id`s of components at same priority
+        for _, ids in pairs(statusline.elastic_ids) do
+            -- keep contracting until out of expandable components
+            local end_of_components
+            while not end_of_components do
                 for _, id in ipairs(ids) do
                     local ec = statusline:get(id)
-                    ec:next_p()
-                    local prev_len = M.count_chars(ec.stl)
-                    local cur_len = M.count_chars(ec:eval())
-                    saved_chars = saved_chars + (prev_len - cur_len)
+                    -- try increasing the child index and return success
+                    if next_p(ec) then
+                        end_of_components = false
+                        local prev_len = M.count_chars(ec.stl)
+                        local cur_len = M.count_chars(ec:eval())
+                        saved_chars = saved_chars + (prev_len - cur_len)
+                    else
+                        -- when the expandable components at the same priority level
+                        -- have no more children, this flag cannot be rescued and
+                        -- the loop ends.
+                        end_of_components = true
+                    end
                 end
 
+                -- check if we can get out the loop earlyer
                 if stl_max_len - saved_chars <= winw then
                     get_out = true
                     break
                 end
-                i = i + 1
             end
             if get_out then
                 break
