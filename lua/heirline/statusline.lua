@@ -56,7 +56,7 @@ end
 function StatusLine:make_ids(index)
     local parent_id = self:nonlocal("id") or {}
 
-    self.id = vim.tbl_extend('force', parent_id, {[#parent_id + 1] = index})
+    self.id = vim.tbl_extend("force", parent_id, { [#parent_id + 1] = index })
 
     for i, c in ipairs(self) do
         c:make_ids(i)
