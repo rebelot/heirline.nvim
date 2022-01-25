@@ -108,7 +108,7 @@ function M.make_elastic_component(priority, ...)
             table.insert(self.elastic_ids[self.priority], self.id)
             self:set_win_attr("pi", 1)
         end
-        self.pick_child = {self:get_win_attr("pi")}
+        self.pick_child = { self:get_win_attr("pi") }
     end
 
     return new
