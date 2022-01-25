@@ -82,7 +82,7 @@ end
 function M.insert(destination, ...)
     local children = { ... }
     local new = M.clone(destination)
-    for i, child in ipairs(children) do
+    for _, child in ipairs(children) do
         local new_child = M.clone(child)
         table.insert(new, new_child)
     end
@@ -90,30 +90,15 @@ function M.insert(destination, ...)
 end
 
 function M.count_chars(str)
-    str = vim.api.nvim_eval_statusline(str:gsub("%%=", ""), { winid = 0 }).str
-    local non_ascii_bytes = 0
-    local ascii_bytes = 0
-    for c in string.gmatch(str, ".") do
-        if c:byte() > 127 then
-            non_ascii_bytes = non_ascii_bytes + 1
-        else
-            ascii_bytes = ascii_bytes + 1
-        end
+    return vim.api.nvim_eval_statusline(str, { winid = 0, maxwidth = 0 }).width
+end
+
+local function next_p(self)
+    local pi = self:get_win_attr("pi") + 1
+    if pi > #self then
+        pi = #self
     end
-    return ascii_bytes + non_ascii_bytes / 3
-end
-
-function M.set_win_attr(self, attr, val, default)
-    local winnr = vim.api.nvim_win_get_number(0)
-    self[attr] = self[attr] or {}
-    self[attr][winnr] = val or (self[attr][winnr] or default)
-end
-
-function M.get_win_attr(self, attr, default)
-    local winnr = vim.api.nvim_win_get_number(0)
-    self[attr] = self[attr] or {}
-    self[attr][winnr] = self[attr][winnr] or default
-    return self[attr][winnr]
+    self:set_win_attr("pi", pi)
 end
 
 function M.make_elastic_component(priority, ...)
@@ -124,72 +109,33 @@ function M.make_elastic_component(priority, ...)
     end
     new.static = {
         priority = priority,
-        next_p = function(self)
-            local pi = M.get_win_attr(self, "pi") + 1
-            if pi > #self then
-                pi = #self
-            end
-            M.set_win_attr(self, "pi", pi)
-        end,
+        next_p = next_p
     }
     new.init = function(self)
-        if not self.once then
+        if self.pre_eval then
             self.elastic_ids[self.priority] = self.elastic_ids[self.priority] or {}
             table.insert(self.elastic_ids[self.priority], self.id)
-            M.set_win_attr(self, "pi", 1)
-
-            for _, c in ipairs(self) do
-                c.condition = function(self_)
-                    return self_.id[#self_.id] == M.get_win_attr(self_, "pi")
-                end
-            end
-
-            self.once = true
+            self:set_win_attr("pi", 1)
         end
-    end
-
-    new.condition = function(self)
-        return not self.deferred
+        self.pick_child = {self:get_win_attr("pi")}
     end
 
     return new
 end
 
-local function elastic_len(statusline, reset)
-    local len = 0
-    for _, ids in pairs(statusline.elastic_ids) do
-        for _, id in ipairs(ids) do
-            local ec = statusline:get(id)
-            if reset then
-                M.set_win_attr(ec, "pi", 1)
-            end
-            len = len + M.count_chars(ec:eval())
-        end
-    end
-    return len
-end
-
-local function defer(statusline, val)
-    for _, ids in pairs(statusline.elastic_ids) do
-        for _, id in ipairs(ids) do
-            local ec = statusline:get(id)
-            ec.deferred = val
-        end
-    end
-end
-
 function M.elastic_before(statusline, last_out)
     local winw = vim.api.nvim_win_get_width(0)
-    statusline.elastic_ids = statusline.elastic_ids or {}
 
-    defer(statusline, true)
-    local avail_wo_elastic = winw - M.count_chars(statusline:eval())
-    defer(statusline, false)
+    statusline.elastic_ids = {}
+    statusline.pre_eval = true
 
-    local avail = avail_wo_elastic - elastic_len(statusline, true) -- resets pi to 1
+    local stl_max_len = M.count_chars(statusline:eval())
 
-    if avail < 1 then
-        local stop = false
+    statusline.pre_eval = false
+
+    if stl_max_len > winw then
+        local saved_chars = 0
+        local get_out = false
         for _, ids in pairs(statusline.elastic_ids) do
             local max_count = 0
             for _, id in ipairs(ids) do
@@ -202,15 +148,18 @@ function M.elastic_before(statusline, last_out)
                 for _, id in ipairs(ids) do
                     local ec = statusline:get(id)
                     ec:next_p()
+                    local prev_len = M.count_chars(ec.stl)
+                    local cur_len = M.count_chars(ec:eval())
+                    saved_chars = saved_chars + (prev_len - cur_len)
                 end
 
-                if avail_wo_elastic - elastic_len(statusline, false) > 0 then
-                    stop = true
+                if stl_max_len - saved_chars <= winw then
+                    get_out = true
                     break
                 end
                 i = i + 1
             end
-            if stop then
+            if get_out then
                 break
             end
         end
