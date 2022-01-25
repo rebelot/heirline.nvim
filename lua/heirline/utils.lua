@@ -94,11 +94,8 @@ function M.count_chars(str)
 end
 
 function M.make_elastic_component(priority, ...)
-    local new = {}
-    local components = { ... }
-    for i, c in ipairs(components) do
-        new[i] = vim.tbl_deep_extend("keep", c, {})
-    end
+    local new = M.insert({}, ...)
+
     new.static = {
         priority = priority,
     }
