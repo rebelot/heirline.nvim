@@ -19,6 +19,8 @@ end
 
 local last_out = ""
 function M.eval()
+    M.statusline.winnr = vim.api.nvim_win_get_number(0)
+
     if M.events.before then
         M.events.before(M.statusline, last_out)
     end

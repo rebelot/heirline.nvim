@@ -77,6 +77,19 @@ function StatusLine:nonlocal(attr)
     return getmetatable(self).__index(self, attr)
 end
 
+function StatusLine:set_win_attr(attr, val, default)
+    local winnr = self.winnr
+    self[attr] = self[attr] or {}
+    self[attr][winnr] = val or (self[attr][winnr] or default)
+end
+
+function StatusLine:get_win_attr(attr, default)
+    local winnr = self.winnr
+    self[attr] = self[attr] or {}
+    self[attr][winnr] = self[attr][winnr] or default
+    return self[attr][winnr]
+end
+
 function StatusLine:eval()
     if self.condition and not self:condition() then
         return ""
