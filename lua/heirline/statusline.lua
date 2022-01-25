@@ -7,6 +7,7 @@ local default_restrict = {
     provider = true,
     condition = true,
     restrict = true,
+    pick_child = true,
 }
 
 local StatusLine = {
@@ -72,7 +73,6 @@ function StatusLine:get(id)
     return curr
 end
 
-
 function StatusLine:nonlocal(attr)
     return getmetatable(self).__index(self, attr)
 end
@@ -116,11 +116,22 @@ function StatusLine:eval()
         table.insert(stl, hl_str_start .. provider_str .. hl_str_end)
     end
 
-    for _, child in ipairs(self) do
-        local out = child:eval()
-        table.insert(stl, out)
-        if self.stop_when and self:stop_when(out) then
-            break
+    if self.pick_child then
+        for _, i in ipairs(self.pick_child) do
+            local child = self[i]
+            local out = child:eval()
+            table.insert(stl, out)
+            if self.stop_when and self:stop_when(out, child) then
+                break
+            end
+        end
+    else
+        for _, child in ipairs(self) do
+            local out = child:eval()
+            table.insert(stl, out)
+            if self.stop_when and self:stop_when(out, child) then
+                break
+            end
         end
     end
 
