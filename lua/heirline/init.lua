@@ -30,4 +30,12 @@ function M.eval()
     return out
 end
 
+-- test [[
+function M.timeit()
+    local start = os.clock()
+    M.eval()
+    return os.clock() - start
+end
+--]]
+
 return M
