@@ -124,7 +124,9 @@ function StatusLine:eval()
         end
     end
 
-    return table.concat(stl, "")
+    self.stl = table.concat(stl, "")
+
+    return self.stl
 end
 
 return StatusLine
