@@ -93,14 +93,6 @@ function M.count_chars(str)
     return vim.api.nvim_eval_statusline(str, { winid = 0, maxwidth = 0 }).width
 end
 
-local function next_p(self)
-    local pi = self:get_win_attr("pi") + 1
-    if pi > #self then
-        pi = #self
-    end
-    self:set_win_attr("pi", pi)
-end
-
 function M.make_elastic_component(priority, ...)
     local new = {}
     local components = { ... }
@@ -109,7 +101,6 @@ function M.make_elastic_component(priority, ...)
     end
     new.static = {
         priority = priority,
-        next_p = next_p
     }
     new.init = function(self)
         if self.pre_eval then
@@ -121,6 +112,15 @@ function M.make_elastic_component(priority, ...)
     end
 
     return new
+end
+
+local function next_p(self)
+    local pi = self:get_win_attr("pi") + 1
+    if pi > #self then
+        return false
+    end
+    self:set_win_attr("pi", pi)
+    return true
 end
 
 function M.elastic_before(statusline, last_out)
