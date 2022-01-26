@@ -146,7 +146,7 @@ function M.elastic_before(statusline, last_out)
         -- get the `id`s of components at same priority
         for _, ids in pairs(statusline.elastic_ids) do
             -- keep contracting until out of expandable components
-            local end_of_components
+            local end_of_components = false
             while not end_of_components do
                 for _, id in ipairs(ids) do
                     local ec = statusline:get(id)
@@ -164,7 +164,7 @@ function M.elastic_before(statusline, last_out)
                     end
                 end
 
-                -- check if we can get out the loop earlyer
+                -- check if we can get out the loop earlier
                 if stl_max_len - saved_chars <= winw then
                     get_out = true
                     break
