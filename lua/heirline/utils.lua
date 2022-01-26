@@ -107,6 +107,7 @@ function M.make_elastic_component(priority, ...)
         end
         self.pick_child = { self:get_win_attr("pi") }
     end
+    new.restrict = {pi = true}
 
     return new
 end
