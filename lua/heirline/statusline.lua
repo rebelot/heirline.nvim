@@ -26,6 +26,7 @@ function StatusLine:new(child)
     end
 
     new.condition = child.condition
+    new.pick_child = child.pick_child and vim.tbl_exend("keep", child.pick_child, {})
     new.init = child.init
     new.provider = child.provider
     new.stop_when = child.stop_when

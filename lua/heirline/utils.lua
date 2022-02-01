@@ -100,14 +100,15 @@ function M.make_elastic_component(priority, ...)
         priority = priority,
     }
     new.init = function(self)
-        if self.pre_eval then
-            self.elastic_ids[self.priority] = self.elastic_ids[self.priority] or {}
+        self.elastic_ids[self.priority] = self.elastic_ids[self.priority] or {}
+        if not vim.tbl_contains(self.elastic_ids[self.priority], self.id) then
             table.insert(self.elastic_ids[self.priority], self.id)
-            self:set_win_attr("pi", 1)
         end
+
+        self:set_win_attr("pi", nil, 1)
         self.pick_child = { self:get_win_attr("pi") }
     end
-    new.restrict = {pi = true}
+    new.restrict = { pi = true }
 
     return new
 end
@@ -121,61 +122,87 @@ local function next_p(self)
     return true
 end
 
-function M.elastic_before(statusline, last_out)
+local function prev_p(self)
+    local pi = self:get_win_attr("pi") - 1
+    if pi < 1 then
+        return false
+    end
+    self:set_win_attr("pi", pi)
+    return true
+end
+
+function M.elastic_before(statusline, prev_out)
+    statusline.elastic_ids = {}
+end
+
+local function is_child(child, parent) -- ids
+    if not (child and parent) then
+        return false
+    end
+    if #child <= #parent then
+        return false
+    end
+    for i, v in ipairs(parent) do
+        if child[i] ~= v then
+            return false
+        end
+    end
+    return true
+end
+
+function M.elastic_after(statusline, out)
     local winw = vim.api.nvim_win_get_width(0)
 
-    statusline.elastic_ids = {}
+    local stl_len = M.count_chars(out)
 
-    -- Set the `pre_eval` flag to signal active expandable components they should
-    -- put their `id` into the statusline-global `elastic_ids` table and set their
-    -- child index `pi` to 1.
-    -- The flag is handled by the component's `init` function.
-    statusline.pre_eval = true
-    -- First-pass eval of the statusline: executes the expandable component's `init`
-    -- and gets the maximum length assuming all components are fully expanded.
-    -- Each component stores its last evaluated string in self.stl
-    local stl_max_len = M.count_chars(statusline:eval())
-
-    statusline.pre_eval = false
-
-    -- if there's not enough space, try contracting components in
-    -- order of priority.
-    if stl_max_len > winw then
+    if stl_len > winw then
         local saved_chars = 0
-        local get_out = false
 
-        -- get the `id`s of components at same priority
         for _, ids in pairs(statusline.elastic_ids) do
-            -- keep contracting until out of expandable components
-            local end_of_components = false
-            while not end_of_components do
-                for _, id in ipairs(ids) do
-                    local ec = statusline:get(id)
-                    -- try increasing the child index and return success
-                    if next_p(ec) then
-                        end_of_components = false
-                        local prev_len = M.count_chars(ec.stl)
-                        local cur_len = M.count_chars(ec:eval())
-                        saved_chars = saved_chars + (prev_len - cur_len)
-                    else
-                        -- when the expandable components at the same priority level
-                        -- have no more children, this flag cannot be rescued and
-                        -- the loop ends.
-                        end_of_components = true
-                    end
-                end
-
-                -- check if we can get out the loop earlier
-                if stl_max_len - saved_chars <= winw then
-                    get_out = true
-                    break
+            for _, id in ipairs(ids) do
+                local ec = statusline:get(id)
+                -- try increasing the child index and return success
+                if next_p(ec) then
+                    local prev_len = M.count_chars(ec.stl)
+                    local cur_len = M.count_chars(ec:eval())
+                    saved_chars = saved_chars + (prev_len - cur_len)
                 end
             end
-            if get_out then
+            if stl_len - saved_chars <= winw then
+                break
+            end
+        end
+    elseif stl_len < winw then
+        local gained_chars = 0
+
+        local elastic_ids = {}
+        for _, ids in pairs(statusline.elastic_ids) do
+            table.insert(elastic_ids, ids)
+        end
+
+        for i = #elastic_ids, 1, -1 do
+        -- for i = 1, #elastic_ids, 1 do
+            local ids = elastic_ids[i]
+            for _, id in ipairs(ids) do
+                local ec = statusline:get(id)
+
+                if prev_p(ec) then
+                    local prev_len = M.count_chars(ec.stl)
+                    local cur_len = M.count_chars(ec:eval())
+                    gained_chars = gained_chars + (cur_len - prev_len)
+                end
+            end
+
+            if stl_len + gained_chars > winw then
+                for _, id in ipairs(ids) do
+                    local ec = statusline:get(id)
+                    next_p(ec)
+                end
                 break
             end
         end
     end
+    return out
 end
 
 return M
