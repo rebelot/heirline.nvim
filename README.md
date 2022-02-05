@@ -61,12 +61,5 @@ Calling `setup` will load your statusline. To learn how to write a StatusLine, s
 ### Donate
 Buy me coffee and support my work ;)
 
-<form action="https://www.paypal.com/donate" method="post" target="_top">
-<input type="hidden" name="business" value="VNQPHGW4JEM3S" />
-<input type="hidden" name="no_recurring" value="0" />
-<input type="hidden" name="item_name" value="Buy me a coffee and support my work ;)" />
-<input type="hidden" name="currency_code" value="EUR" />
-<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
-<img alt="" border="0" src="https://www.paypal.com/en_IT/i/scr/pixel.gif" width="1" height="1" />
-</form>
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=VNQPHGW4JEM3S)
 
