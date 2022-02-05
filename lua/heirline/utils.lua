@@ -99,34 +99,33 @@ function M.make_elastic_component(priority, ...)
     new.static = {
         priority = priority,
     }
-    -- new.priority = priority
     new.init = function(self)
         if not vim.tbl_contains(self.elastic_ids, self.id) then
             table.insert(self.elastic_ids, self.id)
         end
-        self:set_win_attr("pi", nil, 1)
-        self.pick_child = { self:get_win_attr("pi") }
+        self:set_win_attr("win_child_index", nil, 1)
+        self.pick_child = { self:get_win_attr("win_child_index") }
     end
-    new.restrict = { pi = true }
+    new.restrict = { win_child_index = true }
 
     return new
 end
 
-local function next_p(self)
-    local pi = (self:get_win_attr("pi") or 0) + 1
+local function next_child(self)
+    local pi = self:get_win_attr("win_child_index") + 1
     if pi > #self then
         return false
     end
-    self:set_win_attr("pi", pi)
+    self:set_win_attr("win_child_index", pi)
     return true
 end
 
-local function prev_p(self)
-    local pi = (self:get_win_attr("pi") or 0) - 1
+local function prev_child(self)
+    local pi = self:get_win_attr("win_child_index") - 1
     if pi < 1 then
         return false
     end
-    self:set_win_attr("pi", pi)
+    self:set_win_attr("win_child_index", pi)
     return true
 end
 
@@ -202,7 +201,7 @@ function M.elastic_after(statusline, out)
             for _, id in ipairs(ids) do
                 local ec = statusline:get(id)
                 -- try increasing the child index and return success
-                if next_p(ec) then
+                if next_child(ec) then
                     local prev_len = M.count_chars(ec.stl)
                     local cur_len = M.count_chars(ec:eval())
                     saved_chars = saved_chars + (prev_len - cur_len)
@@ -225,7 +224,7 @@ function M.elastic_after(statusline, out)
             for _, id in ipairs(ids) do
                 local ec = statusline:get(id)
 
-                if prev_p(ec) then
+                if prev_child(ec) then
                     local prev_len = M.count_chars(ec.stl)
                     local cur_len = M.count_chars(ec:eval())
                     gained_chars = gained_chars + (cur_len - prev_len)
@@ -235,7 +234,7 @@ function M.elastic_after(statusline, out)
             if stl_len + gained_chars > winw then
                 for _, id in ipairs(ids) do
                     local ec = statusline:get(id)
-                    next_p(ec)
+                    next_child(ec)
                 end
                 break
             end
