@@ -149,25 +149,6 @@ local function is_child(child, parent) -- ids
     return true
 end
 
-local function group_elastic_ids_(statusline, mode)
-    mode = mode or 0
-    local priority_groups = {}
-    local priorities = {}
-
-    for _, id in ipairs(statusline.elastic_ids) do
-        local ec = statusline:get(id)
-        local priority = ec.priority
-        local parent_priority = ec:nonlocal("priority")
-        priority = parent_priority and parent_priority + mode or priority
-        priority_groups[priority] = priority_groups[priority] or {}
-        table.insert(priority_groups[priority], id)
-        if not priorities[priority] then
-            table.insert(priorities, priority)
-        end
-    end
-    return priority_groups, priorities
-end
-
 local function group_elastic_ids(statusline, mode)
     local priority_groups = {}
     local priorities = {}
