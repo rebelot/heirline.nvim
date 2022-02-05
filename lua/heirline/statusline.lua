@@ -55,6 +55,13 @@ function StatusLine:new(child)
     return new
 end
 
+function StatusLine:broadcast(func)
+    for i, c in ipairs(self) do
+        func(c)
+        c:broadcast(func)
+    end
+end
+
 function StatusLine:make_ids(index)
     local parent_id = self:nonlocal("id") or {}
 
@@ -78,6 +85,14 @@ function StatusLine:nonlocal(attr)
     return getmetatable(self).__index(self, attr)
 end
 
+
+function StatusLine:local_(attr)
+    local orig_mt = getmetatable(self)
+    setmetatable(self, {})
+    local result = self[attr]
+    setmetatable(self, orig_mt)
+    return result
+end
 function StatusLine:set_win_attr(attr, val, default)
     local winnr = self.winnr
     self[attr] = self[attr] or {}
