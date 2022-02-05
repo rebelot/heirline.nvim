@@ -99,12 +99,11 @@ function M.make_elastic_component(priority, ...)
     new.static = {
         priority = priority,
     }
+    -- new.priority = priority
     new.init = function(self)
-        self.elastic_ids[self.priority] = self.elastic_ids[self.priority] or {}
-        if not vim.tbl_contains(self.elastic_ids[self.priority], self.id) then
-            table.insert(self.elastic_ids[self.priority], self.id)
+        if not vim.tbl_contains(self.elastic_ids, self.id) then
+            table.insert(self.elastic_ids, self.id)
         end
-
         self:set_win_attr("pi", nil, 1)
         self.pick_child = { self:get_win_attr("pi") }
     end
@@ -114,7 +113,7 @@ function M.make_elastic_component(priority, ...)
 end
 
 local function next_p(self)
-    local pi = self:get_win_attr("pi") + 1
+    local pi = (self:get_win_attr("pi") or 0) + 1
     if pi > #self then
         return false
     end
@@ -123,7 +122,7 @@ local function next_p(self)
 end
 
 local function prev_p(self)
-    local pi = self:get_win_attr("pi") - 1
+    local pi = (self:get_win_attr("pi") or 0) - 1
     if pi < 1 then
         return false
     end
@@ -150,15 +149,75 @@ local function is_child(child, parent) -- ids
     return true
 end
 
+local function group_elastic_ids_(statusline, mode)
+    mode = mode or 0
+    local priority_groups = {}
+    local priorities = {}
+
+    for _, id in ipairs(statusline.elastic_ids) do
+        local ec = statusline:get(id)
+        local priority = ec.priority
+        local parent_priority = ec:nonlocal("priority")
+        priority = parent_priority and parent_priority + mode or priority
+        priority_groups[priority] = priority_groups[priority] or {}
+        table.insert(priority_groups[priority], id)
+        if not priorities[priority] then
+            table.insert(priorities, priority)
+        end
+    end
+    return priority_groups, priorities
+end
+
+local function group_elastic_ids(statusline, mode)
+    local priority_groups = {}
+    local priorities = {}
+    local cur_priority
+    local prev_component
+
+    for _, id in ipairs(statusline.elastic_ids) do
+        local ec = statusline:get(id)
+
+        local priority
+        if prev_component and is_child(ec.id, prev_component.id) then
+            priority = cur_priority + mode
+            -- if mode == -1 then
+            --     priority = ec.priority < cur_priority + mode and ec.priority or cur_priority + mode
+            -- elseif mode == 1 then
+            --     priority = ec.priority > cur_priority + mode and ec.priority or cur_priority + mode
+            -- end
+        else
+            priority = ec.priority
+        end
+
+        prev_component = ec
+        cur_priority = priority
+
+        priority_groups[priority] = priority_groups[priority] or {}
+        table.insert(priority_groups[priority], id)
+        if not priorities[priority] then
+            table.insert(priorities, priority)
+        end
+    end
+    return priority_groups, priorities
+end
+
+
 function M.elastic_after(statusline, out)
     local winw = vim.api.nvim_win_get_width(0)
 
     local stl_len = M.count_chars(out)
 
     if stl_len > winw then
+        local priority_groups, priorities = group_elastic_ids(statusline, -1)
+
+        table.sort(priorities, function(a, b)
+            return a < b
+        end)
+
         local saved_chars = 0
 
-        for _, ids in pairs(statusline.elastic_ids) do
+        for _, p in ipairs(priorities) do
+            local ids = priority_groups[p]
             for _, id in ipairs(ids) do
                 local ec = statusline:get(id)
                 -- try increasing the child index and return success
@@ -175,14 +234,13 @@ function M.elastic_after(statusline, out)
     elseif stl_len < winw then
         local gained_chars = 0
 
-        local elastic_ids = {}
-        for _, ids in pairs(statusline.elastic_ids) do
-            table.insert(elastic_ids, ids)
-        end
+        local priority_groups, priorities = group_elastic_ids(statusline, 1)
+        table.sort(priorities, function(a, b)
+            return a > b
+        end)
 
-        for i = #elastic_ids, 1, -1 do
-        -- for i = 1, #elastic_ids, 1 do
-            local ids = elastic_ids[i]
+        for _, p in ipairs(priorities) do
+            local ids = priority_groups[p]
             for _, id in ipairs(ids) do
                 local ec = statusline:get(id)
 
