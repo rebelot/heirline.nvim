@@ -12,7 +12,7 @@ local default_restrict = {
 
 local StatusLine = {
     hl = {},
-    cur_hl = {},
+    merged_hl = {},
 }
 
 function StatusLine:new(child)
@@ -118,36 +118,36 @@ function StatusLine:eval()
     local stl = {}
 
     local hl = type(self.hl) == "function" and (self:hl() or {}) or self.hl -- self raw hl
-    local prev_hl = self:nonlocal("cur_hl") -- the parent hl
+    local parent_hl = self:nonlocal("merged_hl")
 
-    if prev_hl.force then
-        self.cur_hl = vim.tbl_extend("keep", prev_hl, hl) -- merged hl
+    if parent_hl.force then
+        self.merged_hl = vim.tbl_extend("keep", parent_hl, hl)
     else
-        self.cur_hl = vim.tbl_extend("force", prev_hl, hl) -- merged hl
+        self.merged_hl = vim.tbl_extend("force", parent_hl, hl)
     end
 
     if self.provider then
         local provider_str = type(self.provider) == "function" and (self:provider() or "") or (self.provider or "")
-        local hl_str_start, hl_str_end = hi.eval_hl(self.cur_hl)
+        local hl_str_start, hl_str_end = hi.eval_hl(self.merged_hl)
         table.insert(stl, hl_str_start .. provider_str .. hl_str_end)
     end
 
+    local children_i
     if self.pick_child then
-        for _, i in ipairs(self.pick_child) do
-            local child = self[i]
-            local out = child:eval()
-            table.insert(stl, out)
-            if self.stop_when and self:stop_when(out, child) then
-                break
-            end
-        end
+        children_i = self.pick_child
     else
-        for _, child in ipairs(self) do
-            local out = child:eval()
-            table.insert(stl, out)
-            if self.stop_when and self:stop_when(out, child) then
-                break
-            end
+        children_i = {}
+        for i, _ in ipairs(self) do
+            table.insert(children_i, i)
+        end
+    end
+
+    for _, i in ipairs(children_i) do
+        local child = self[i]
+        local out = child:eval()
+        table.insert(stl, out)
+        if self.stop_when and self:stop_when(out, child) then
+            break
         end
     end
 
