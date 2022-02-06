@@ -1,5 +1,6 @@
 local M = {}
 local StatusLine = require("heirline.statusline")
+local utils = require("heirline.utils")
 
 function M.reset_highlights()
     return require("heirline.highlights").reset_highlights()
@@ -10,25 +11,17 @@ function M.load()
     vim.cmd("set statusline=%{%v:lua.require'heirline'.eval()%}")
 end
 
-function M.setup(statusline, events)
+function M.setup(statusline)
     M.statusline = StatusLine:new(statusline)
     M.statusline:make_ids()
-    M.events = events or {}
     M.load()
 end
 
-local last_out = ""
 function M.eval()
     M.statusline.winnr = vim.api.nvim_win_get_number(0)
-
-    if M.events.before then
-        M.events.before(M.statusline, last_out)
-    end
+    M.statusline.flexible_components = {}
     local out = M.statusline:eval()
-    if M.events.after then
-        out = M.events.after(M.statusline, out)
-    end
-    last_out = out
+    utils.expand_or_contract_flexible_components(M.statusline, out)
     return out
 end
 

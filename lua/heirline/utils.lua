@@ -93,15 +93,15 @@ function M.count_chars(str)
     return vim.api.nvim_eval_statusline(str, { winid = 0, maxwidth = 0 }).width
 end
 
-function M.make_elastic_component(priority, ...)
+function M.make_flexible_component(priority, ...)
     local new = M.insert({}, ...)
 
     new.static = {
         priority = priority,
     }
     new.init = function(self)
-        if not vim.tbl_contains(self.elastic_ids, self.id) then
-            table.insert(self.elastic_ids, self.id)
+        if not vim.tbl_contains(self.flexible_components, self) then
+            table.insert(self.flexible_components, self)
         end
         self:set_win_attr("win_child_index", nil, 1)
         self.pick_child = { self:get_win_attr("win_child_index") }
@@ -129,36 +129,30 @@ local function prev_child(self)
     return true
 end
 
-function M.elastic_before(statusline, prev_out)
-    statusline.elastic_ids = {}
-end
-
-local function is_child(child, parent) -- ids
+local function is_child(child, parent)
     if not (child and parent) then
         return false
     end
-    if #child <= #parent then
+    if #child.id <= #parent.id then
         return false
     end
-    for i, v in ipairs(parent) do
-        if child[i] ~= v then
+    for i, v in ipairs(parent.id) do
+        if child.id[i] ~= v then
             return false
         end
     end
     return true
 end
 
-local function group_elastic_ids(statusline, mode)
+local function group_flexible_components(statusline, mode)
     local priority_groups = {}
     local priorities = {}
     local cur_priority
     local prev_component
 
-    for _, id in ipairs(statusline.elastic_ids) do
-        local ec = statusline:get(id)
-
+    for _, component in ipairs(statusline.flexible_components) do
         local priority
-        if prev_component and is_child(ec.id, prev_component.id) then
+        if prev_component and is_child(component, prev_component) then
             priority = cur_priority + mode
             -- if mode == -1 then
             --     priority = ec.priority < cur_priority + mode and ec.priority or cur_priority + mode
@@ -166,14 +160,14 @@ local function group_elastic_ids(statusline, mode)
             --     priority = ec.priority > cur_priority + mode and ec.priority or cur_priority + mode
             -- end
         else
-            priority = ec.priority
+            priority = component.priority
         end
 
-        prev_component = ec
+        prev_component = component
         cur_priority = priority
 
         priority_groups[priority] = priority_groups[priority] or {}
-        table.insert(priority_groups[priority], id)
+        table.insert(priority_groups[priority], component)
         if not priorities[priority] then
             table.insert(priorities, priority)
         end
@@ -181,15 +175,17 @@ local function group_elastic_ids(statusline, mode)
     return priority_groups, priorities
 end
 
+function M.expand_or_contract_flexible_components(statusline, out)
+    if not statusline.flexible_components or not next(statusline.flexible_components) then
+        return
+    end
 
-function M.elastic_after(statusline, out)
     local winw = vim.api.nvim_win_get_width(0)
 
     local stl_len = M.count_chars(out)
 
     if stl_len > winw then
-        local priority_groups, priorities = group_elastic_ids(statusline, -1)
-
+        local priority_groups, priorities = group_flexible_components(statusline, -1)
         table.sort(priorities, function(a, b)
             return a < b
         end)
@@ -197,13 +193,11 @@ function M.elastic_after(statusline, out)
         local saved_chars = 0
 
         for _, p in ipairs(priorities) do
-            local ids = priority_groups[p]
-            for _, id in ipairs(ids) do
-                local ec = statusline:get(id)
+            for _, component in ipairs(priority_groups[p]) do
                 -- try increasing the child index and return success
-                if next_child(ec) then
-                    local prev_len = M.count_chars(ec.stl)
-                    local cur_len = M.count_chars(ec:eval())
+                if next_child(component) then
+                    local prev_len = M.count_chars(component.stl)
+                    local cur_len = M.count_chars(component:eval())
                     saved_chars = saved_chars + (prev_len - cur_len)
                 end
             end
@@ -214,33 +208,28 @@ function M.elastic_after(statusline, out)
     elseif stl_len < winw then
         local gained_chars = 0
 
-        local priority_groups, priorities = group_elastic_ids(statusline, 1)
+        local priority_groups, priorities = group_flexible_components(statusline, 1)
         table.sort(priorities, function(a, b)
             return a > b
         end)
 
         for _, p in ipairs(priorities) do
-            local ids = priority_groups[p]
-            for _, id in ipairs(ids) do
-                local ec = statusline:get(id)
-
-                if prev_child(ec) then
-                    local prev_len = M.count_chars(ec.stl)
-                    local cur_len = M.count_chars(ec:eval())
+            for _, component in ipairs(priority_groups[p]) do
+                if prev_child(component) then
+                    local prev_len = M.count_chars(component.stl)
+                    local cur_len = M.count_chars(component:eval())
                     gained_chars = gained_chars + (cur_len - prev_len)
                 end
             end
 
             if stl_len + gained_chars > winw then
-                for _, id in ipairs(ids) do
-                    local ec = statusline:get(id)
-                    next_child(ec)
+                for _, component in ipairs(priority_groups[p]) do
+                    next_child(component)
                 end
                 break
             end
         end
     end
-    return out
 end
 
 return M
