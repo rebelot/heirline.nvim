@@ -85,7 +85,6 @@ function StatusLine:nonlocal(attr)
     return getmetatable(self).__index(self, attr)
 end
 
-
 function StatusLine:local_(attr)
     local orig_mt = getmetatable(self)
     setmetatable(self, {})
@@ -146,9 +145,6 @@ function StatusLine:eval()
         local child = self[i]
         local out = child:eval()
         table.insert(stl, out)
-        if self.stop_when and self:stop_when(out, child) then
-            break
-        end
     end
 
     self.stl = table.concat(stl, "")

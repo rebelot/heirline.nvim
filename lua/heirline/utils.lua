@@ -201,6 +201,7 @@ function M.expand_or_contract_flexible_components(statusline, out)
                     saved_chars = saved_chars + (prev_len - cur_len)
                 end
             end
+
             if stl_len - saved_chars <= winw then
                 break
             end
@@ -228,6 +229,16 @@ function M.expand_or_contract_flexible_components(statusline, out)
                 end
                 break
             end
+        end
+    end
+end
+
+function M.pick_child_on_condition(self)
+    self.pick_child = {}
+    for i, child in ipairs(self) do
+        if not child.condition or child:condition() then
+            table.insert(self.pick_child, i)
+            break
         end
     end
 end
