@@ -5,7 +5,7 @@
 - [Main concepts](#main-concepts)
 - [Component fields](#component-fields)
   - [The StatusLine life cycle](#the-statusline-life-cycle)
-  - [StatusLine Base Methods](#statusline-base-methods)
+  - [StatusLine Base Methods and Attributes](#statusline-base-methods-and-attributes)
 - [Builtin conditions and utilities](#builtin-conditions-and-utilities)
 - [Recipes](#recipes)
   - [Getting started](#getting-started)
@@ -24,6 +24,8 @@
   - [Terminal Name](#terminal-name)
   - [Help FileName](#help-filename)
   - [Snippets Indicator](#snippets-indicator)
+  - [Spell](#spell)
+- [Flexible Components](#flexible-components) :new:
 - [Putting it all together: Conditional Statuslines](#putting-it-all-together-conditional-statuslines)
 - [Theming](#theming)
 
@@ -131,13 +133,12 @@ Each component may contain _any_ of the following fields:
 
 **Advanced fields**
 
-- `stop_at_first`:
-  - Type: `bool`
-  - Description: If a component has any child, their evaluation will stop at
-    the first child in the succession line who does not return an empty string.
-    This field is not inherited by the component's progeny. Use this in
-    combination with children conditions to create buffer-specific statuslines!
-    (Or do whatever you can think of!)
+- `pick_child`:
+  - Type: `table[int]`
+  - Description: Specify which children and in which order they should be
+    evaluated by indicating their indexes (eg: `{1, 3, 2}`). It makes most
+    sense to modify this attribute from within `init` function using the self
+    parameter to dynamically pick the children to evaluate.
 - `init`:
   - Type: `function(self) -> any`
   - Description: This function is called whenever a component is evaluated
@@ -160,7 +161,7 @@ Each component may contain _any_ of the following fields:
   - Description: Set-like table to control which component fields can be
     inherited by the component's progeny. The supplied table gets merged with
     the defaults. By default, the following fields are private to the
-    component: `stop_at_first`, `init`, `provider`, `condition` and `restrict`.
+    component: `pick_child`, `init`, `provider`, `condition` and `restrict`.
     Attention: modifying the defaults could dramatically affect the behavior of
     the component! (eg: `restrict = { my_private_var = true, provider = false }`)
 
@@ -171,15 +172,15 @@ _creation_ (instantiation) and its _evaluation_. When creating the "blueprint"
 tables, the user instructs the actual constructor on the attributes and methods
 of the component. The fields `static` and `restrict` will have a meaning only
 during the instantiation phase, while `condition`, `init`, `hl`, `provider` and
-`stop_at_first` are evaluated (in this order) every time the statusline is
+`pick_child` are evaluated (in this order) every time the statusline is
 refreshed.
 
 Confused yet? Don't worry, everything will come together in the [Recipes](#recipes) examples.
 
-### StatusLine Base Methods
+### StatusLine Base Methods and Attributes
 
 You'll probably never need those, however, for completeness, it's worth
-explaining the `StatusLine` object base methods:
+explaining the `StatusLine` object base methods and attributes:
 
 - `new(self, child)`: This is the constructor that takes in the `child`
   "blueprint" and returns a new `StatusLine` object. This function is
@@ -195,6 +196,16 @@ explaining the `StatusLine` object base methods:
   `__index`, ignoring any value defined for that keyword in the component
   itself (`self`). This is useful for children that want to look for their
   parent's attributes, ignoring what was passed to them by inheritance.
+- `local_(self, attr)`: Return the value of `attr` only if it is defined for
+  the component itself, do not look in the parent's metatables.
+- `broadcast(self, func)`: Execute `func(component)` on every component of the
+  statusline.
+- `get(self, id)`: Get a handle of the component with the given `id`
+- `id`: Table containing the indices required to index the component from the
+  root.
+- `{set,get}_win_attr(self, attr, default)`: Set or get a window-local
+  component attribute. If the attribute is not defined, sets a `default` value.
+- `stl`: the last output value of the component's evaluation.
 
 ## Builtin conditions and utilities
 
@@ -235,6 +246,18 @@ These functions are accessible via `require'heirline.conditions'` and
   - `component`: the component to be surrounded.
 - `insert(parent, ...)`: return a copy of `parent` component where each `child`
   in `...` (variable arguments) is appended to its children (if any).
+- `make_flexible_component(priority, ...)`: Returns a _flexible component_ with
+  the given priority (`int`). This component will cycle between all the `components`
+  passed as `...` arguments until they fit in the available space for the
+  statusline. The components passed as variable arguments should evaluate to
+  decreasing lengths. See [Flexible Components](#flexible-components) for more!
+- `pick_child_on_condition(component)`: This function should be passed as the `init`
+  field while defining a new component. It will dynamically set the `pick_child`
+  field to the index of the first child whose condition evaluates to `true`.
+  This is useful for branching conditional statuslines
+  (see [Putting it all together: Conditional Statuslines](#putting-it-all-together-conditional-statuslines)).
+- `count_chars(str)`: Returns the character length of `str`. Handles multibyte
+  characters (icons) and statusline syntax like `%f`, `%3.10%(...%)`, etc.
 
 ## Recipes
 
@@ -552,7 +575,8 @@ local ScrollBar ={
         local lines = vim.api.nvim_buf_line_count(0)
         local i = math.floor(curr_line / lines * (#self.sbar - 1)) + 1
         return string.rep(self.sbar[i], 2)
-    end
+    end,
+    hl = { fg = colors.blue, bg = colors.bright_bg },
 }
 ```
 
@@ -586,6 +610,8 @@ local LSPActive = {
 ```lua
 -- I personally use it only to display progress messages!
 -- See lsp-status/README.md for configuration options.
+
+-- Note: check "j-hui/fidget.nvim" for a nice statusline-free alternative.
 local LSPMessages = {
     provider = require("lsp-status").status,
     hl = { fg = colors.gray },
@@ -764,6 +790,7 @@ local DAPMessages = {
                 return filename == progname
             end
         end
+        return false
     end,
     provider = function()
         return " " .. require("dap").status()
@@ -894,6 +921,147 @@ local Snippets = {
 }
 ```
 
+### Spell
+
+Add indicator when spell is set!
+
+```lua
+local Spell = {
+    condition = function()
+        return vim.wo.spell
+    end,
+    provider = 'SPELL ',
+    hl = { style = 'bold', fg = colors.orange}
+}
+```
+
+## Flexible Components
+
+Yes, Heirline has flexible components! And, like any other component, they are
+nestable and context-aware!
+
+Flexible components are components that will adjust their output depending on
+the visible space for that window statusline.
+
+Setting them up is as easy as calling `utils.make_flexible_component(priority, ...)`
+replacing the variable `...` with a series of components that will evaluate to
+decreasing lengths.
+
+The `priority` will determine the order at which multiple flexible components are
+expanded or contracted:
+
+- higher priority: last to contract, first to expand
+- lower priority: first to contract, last to expand
+- same priority: will contract or expand simultaneously
+
+Flexible components can be nested at will, however, when doing so, the
+`priority` of the nested components will be ignored and only the
+**_outermost_** priority will be used to determine the order of
+expansion/contraction. If you'd like nested components to have different
+priorities, make sure there is enough difference between the priorities of the
+outermost ("_root_") flexible components (at least `1 + (1 for each level of nesting)`),
+unless you are after some very complicated behavior.
+
+You don't need to do the math though, you can just use large numbers! If
+nesting seems complex, it is because it is! Remember that you can suit most of
+your needs without nesting flexible components.
+
+Here's a **_wild_** example:
+
+```lua
+local a = { provider = string.rep("A", 40) }
+local b = { provider = string.rep("B", 30) }
+local c = { provider = string.rep("C", 20) }
+local d = { provider = string.rep("D", 10) }
+local e = { provider = string.rep("E", 8) }
+local f = { provider = string.rep("F", 4) }
+
+local nest_madness = {
+    utils.make_elastic_component(1,
+        a,
+        utils.make_elastic_component(nil, -- nested components priority is ignored!
+            b,
+            utils.make_elastic_component(nil, c, d),
+            e
+        ),
+        f
+    ),
+    { provider = "%=" },
+    utils.make_elastic_component(4, -- 1 + 1 * 2 levels of nesting
+        a,
+        utils.make_elastic_component(nil,
+            b,
+            utils.make_elastic_component(nil, c, d),
+            e
+        ),
+        f
+    ),
+}
+require("heirline").setup(nest_madness)
+```
+
+And now some more useful examples!
+
+**Flexible WorkDir** compare to [Working Directory](#working-directory)
+
+```lua
+local WorkDir = {
+    provider = function(self)
+        self.icon = (vim.fn.haslocaldir(0) == 1 and "l" or "g") .. " " .. " "
+        local cwd = vim.fn.getcwd(0)
+        self.cwd = vim.fn.fnamemodify(cwd, ":~")
+    end,
+    hl = { fg = colors.blue, style = "bold" },
+
+    utils.make_flexible_component(1, {
+        -- evaluates to the full-lenth path
+        provider = function(self)
+            local trail = self.cwd:sub(-1) == "/" and "" or "/"
+            return self.icon .. self.cwd .. trail .." "
+        end,
+    }, {
+        -- evaluates to the shortened path
+        provider = function(self)
+            local cwd = vim.fn.pathshorten(self.cwd)
+            local trail = self.cwd:sub(-1) == "/" and "" or "/"
+            return self.icon .. cwd .. trail .. " "
+        end,
+    }, {
+        -- evaluates to "", hiding the component
+        provider = "",
+    }),
+}
+```
+
+**Flexible FileName** Use this in the same context of
+[Crash course part II: FileName and friends](#crash-course-part-ii-filename-and-friends)
+
+```lua
+local FileName = {
+    init = function(self)
+        self.lfilename = vim.fn.fnamemodify(self.filename, ":.")
+        if self.lfilename == "" then self.lfilename = "[No Name]" end
+    end,
+    hl = { fg = utils.get_highlight("Directory").fg },
+
+    utils.make_flexible_component(2, {
+        provider = function(self)
+            return self.lfilename
+        end,
+    }, {
+        provider = function(self)
+            return vim.fn.pathshorten(self.lfilename)
+        end,
+    }),
+}
+```
+
+**Flexible Gps** _a.k.a._ make it disappear
+
+```lua
+local Gps = utils.make_flexible_component(3, Gps, { provider = "" })
+```
+
 ## Putting it all together: Conditional Statuslines
 
 With heirline you can setup custom statuslines depending on some condition.
@@ -946,8 +1114,8 @@ local InactiveStatusline = {
 local SpecialStatusline = {
     condition = function()
         return conditions.buffer_matches({
-            buftype = {"nofile", "help", "quickfix"},
-            filetype = {"^git.*", "fugitive"}
+            buftype = { "nofile", "prompt", "help", "quickfix" },
+            filetype = { "^git.*", "fugitive" },
         })
     end,
 
@@ -970,12 +1138,16 @@ local TerminalStatusline = {
 ```
 
 That's it! We now sparkle a bit of conditional default colors to affect all the
-statuslines at once and set the flag `stop_at_first` to stop the evaluation at
-the first component that returns something printable!
+statuslines at once and set the flag `pick_child` via
+`utils.pick_child_on_condition` to stop the evaluation at the first component
+whose condition evaluates to `true`!
 
 **IMPORTANT**: Statuslines conditions are evaluate sequentially, so make sure
 that their order makes sense! Ideally, you should order them from stricter to
-looser conditions.
+looser conditions. You can always write the `init` function yourself and
+leverage the `pick_child` table to have full control. See the implementation
+of [`utils.pick_child_on_condition`](lua/heirline/utils.lua#L236) to have a
+sense of what's going on.
 
 ```lua
 local StatusLines = {
@@ -994,7 +1166,7 @@ local StatusLines = {
         end
     end,
 
-    stop_at_first = true,
+    init = utils.pick_child_on_condition,
 
     SpecialStatusline, TerminalStatusline, InactiveStatusline, DefaultStatusline,
 }
