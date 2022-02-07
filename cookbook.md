@@ -204,7 +204,8 @@ explaining the `StatusLine` object base methods and attributes:
 - `id`: Table containing the indices required to index the component from the
   root.
 - `{set,get}_win_attr(self, attr, default)`: Set or get a window-local
-  component attribute. If the attribute is not defined, sets a default value.
+  component attribute. If the attribute is not defined, sets a `default` value.
+- `stl`: the last output value of the component's evaluation.
 
 ## Builtin conditions and utilities
 
