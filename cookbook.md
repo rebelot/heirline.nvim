@@ -5,7 +5,7 @@
 - [Main concepts](#main-concepts)
 - [Component fields](#component-fields)
   - [The StatusLine life cycle](#the-statusline-life-cycle)
-  - [StatusLine Base Methods](#statusline-base-methods)
+  - [StatusLine Base Methods and Attributes](#statusline-base-methods-and-attributes)
 - [Builtin conditions and utilities](#builtin-conditions-and-utilities)
 - [Recipes](#recipes)
   - [Getting started](#getting-started)
@@ -177,10 +177,10 @@ refreshed.
 
 Confused yet? Don't worry, everything will come together in the [Recipes](#recipes) examples.
 
-### StatusLine Base Methods
+### StatusLine Base Methods and Attributes
 
 You'll probably never need those, however, for completeness, it's worth
-explaining the `StatusLine` object base methods:
+explaining the `StatusLine` object base methods and attributes:
 
 - `new(self, child)`: This is the constructor that takes in the `child`
   "blueprint" and returns a new `StatusLine` object. This function is
@@ -198,6 +198,13 @@ explaining the `StatusLine` object base methods:
   parent's attributes, ignoring what was passed to them by inheritance.
 - `local_(self, attr)`: Return the value of `attr` only if it is defined for
   the component itself, do not look in the parent's metatables.
+- `broadcast(self, func)`: Execute `func(component)` on every component of the
+  statusline.
+- `get(self, id)`: Get a handle of the component with the given `id`
+- `id`: Table containing the indices required to index the component from the
+  root.
+- `{set,get}_win_attr(self, attr, default)`: Set or get a window-local
+  component attribute. If the attribute is not defined, sets a default value.
 
 ## Builtin conditions and utilities
 
