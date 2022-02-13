@@ -449,6 +449,7 @@ local FileName = {
         if not conditions.width_percent_below(#filename, 0.25) then
             filename = vim.fn.pathshorten(filename)
         end
+        return filename
     end,
     hl = { fg = utils.get_highlight("Directory").fg },
 }
