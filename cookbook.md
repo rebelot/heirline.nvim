@@ -449,6 +449,7 @@ local FileName = {
         if not conditions.width_percent_below(#filename, 0.25) then
             filename = vim.fn.pathshorten(filename)
         end
+        return filename
     end,
     hl = { fg = utils.get_highlight("Directory").fg },
 }
@@ -977,21 +978,21 @@ local e = { provider = string.rep("E", 8) }
 local f = { provider = string.rep("F", 4) }
 
 local nest_madness = {
-    utils.make_elastic_component(1,
+    utils.make_flexible_component(1,
         a,
-        utils.make_elastic_component(nil, -- nested components priority is ignored!
+        utils.make_flexible_component(nil, -- nested components priority is ignored!
             b,
-            utils.make_elastic_component(nil, c, d),
+            utils.make_flexible_component(nil, c, d),
             e
         ),
         f
     ),
     { provider = "%=" },
-    utils.make_elastic_component(4, -- 1 + 1 * 2 levels of nesting
+    utils.make_flexible_component(4, -- 1 + 1 * 2 levels of nesting
         a,
-        utils.make_elastic_component(nil,
+        utils.make_flexible_component(nil,
             b,
-            utils.make_elastic_component(nil, c, d),
+            utils.make_flexible_component(nil, c, d),
             e
         ),
         f
