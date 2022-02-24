@@ -320,9 +320,6 @@ No statusline is worth its weight in _fancyness_ :star2: without an appropriate
 mode indicator. So let's cook ours! Also, this snippet will introduce you to a
 lot of heirline advanced capabilities.
 
-**Attention**: `^V` and `^S` characters are real special characters. Type
-`<C-v><C-v>` or `<C-v><C-s>` in insert mode to write them!
-
 ```lua
 local ViMode = {
     -- get vim current mode, this information will be required by the provider
@@ -340,7 +337,7 @@ local ViMode = {
             no = "N?",
             nov = "N?",
             noV = "N?",
-            ["no^V"] = "N?",
+            ["no\22"] = "N?",
             niI = "Ni",
             niR = "Nr",
             niV = "Nv",
@@ -349,11 +346,11 @@ local ViMode = {
             vs = "Vs",
             V = "V_",
             Vs = "Vs",
-            ["^V"] = "^V",
-            ["^Vs"] = "^V",
+            ["\22"] = "^V",
+            ["\22s"] = "^V",
             s = "S",
             S = "S_",
-            ["^S"] = "^S",
+            ["\19"] = "^S",
             i = "I",
             ic = "Ic",
             ix = "Ix",
@@ -376,11 +373,11 @@ local ViMode = {
             i = colors.green,
             v = colors.cyan,
             V =  colors.cyan,
-            ["^V"] =  colors.cyan,
+            ["\22"] =  colors.cyan,
             c =  colors.orange,
             s =  colors.purple,
             S =  colors.purple,
-            ["^S"] =  colors.purple,
+            ["\19"] =  colors.purple,
             R =  colors.orange,
             r =  colors.orange,
             ["!"] =  colors.red,
