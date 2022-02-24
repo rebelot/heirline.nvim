@@ -54,7 +54,7 @@ function M.has_diagnostics()
 end
 
 function M.lsp_attached()
-    return #vim.lsp.buf_get_clients() > 0
+    return next(vim.lsp.buf_get_clients()) ~= nil
 end
 
 
