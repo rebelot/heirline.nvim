@@ -6,6 +6,10 @@ function M.reset_highlights()
     return require("heirline.highlights").reset_highlights()
 end
 
+function M.get_highlights()
+    return require("heirline.highlights").get_highlights()
+end
+
 function M.load()
     vim.g.qf_disable_statusline = true
     vim.cmd("set statusline=%{%v:lua.require'heirline'.eval()%}")
