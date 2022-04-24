@@ -3,14 +3,17 @@ local M = {}
 function M.get_highlight(hlname)
     local hl = vim.api.nvim_get_hl_by_name(hlname, true)
     local t = {}
-    local hex = function(n)
-        if n then
-            return string.format("#%06x", n)
-        end
+    -- local hex = function(n)
+    --     if n then
+    --         return string.format("#%06x", n)
+    --     end
+    -- end
+    for k, v in pairs(hl) do
+        t[k] = v
     end
-    t.fg = hex(hl.foreground)
-    t.bg = hex(hl.background)
-    t.sp = hex(hl.special)
+    t.fg = hl.foreground
+    t.bg = hl.background
+    t.sp = hl.special
     t.style = "none,"
     if hl.underline then
         t.style = t.style .. "underline"
