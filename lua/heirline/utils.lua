@@ -2,38 +2,20 @@ local M = {}
 
 function M.get_highlight(hlname)
     local hl = vim.api.nvim_get_hl_by_name(hlname, true)
-    local t = {}
-    -- local hex = function(n)
-    --     if n then
-    --         return string.format("#%06x", n)
-    --     end
-    -- end
-    for k, v in pairs(hl) do
-        t[k] = v
-    end
-    t.fg = hl.foreground
-    t.bg = hl.background
-    t.sp = hl.special
-    t.style = "none,"
-    if hl.underline then
-        t.style = t.style .. "underline"
-    end
-    if hl.undercurl then
-        t.style = t.style .. "undercurl"
-    end
-    if hl.bold then
-        t.style = t.style .. "bold"
-    end
-    if hl.italic then
-        t.style = t.style .. "italic"
-    end
-    if hl.reverse then
-        t.style = t.style .. "reverse"
-    end
-    if hl.nocombine then
-        t.style = t.style .. "nocombine"
-    end
-    return t
+    setmetatable(hl, {
+        __index = function(t, k)
+            if k == "fg" then
+                return t.foreground
+            elseif k == "bg" then
+                return t.background
+            elseif k == "sp" then
+                return t.special
+            else
+                return t[k]
+            end
+        end,
+    })
+    return hl
 end
 
 function M.clone(block, with)
