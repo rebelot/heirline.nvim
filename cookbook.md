@@ -105,13 +105,11 @@ Each component may contain _any_ of the following fields:
     etc. For more, see `:h 'statusline'`. To print an actual `%`, use `%%`.
 - `hl`:
   - Type: `table` or `function(self) -> table`. The table may contain any of:
-    - `fg`: The foreground color. Type: `string` to hex color code or vim
+    - `fg` — `foreground`: The foreground color. Type: `string` to hex color code or vim
       builtin color name (eg.: `"#FFFFFF"`, `"red"`).
-    - `bg`: The background color. Type: as above.
-    - `guisp`: The underline/undercurl color, if any. Type: as above.
-    - `style`: Any of the supported comma-separated highlight styles: `italic`,
-      `bold`, `underline`, `undercurl`, `reverse`, `nocombine` or `none`. (eg.:
-      `"bold,italic"`)
+    - `bg` — `background`: The background color. Type: as above.
+    - `sp` — `special`: The underline/undercurl color, if any. Type: as above.
+    - Style fields supported by `synIDattrstyle()`: Example: `{ bold = true, underline = true }`
     - `force`: Control whether the parent's `hl` fields will override child's hl.
       Type: `bool`.
   - Description: `hl` controls the colors of what is printed by the component's
@@ -230,8 +228,9 @@ These functions are accessible via `require'heirline.conditions'` and
 **Utility functions**:
 
 - `get_highlight(hl_name)`: returns a table of the attributes of the provided
-  highlight name. The returned table contains the same `hl` fields described
-  above.
+  highlight name. The returned table contains the same fields as returned by
+  `nvim_get_hl_by_name`. The returned table can be indexed using the following abbreviations:
+  `fg` → `foreground`, `bg` → `background`, `sp` → `special`.
 - `clone(component[, with])`: returns a new component which is a copy of the
   supplied one, updated with the fields in the optional `with` table.
 - `surround(delimiters, color, component)`: returns a new component, which
@@ -397,7 +396,7 @@ local ViMode = {
     -- Same goes for the highlight. Now the foreground will change according to the current mode.
     hl = function(self)
         local mode = self.mode:sub(1, 1) -- get only the first mode character
-        return { fg = self.mode_colors[mode], style = "bold", }
+        return { fg = self.mode_colors[mode], bold = true, }
     end,
 }
 ```
@@ -471,7 +470,7 @@ local FileNameModifer = {
     hl = function()
         if vim.bo.modified then
             -- use `force` because we need to override the child's hl foreground
-            return { fg = colors.cyan, style = 'bold', force=true }
+            return { fg = colors.cyan, bold = true, force=true }
         end
     end,
 }
@@ -495,7 +494,7 @@ local FileType = {
     provider = function()
         return string.upper(vim.bo.filetype)
     end,
-    hl = { fg = utils.get_highlight("Type").fg, style = 'bold' },
+    hl = { fg = utils.get_highlight("Type").fg, bold = true },
 }
 ```
 
@@ -599,7 +598,7 @@ local LSPActive = {
         end
         return " [" .. table.concat(names, " ") .. "]"
     end,
-    hl = { fg = colors.green, style = "bold" },
+    hl = { fg = colors.green, bold = true },
 }
 ```
 
@@ -733,7 +732,7 @@ local Git = {
         provider = function(self)
             return " " .. self.status_dict.head
         end,
-        hl = {style = 'bold'}
+        hl = { bold = true }
     },
     -- You could handle delimiters, icons and counts similar to Diagnostics
     {
@@ -859,7 +858,7 @@ local WorkDir = {
         local trail = cwd:sub(-1) == '/' and '' or "/"
         return icon .. cwd  .. trail
     end,
-    hl = { fg = colors.blue, style = "bold" },
+    hl = { fg = colors.blue, bold = true },
 }
 ```
 
@@ -877,7 +876,7 @@ local TerminalName = {
         local tname, _ = vim.api.nvim_buf_get_name(0):gsub(".*:", "")
         return " " .. tname
     end,
-    hl = { fg = colors.blue, style = "bold" },
+    hl = { fg = colors.blue, bold = true },
 }
 ```
 
@@ -915,7 +914,7 @@ local Snippets = {
         local backward = (vim.fn["UltiSnips#CanJumpBackwards"]() == 1) and " " or ""
         return backward .. forward
     end,
-    hl = { fg = "red", syle = "bold" },
+    hl = { fg = "red", bold = true },
 }
 ```
 
@@ -929,14 +928,14 @@ local Spell = {
         return vim.wo.spell
     end,
     provider = 'SPELL ',
-    hl = { style = 'bold', fg = colors.orange}
+    hl = { bold = true, fg = colors.orange}
 }
 ```
 
 ## Flexible Components
 
-Yes, Heirline has flexible components! And, like any other component, they are
-nestable and context-aware!
+Yes, Heirline has flexible components! And, like any other component, they
+can be nested and are context-aware!
 
 Flexible components are components that will adjust their output depending on
 the visible space for that window statusline.
@@ -945,7 +944,7 @@ Setting them up is as easy as calling `utils.make_flexible_component(priority, .
 replacing the variable `...` with a series of components that will evaluate to
 decreasing lengths.
 
-The `priority` will determine the order at which multiple flexible components are
+The `priority` will determine the order at which multiple flexible components will be
 expanded or contracted:
 
 - higher priority: last to contract, first to expand
@@ -1009,7 +1008,7 @@ local WorkDir = {
         local cwd = vim.fn.getcwd(0)
         self.cwd = vim.fn.fnamemodify(cwd, ":~")
     end,
-    hl = { fg = colors.blue, style = "bold" },
+    hl = { fg = colors.blue, bold = true },
 
     utils.make_flexible_component(1, {
         -- evaluates to the full-lenth path
