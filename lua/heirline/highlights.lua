@@ -38,13 +38,22 @@ local function normalize_hl(hl)
     fixed_hl.foreground = hex(hl.foreground or hl.fg)
     fixed_hl.background = hex(hl.background or hl.bg)
     fixed_hl.special = hex(hl.special or hl.sp or hl.guisp)
-    fixed_hl.guisp = nil
     fixed_hl.fg = nil
     fixed_hl.bg = nil
     fixed_hl.sp = nil
     fixed_hl.force = nil
 
+    if fixed_hl.guisp then
+        vim.notify_once("[Heirline]: guisp field is deprecated, use sp or special", vim.log.levels.WARN)
+        fixed_hl.guisp = nil
+    end
+
     if hl.style then
+        vim.notify_once(
+            "[Heirline]: style field is deprecated, use fields supported by nvim_set_hl. "
+                .. "Example: hl = { fg = 'red', bold = true }",
+            vim.log.levels.WARN
+        )
         for _, val in ipairs(vim.fn.split(hl.style, ",")) do
             fixed_hl[val] = true
         end
