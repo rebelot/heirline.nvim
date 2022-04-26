@@ -11,7 +11,7 @@ function M.get_highlight(hlname)
             elseif k == "sp" then
                 return t.special
             else
-                return t[k]
+                return rawget(t, k)
             end
         end,
     })
