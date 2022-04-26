@@ -25,6 +25,7 @@
   - [Help FileName](#help-filename)
   - [Snippets Indicator](#snippets-indicator)
   - [Spell](#spell)
+  - [Search Results](#search-results)
 - [Flexible Components](#flexible-components) :new:
 - [Putting it all together: Conditional Statuslines](#putting-it-all-together-conditional-statuslines)
 - [Theming](#theming)
@@ -931,6 +932,38 @@ local Spell = {
     end,
     provider = 'SPELL ',
     hl = { bold = true, fg = colors.orange}
+}
+```
+
+### Search Results
+
+Show the number of search results if search is active.
+
+```lua
+local SearchResults = {
+    condition = function(self)
+        local lines = vim.api.nvim_buf_line_count(0)
+        if lines > 50000 then return end
+
+        local search_term = vim.fn.getreg("/")
+        if search_term == "" then return end
+
+        if search_term:find("@") then return end
+
+        local search_count = vim.fn.searchcount({ recompute = 1, maxcount = -1 })
+        local active = false
+        if vim.v.hlsearch and vim.v.hlsearch == 1 and search_count.total > 0 then
+           active = true
+        end
+        if not active then return end
+
+        search_term = search_term:gsub([[\<]], ""):gsub([[\>]], "")
+        self.search_results = table.concat {
+            search_term, " [", search_count.current, "/", search_count.total, "]"
+        }
+        return true
+    end,
+    provider = function(self) return self.search_results end
 }
 ```
 
