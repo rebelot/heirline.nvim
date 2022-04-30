@@ -105,10 +105,10 @@ Each component may contain _any_ of the following fields:
     etc. For more, see `:h 'statusline'`. To print an actual `%`, use `%%`.
 - `hl`:
   - Type: `table` or `function(self) -> table`. The table may contain any of:
-    - `fg` — `foreground`: The foreground color. Type: `string` to hex color code or vim
+    - `fg`: The foreground color. Type: `string` to hex color code or vim
       builtin color name (eg.: `"#FFFFFF"`, `"red"`).
-    - `bg` — `background`: The background color. Type: as above.
-    - `sp` — `special`: The underline/undercurl color, if any. Type: as above.
+    - `bg`: The background color. Type: as above.
+    - `sp`: The underline/undercurl color, if any. Type: as above.
     - Style fields supported by `synIDattrstyle()`: Example: `{ bold = true, underline = true }`
     - `force`: Control whether the parent's `hl` fields will override child's hl.
       Type: `bool`.
