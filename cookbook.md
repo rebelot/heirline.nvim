@@ -331,7 +331,7 @@ local ViMode = {
     -- corresponding string and color. We can put these into `static` to compute
     -- them at initialisation time.
     static = {
-        mode_names = { -- change the strings if yow like it vvvvverbose!
+        mode_names = { -- change the strings if you like it vvvvverbose!
             n = "N",
             no = "N?",
             nov = "N?",
