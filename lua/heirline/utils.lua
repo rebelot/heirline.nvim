@@ -160,12 +160,17 @@ local function group_flexible_components(statusline, mode)
     return priority_groups, priorities
 end
 
-function M.expand_or_contract_flexible_components(statusline, out)
+function M.expand_or_contract_flexible_components(statusline, is_winbar, out)
     if not statusline.flexible_components or not next(statusline.flexible_components) then
         return
     end
 
-    local winw = vim.api.nvim_win_get_width(0)
+    local winw
+    if vim.o.laststatus == 3 and not is_winbar then
+        winw = vim.o.columns
+    else
+        winw = vim.api.nvim_win_get_width(0)
+    end
 
     local stl_len = M.count_chars(out)
 
