@@ -27,6 +27,7 @@
   - [Spell](#spell)
 - [Flexible Components](#flexible-components) :new:
 - [Putting it all together: Conditional Statuslines](#putting-it-all-together-conditional-statuslines)
+- [A classic: Change multiple background colors based on Vi Mode](#a-classic-change-multiple-background-colors-based-on-vi-mode)
 - [Theming](#theming)
 
 ## Main concepts
@@ -1183,6 +1184,78 @@ build your own dream StatusLine(s)!_**
 ```lua
 require("heirline").setup(StatusLines)
 -- we're done.
+```
+
+## A classic: Change multiple background colors based on Vi Mode.
+
+You may feel nostaligc about the good ol' Airline Style, where multiple
+sections used to change background color based on the current mode.
+Fear not! We can conveniently do that by making the mode-dominant color
+visible to all components in one go.
+
+```lua
+local StatusLines = {
+
+    hl = function()
+        if conditions.is_active() then
+            return {
+                fg = utils.get_highlight("StatusLine").fg,
+                bg = utils.get_highlight("StatusLine").bg,
+            }
+        else
+            return {
+                fg = utils.get_highlight("StatusLineNC").fg,
+                bg = utils.get_highlight("StatusLineNC").bg,
+            }
+        end
+    end,
+
+    static = {
+        mode_colors = {
+            n = colors.red,
+            i = colors.green,
+            v = colors.cyan,
+            V = colors.cyan,
+            ["\22"] = colors.cyan,
+            c = colors.orange,
+            s = colors.purple,
+            S = colors.purple,
+            ["\19"] = colors.purple,
+            R = colors.orange,
+            r = colors.orange,
+            ["!"] = colors.red,
+            t = colors.green,
+        },
+        mode_color = function(self)
+            local mode = conditions.is_active() and vim.fn.mode() or "n"
+            return self.mode_colors[mode]
+        end,
+    },
+}
+```
+
+Now the ViMode simply becomes:
+
+```lua
+local ViMode = {
+    static = {
+        mode_names = { ... }
+    },
+    provider = function(self)
+        return " %2(" .. self.mode_names[vim.fn.mode(1)] .. "%)"
+    end,
+    hl = function(self)
+        local color = self:mode_color() -- here!
+        return { fg = color, bold = true }
+    end,
+}
+```
+
+And you can go crazy surrounding all the blocks you want with a little help from `utils.surround`.
+
+```lua
+utils.surround({ "", "" }, function(self) return self:mode_color() end, {Ruler, hl = {fg = 'black'}} ),
+-- we are surrounding the component and adjusting the foreground in one go!
 ```
 
 ## Theming
