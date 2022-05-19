@@ -308,7 +308,7 @@ local colors = {
 }
 ```
 
-Perhaps, your favourite colorscheme already provides a way to get the theme colors.
+Perhaps, your favorite colorscheme already provides a way to get the theme colors.
 
 ```lua
 local colors = require'kanagawa.colors'.setup() -- wink
@@ -316,7 +316,7 @@ local colors = require'kanagawa.colors'.setup() -- wink
 
 ### Crash course: the ViMode
 
-No statusline is worth its weight in _fancyness_ :star2: without an appropriate
+No statusline is worth its weight in _fanciness_ :star2: without an appropriate
 mode indicator. So let's cook ours! Also, this snippet will introduce you to a
 lot of heirline advanced capabilities.
 
@@ -1140,7 +1140,7 @@ local TerminalStatusline = {
 That's it! We now sparkle a bit of conditional default colors to affect all the
 statuslines at once and set the flag `pick_child` via
 `utils.pick_child_on_condition` to stop the evaluation at the first component
-whose condition evaluates to `true`! 
+whose condition evaluates to `true`!
 
 Note that no condition equals to `true`, so make sure that all your statuslines
 but the last one have a condition set at their top-level.
