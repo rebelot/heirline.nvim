@@ -12,9 +12,9 @@ end
 
 function M.load()
     vim.g.qf_disable_statusline = true
-    vim.cmd("set statusline=%{%v:lua.require'heirline'.eval_statusline()%}")
+    vim.o.statusline = "%{%v:lua.require'heirline'.eval_statusline()%}"
     if M.winbar then
-        vim.cmd("set winbar=%{%v:lua.require'heirline'.eval_winbar()%}")
+        vim.o.winbar = "%{%v:lua.require'heirline'.eval_winbar()%}"
     end
 end
 
@@ -47,7 +47,8 @@ end
 -- test [[
 function M.timeit()
     local start = os.clock()
-    M.eval()
+    M.eval_statusline()
+    M.eval_winbar()
     return os.clock() - start
 end
 --]]
