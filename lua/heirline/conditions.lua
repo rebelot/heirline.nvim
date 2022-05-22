@@ -40,8 +40,14 @@ function M.buffer_matches(patterns)
     return false
 end
 
-function M.width_percent_below(n, thresh)
-    local winwidth = vim.api.nvim_win_get_width(0)
+function M.width_percent_below(n, thresh, is_winbar)
+    local winwidth
+    if vim.o.laststatus == 3 and not is_winbar then
+        winwidth = vim.o.columns
+    else
+        winwidth = vim.api.nvim_win_get_width(0)
+    end
+
     return n / winwidth <= thresh
 end
 
