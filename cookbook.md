@@ -27,6 +27,8 @@
   - [Spell](#spell)
 - [Flexible Components](#flexible-components) :new:
 - [Putting it all together: Conditional Statuslines](#putting-it-all-together-conditional-statuslines)
+  - [Lion's finesse](#lions-finesse)
+  - [Winbar](#winbar) :new:
 - [A classic: Change multiple background colors based on Vi Mode](#a-classic-change-multiple-background-colors-based-on-vi-mode)
 - [Theming](#theming)
 
@@ -51,7 +53,11 @@ There is no limit in how many components can be nested into each other.
 local statusline = {
 {...}, {...}, {..., {...}, {...}, {..., {...}, {..., {...}}}}
 }
-require'heirline'.setup(statusline)
+
+local winbar = {{...}, {{...}, {...}}}
+
+-- the winbar parameter is optional!
+require'heirline'.setup(statusline, winbar)
 ```
 
 Writing nested tables can be tiresome, so the best approach is to define simple
@@ -73,8 +79,9 @@ local statusline = {
 require'heirline'.setup(statusline)
 ```
 
-After calling `require'heirline'.setup(statusline)`, your `StatusLine` object
-is created and you can find its handle at `require'heirline'.statusline`.
+After calling `require'heirline'.setup(statusline[, winbar])`, your `StatusLine` object
+will be created, and you can find its handle at `require'heirline'.statusline`
+(and `require'heirline'.winbar`).
 Any modification to the object itself will reflect in real time on your statusline!
 
 Note that no reference is shared between the table objects used as blueprints (the
@@ -122,8 +129,8 @@ Each component may contain _any_ of the following fields:
   - Type: `function(self) -> any`
   - Description: This function controls whether the component should be
     evaluated or not. It is the first function to be executed at evaluation
-    time. The truth of the return value is tested, so any value besides `nil`
-    and `false` will evaluate to true. Of course, this will affect all of the
+    time. The _truthy_ of the return value is tested, so any value besides `nil`
+    and `false` will evaluate to `true`. Of course, this will affect all of the
     component's progeny.
 - `{...}`:
   - Type: `list`
@@ -136,7 +143,7 @@ Each component may contain _any_ of the following fields:
   - Type: `table[int]`
   - Description: Specify which children and in which order they should be
     evaluated by indicating their indexes (eg: `{1, 3, 2}`). It makes most
-    sense to modify this attribute from within `init` function using the self
+    sense to modify this attribute from within `init` function using the `self`
     parameter to dynamically pick the children to evaluate.
 - `init`:
   - Type: `function(self) -> any`
@@ -220,8 +227,9 @@ These functions are accessible via `require'heirline.conditions'` and
   (`filetype`,`buftype` or `bufname`) matches any of the lua patterns in the
   corresponding list.
   - `patterns`: table of the form `{filetype = {...}, buftype = {...}, bufname = {...}}` where each field is a list of lua patterns.
-- `width_percent_below(N, threshold)`: returns true if `(N / current_window_width) <= threshold`
-  (eg.: `width_percent_below(#mystring, 0.33)`)
+- `width_percent_below(N, threshold, is_winbar)`: returns true if `(N / current_window_width) <= threshold`
+  (eg.: `width_percent_below(#mystring, 0.33)`). This function checks the value
+  of `vim.o.laststatus` to determine the statusline draw space, if `is_winbar == true` only the current window width will be considered.
 - `is_git_repo()`: returns true if the file is within a git repo (uses [gitsigns](https://github.com/lewis6991/gitsigns.nvim))
 - `has_diagnostics()`: returns true if there is any diagnostic for the buffer.
 - `lsp_attached():` returns true if an LSP is attached to the buffer.
@@ -443,6 +451,7 @@ local FileName = {
         if filename == "" then return "[No Name]" end
         -- now, if the filename would occupy more than 1/4th of the available
         -- space, we trim the file path to its initials
+        -- See Flexible Components section below for dynamic truncation
         if not conditions.width_percent_below(#filename, 0.25) then
             filename = vim.fn.pathshorten(filename)
         end
@@ -1084,7 +1093,7 @@ local Align = { provider = "%=" }
 local Space = { provider = " " }
 ```
 
-Assembling your favorite components and doing last-minute adjustmens is easy!
+Assembling your favorite components and doing last-minute adjustments is easy!
 
 ```lua
 
@@ -1135,6 +1144,7 @@ local TerminalStatusline = {
     -- Quickly add a condition to the ViMode to only show it when buffer is active!
     { condition = conditions.is_active, ViMode, Space }, FileType, Space, TerminalName, Align,
 }
+
 ```
 
 That's it! We now sparkle a bit of conditional default colors to affect all the
@@ -1184,6 +1194,86 @@ build your own dream StatusLine(s)!_**
 ```lua
 require("heirline").setup(StatusLines)
 -- we're done.
+```
+
+### Lion's finesse
+
+If you want extra fine control over buftype/filetype/bufname and active/inactive
+buffers, you can use the following style to define your statusline:
+
+- First, buftype/filetype/bufname are matched against the buffer the
+  statusline is displayed into to choose an appropriate branch of the genealogical
+  tree.
+- Then, only one component will be picked depending on if the window of the
+  statusline is the current one or not.
+
+```lua
+local FelineStyle = {
+
+    -- stop at child where buftype/filetype/bufname matches
+    init = utils.pick_child_on_condition,
+
+    {   -- Identify the buftype/filetype/bufname first
+        condtion = function()
+            return conditions.buffer_matches({...})
+        end,
+
+        -- Evaluate only the "active" or "inactive" child
+        init = utils.pick_child_on_condition,
+
+        {   -- If it's the current window, display some components
+            condition = conditions.is_active
+            {...} --
+        },
+        {   -- Otherwise, display some other components
+            {...} --
+        }
+    },
+    {   -- this block can be exactly as the one above for a different kind of
+        -- buffer
+        ...
+    }
+}
+```
+
+### Winbar
+
+Everything we talked about for the statusline can be seamlessly applied
+to the new Neovim `winbar`!
+
+```lua
+local WinBars = {
+    init = utils.pick_child_on_condition,
+    {   -- Hide the winbar for special buffers
+        condition = function()
+            return conditions.buffer_matches({
+                buftype = { "nofile", "prompt", "help", "quickfix" },
+                filetype = { "^git.*", "fugitive" },
+            })
+        end,
+        provider = "",
+    },
+    {   -- A special winbar for terminals
+        condition = function()
+            return conditions.buffer_matches({ buftype = { "terminal" } })
+        end,
+        utils.surround({ "", "" }, colors.dark_red, {
+            FileType,
+            Space,
+            TerminalName,
+        }),
+    },
+    {   -- An inactive winbar for regular files
+        condition = function()
+            return not conditions.is_active()
+        end,
+        utils.surround({ "", "" }, colors.bright_bg, { hl = { fg = "gray", force = true }, FileNameBlock }),
+    },
+    -- A winbar for regular files
+    utils.surround({ "", "" }, colors.bright_bg, FileNameBlock),
+}
+
+require("heirline").setup(StatusLines, WinBars)
 ```
 
 ## A classic: Change multiple background colors based on Vi Mode.
