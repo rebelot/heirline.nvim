@@ -15,7 +15,7 @@ local StatusLine = {
     merged_hl = {},
 }
 
-function StatusLine:new(child)
+function StatusLine:new(child, index)
     child = child or {}
     local new = {}
 
@@ -48,8 +48,11 @@ function StatusLine:new(child)
         end
     end
 
+    local parent_id = self.id or {}
+    new.id = vim.tbl_extend("force", parent_id, { [#parent_id + 1] = index })
+
     for i, sub in ipairs(child) do
-        new[i] = new:new(sub)
+        new[i] = new:new(sub, i)
     end
 
     return new
@@ -62,13 +65,15 @@ function StatusLine:broadcast(func)
     end
 end
 
-function StatusLine:make_ids(index)
-    local parent_id = self:nonlocal("id") or {}
-
-    self.id = vim.tbl_extend("force", parent_id, { [#parent_id + 1] = index })
-
+function StatusLine:find(func)
+    if func(self) then
+        return self
+    end
     for i, c in ipairs(self) do
-        c:make_ids(i)
+        local res = c:find(func)
+        if res then
+            return res
+        end
     end
 end
 
@@ -92,6 +97,7 @@ function StatusLine:local_(attr)
     setmetatable(self, orig_mt)
     return result
 end
+
 function StatusLine:set_win_attr(attr, val, default)
     local winnr = self.winnr
     self[attr] = self[attr] or {}

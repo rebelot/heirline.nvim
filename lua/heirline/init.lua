@@ -20,10 +20,8 @@ end
 
 function M.setup(statusline, winbar)
     M.statusline = StatusLine:new(statusline)
-    M.statusline:make_ids()
     if winbar then
         M.winbar = StatusLine:new(winbar)
-        M.winbar:make_ids()
     end
     M.load()
 end
