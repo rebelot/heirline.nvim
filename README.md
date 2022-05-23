@@ -27,7 +27,7 @@ whatever you can imagine, from simple to complex rules!
 Heirline was deigned with these main features in mind:
 
 - Active/inactive and buftype/filetype/bufname custom statuslines.
-- Modularity: statusline components can be reutilised and will behave according to their position in the genealogical tree.
+- Modularity: statusline components can be reutilized and will behave according to their position in the genealogical tree.
 - Seamless surrounding and coloring of specific components.
 
 Heirline is _not_ for everyone, heirline is for people who like tailoring their own tools (and also like lua):

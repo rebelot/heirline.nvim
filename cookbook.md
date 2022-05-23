@@ -114,7 +114,7 @@ Each component may contain _any_ of the following fields:
 - `hl`:
   - Type: `table` or `function(self) -> table`. The table may contain any of:
     - `fg`: The foreground color. Type: `string` to hex color code or vim
-      builtin color name (eg.: `"#FFFFFF"`, `"red"`).
+      standard color name (e.g.: `"#FFFFFF"`, `"red"`).
     - `bg`: The background color. Type: as above.
     - `sp`: The underline/undercurl color, if any. Type: as above.
     - Style fields supported by `synIDattrstyle()`: Example: `{ bold = true, underline = true }`
@@ -1079,7 +1079,7 @@ Let's say you'd like to have something like this:
 - a default statusline to be shown whenever you edit a regular file,
 - a statusline for regular inactive buffers
 - a statusline for special buffers, like the quickfix, helpfiles, nvim-tree, or other windowed plugins.
-- a dedicated statuslines for terminals
+- a dedicated statuslines for terminals.
 
 Because there's no actual distinction between a statusline and any of its
 components, we can just use the `condition` field to affect a whole series of
@@ -1155,7 +1155,7 @@ whose condition evaluates to `true`!
 Note that no condition equals to `true`, so make sure that all your statuslines
 but the last one have a condition set at their top-level.
 
-**IMPORTANT**: Statuslines conditions are evaluate sequentially, so make sure
+**IMPORTANT**: Statuslines conditions are evaluated sequentially, so make sure
 that their order makes sense! Ideally, you should order them from stricter to
 looser conditions. You can always write the `init` function yourself and
 leverage the `pick_child` table to have full control. See the implementation
@@ -1278,7 +1278,7 @@ require("heirline").setup(StatusLines, WinBars)
 
 ## A classic: Change multiple background colors based on Vi Mode.
 
-You may feel nostaligc about the good ol' Airline Style, where multiple
+You may feel nostalgic about the good ol' Airline Style, where multiple
 sections used to change background color based on the current mode.
 Fear not! We can conveniently do that by making the mode-dominant color
 visible to all components in one go.
