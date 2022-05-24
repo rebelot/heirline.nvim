@@ -142,16 +142,17 @@ function StatusLine:eval()
         self.merged_hl = vim.tbl_extend("force", parent_hl, hl)
     end
 
+    if self.on_click then
+        register_global_function(self, self.on_click)
+        table.insert(stl, "%@v:lua." .. self.on_click.name .. "@")
+    end
+
     if self.provider then
         local provider_str = type(self.provider) == "function" and (self:provider() or "") or (self.provider or "")
         local hl_str_start, hl_str_end = hi.eval_hl(self.merged_hl)
         table.insert(stl, hl_str_start .. provider_str .. hl_str_end)
     end
 
-    if self.on_click then
-        register_global_function(self, self.on_click)
-        table.insert(stl, "%@v:lua." .. self.on_click.name .. "@")
-    end
 
     local children_i
     if self.pick_child then
