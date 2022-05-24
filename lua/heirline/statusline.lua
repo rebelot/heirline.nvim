@@ -8,6 +8,7 @@ local default_restrict = {
     condition = true,
     restrict = true,
     pick_child = true,
+    on_click = true,
 }
 
 local StatusLine = {
@@ -30,6 +31,7 @@ function StatusLine:new(child, index)
     new.init = child.init
     new.provider = child.provider
     new.stop_when = child.stop_when
+    new.on_click = child.on_click and vim.tbl_extend("keep", child.on_click, {})
     new.restrict = child.restrict and vim.tbl_extend("keep", child.restrict, {})
 
     if child.static then
@@ -111,6 +113,15 @@ function StatusLine:get_win_attr(attr, default)
     return self[attr][winnr]
 end
 
+local function register_global_function(component, on_click)
+    if _G[on_click.name] and not on_click.update then
+        return
+    end
+    _G[on_click.name] = function(minwid, nclicks, button)
+        (on_click.callback)(component, minwid, nclicks, button)
+    end
+end
+
 function StatusLine:eval()
     if self.condition and not self:condition() then
         return ""
@@ -137,6 +148,11 @@ function StatusLine:eval()
         table.insert(stl, hl_str_start .. provider_str .. hl_str_end)
     end
 
+    if self.on_click then
+        register_global_function(self, self.on_click)
+        table.insert(stl, "%@v:lua." .. self.on_click.name .. "@")
+    end
+
     local children_i
     if self.pick_child then
         children_i = self.pick_child
@@ -151,6 +167,10 @@ function StatusLine:eval()
         local child = self[i]
         local out = child:eval()
         table.insert(stl, out)
+    end
+
+    if self.on_click then
+        table.insert(stl, "%X")
     end
 
     self.stl = table.concat(stl, "")
