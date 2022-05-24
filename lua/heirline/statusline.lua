@@ -114,12 +114,14 @@ function StatusLine:get_win_attr(attr, default)
 end
 
 local function register_global_function(component, on_click)
-    if _G[on_click.name] and not on_click.update then
-        return
+    local func_name = type(on_click.name) == "function" and on_click.name(component) or on_click.name
+    if _G[func_name] and not on_click.update then
+        return func_name
     end
-    _G[on_click.name] = function(minwid, nclicks, button)
-        (on_click.callback)(component, minwid, nclicks, button)
+    _G[func_name] = function(minwid, nclicks, button)
+        on_click.callback(component, minwid, nclicks, button)
     end
+    return func_name
 end
 
 function StatusLine:eval()
@@ -143,8 +145,8 @@ function StatusLine:eval()
     end
 
     if self.on_click then
-        register_global_function(self, self.on_click)
-        table.insert(stl, "%@v:lua." .. self.on_click.name .. "@")
+        local func_name = register_global_function(self, self.on_click)
+        table.insert(stl, "%@v:lua." .. func_name .. "@")
     end
 
     if self.provider then
