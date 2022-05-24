@@ -132,6 +132,25 @@ Each component may contain _any_ of the following fields:
     time. The _truthy_ of the return value is tested, so any value besides `nil`
     and `false` will evaluate to `true`. Of course, this will affect all of the
     component's progeny.
+- `on_click`:
+  - Type: `table` with the following fields:
+    - `callback`: lua function to be called on mouse click(s). The function
+    has the signature `function(self, minwid, nclicks, button)`
+    (see `:h 'statusline'` description for `@`).
+    - `name`: the global name the function will be registered with. Type: `string`.
+    - `update`: whether the function should be registered even if it already was.
+    This is useful for dynamically registering different callbacks.
+    Omit this field if you are registering only one function.
+    Type: `boolean` (optional).
+  - Description: Register a lua callback to be called on mouse click(s). You
+    need to supply a global name the function will be registered with. Arguments
+    passed to the function are the same described for the `@` statusline field, with
+    the addition of the component reference (`self`) as the first parameter.
+    By default, the callback is dynamically registered _only_ the first time the component
+    containing it is evaluated. If `update` is `true`, the callback will be (re-)registered
+    at each evaluation cycle. Note: be careful of the arguments passed to the callback,
+    you may often prefer wrapping a 'third-party' functions rather than passing their
+    reference as is.
 - `{...}`:
   - Type: `list`
   - Description: The component progeny. Each item of the list is a component
