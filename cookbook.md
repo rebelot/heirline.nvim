@@ -137,7 +137,7 @@ Each component may contain _any_ of the following fields:
     - `callback`: lua function to be called on mouse click(s). The function
     has the signature `function(self, minwid, nclicks, button)`
     (see `:h 'statusline'` description for `@`).
-    - `name`: the global name the function will be registered with. Type: `string`.
+    - `name`: the global name the function will be registered with. Type: `string` or `function -> string`.
     - `update`: whether the function should be registered even if it already was.
     This is useful for dynamically registering different callbacks.
     Omit this field if you are registering only one function.
