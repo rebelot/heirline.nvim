@@ -134,23 +134,32 @@ Each component may contain _any_ of the following fields:
     component's progeny.
 - `on_click`:
   - Type: `table` with the following fields:
-    - `callback`: lua function to be called on mouse click(s). The function
+    - `callback`: (vim/)lua function to be called on mouse click(s). The function
     has the signature `function(self, minwid, nclicks, button)`
-    (see `:h 'statusline'` description for `@`).
-    - `name`: the global name the function will be registered with. Type: `string` or `function -> string`.
-    - `update`: whether the function should be registered even if it already was.
+    (see `:h 'statusline'` description for `@`). If a `string` is provided,
+    it is interpreted as the _raw_ function name (`v:lua.` is not prepended)
+    of an already defined function accessible from vim global scope.
+    Type: `function` or `string`.
+    - `name`: the global name the function will be registered with.
+    It is not required when `callback` is a `string`. Type: `string` or `function -> string`.
+    - `update`: whether the function should be registered even if
+    it already exists in the global namespace.
     This is useful for dynamically registering different callbacks.
     Omit this field if you are registering only one function.
     Type: `boolean` (optional).
-  - Description: Register a lua callback to be called on mouse click(s). You
-    need to supply a global name the function will be registered with. Arguments
-    passed to the function are the same described for the `@` statusline field, with
-    the addition of the component reference (`self`) as the first parameter.
-    By default, the callback is dynamically registered _only_ the first time the component
-    containing it is evaluated. If `update` is `true`, the callback will be (re-)registered
-    at each evaluation cycle. Note: be careful of the arguments passed to the callback,
+  - Description: Specify a function to be called when clicking on the component (including its progeny);
+    Lua functions are automatically registered in the global scope with the name provided
+    by the `name` field. Arguments passed to the function are the same described
+    for the `@` statusline field, with the addition of the component reference
+    (`self`) as the first parameter. The self parameter is _not_ passed if `callback` is a `string`.
+    By default, the callback is registered only once:
+    the first time it's encountered during components evaluation.
+    If `update` is `true`, the callback will be (re-)registered
+    at each evaluation cycle. Note 1: be careful of the arguments passed to the callback,
     you may often prefer wrapping a 'third-party' functions rather than passing their
-    reference as is.
+    reference as is. Note 2: the callback is ___not___ executed in the context
+    of the window/buffer the component belongs to, but in the context of the
+    _actual_ current window and buffer.
 - `{...}`:
   - Type: `list`
   - Description: The component progeny. Each item of the list is a component
