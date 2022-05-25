@@ -114,14 +114,19 @@ function StatusLine:get_win_attr(attr, default)
 end
 
 local function register_global_function(component, on_click)
+    if type(on_click.callback) == "string" then
+        return on_click.callback
+    end
+
     local func_name = type(on_click.name) == "function" and on_click.name(component) or on_click.name
     if _G[func_name] and not on_click.update then
-        return func_name
+        return "v:lua." .. func_name
     end
+
     _G[func_name] = function(minwid, nclicks, button)
         on_click.callback(component, minwid, nclicks, button)
     end
-    return func_name
+    return "v:lua." .. func_name
 end
 
 function StatusLine:eval()
@@ -146,7 +151,7 @@ function StatusLine:eval()
 
     if self.on_click then
         local func_name = register_global_function(self, self.on_click)
-        table.insert(stl, "%@v:lua." .. func_name .. "@")
+        table.insert(stl, "%@" .. func_name .. "@")
     end
 
     if self.provider then
@@ -154,7 +159,6 @@ function StatusLine:eval()
         local hl_str_start, hl_str_end = hi.eval_hl(self.merged_hl)
         table.insert(stl, hl_str_start .. provider_str .. hl_str_end)
     end
-
 
     local children_i
     if self.pick_child then
