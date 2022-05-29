@@ -162,6 +162,10 @@ Each component may contain _any_ of the following fields:
     of the window/buffer the component belongs to, but in the context of the
     _actual_ current window and buffer. Use `winid` parameter to retrieve
     information about the current buffer from a callback.
+    Be careful when accessing `self` attributes that were set depending
+    on the local buffer/window the component is displayed into from
+    within the callback, as they are shared between all representation
+    of the _same_ component.
 - `{...}`:
   - Type: `list`
   - Description: The component progeny. Each item of the list is a component
