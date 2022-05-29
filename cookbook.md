@@ -135,7 +135,7 @@ Each component may contain _any_ of the following fields:
 - `on_click`:
   - Type: `table` with the following fields:
     - `callback`: (vim/)lua function to be called on mouse click(s). The function
-    has the signature `function(self, minwid, nclicks, button)`
+    has the signature `function(self, winid, minwid, nclicks, button)`
     (see `:h 'statusline'` description for `@`). If a `string` is provided,
     it is interpreted as the _raw_ function name (`v:lua.` is not prepended)
     of an already defined function accessible from vim global scope.
@@ -151,7 +151,8 @@ Each component may contain _any_ of the following fields:
     Lua functions are automatically registered in the global scope with the name provided
     by the `name` field. Arguments passed to the function are the same described
     for the `@` statusline field, with the addition of the component reference
-    (`self`) as the first parameter. The self parameter is _not_ passed if `callback` is a `string`.
+    (`self`) as the first parameter and the current `window-ID` as the second parameter.
+    The self parameter and `winid` are _not_ passed if `callback` is a `string`.
     By default, the callback is registered only once:
     the first time it's encountered during components evaluation.
     If `update` is `true`, the callback will be (re-)registered
@@ -159,7 +160,8 @@ Each component may contain _any_ of the following fields:
     you may often prefer wrapping a 'third-party' functions rather than passing their
     reference as is. Note 2: the callback is ___not___ executed in the context
     of the window/buffer the component belongs to, but in the context of the
-    _actual_ current window and buffer.
+    _actual_ current window and buffer. Use `winid` parameter to retrieve
+    information about the current buffer from a callback.
 - `{...}`:
   - Type: `list`
   - Description: The component progeny. Each item of the list is a component
