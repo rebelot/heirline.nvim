@@ -135,18 +135,18 @@ Each component may contain _any_ of the following fields:
 - `on_click`:
   - Type: `table` with the following fields:
     - `callback`: (vim/)lua function to be called on mouse click(s). The function
-    has the signature `function(self, winid, minwid, nclicks, button)`
-    (see `:h 'statusline'` description for `@`). If a `string` is provided,
-    it is interpreted as the _raw_ function name (`v:lua.` is not prepended)
-    of an already defined function accessible from vim global scope.
-    Type: `function` or `string`.
+      has the signature `function(self, winid, minwid, nclicks, button)`
+      (see `:h 'statusline'` description for `@`). If a `string` is provided,
+      it is interpreted as the _raw_ function name (`v:lua.` is not prepended)
+      of an already defined function accessible from vim global scope.
+      Type: `function` or `string`.
     - `name`: the global name the function will be registered with.
-    It is not required when `callback` is a `string`. Type: `string` or `function -> string`.
+      It is not required when `callback` is a `string`. Type: `string` or `function -> string`.
     - `update`: whether the function should be registered even if
-    it already exists in the global namespace.
-    This is useful for dynamically registering different callbacks.
-    Omit this field if you are registering only one function.
-    Type: `boolean` (optional).
+      it already exists in the global namespace.
+      This is useful for dynamically registering different callbacks.
+      Omit this field if you are registering only one function.
+      Type: `boolean` (optional).
   - Description: Specify a function to be called when clicking on the component (including its progeny);
     Lua functions are automatically registered in the global scope with the name provided
     by the `name` field. Arguments passed to the function are the same described
@@ -158,7 +158,7 @@ Each component may contain _any_ of the following fields:
     If `update` is `true`, the callback will be (re-)registered
     at each evaluation cycle. Note 1: be careful of the arguments passed to the callback,
     you may often prefer wrapping a 'third-party' functions rather than passing their
-    reference as is. Note 2: the callback is ___not___ executed in the context
+    reference as is. Note 2: the callback is **_not_** executed in the context
     of the window/buffer the component belongs to, but in the context of the
     _actual_ current window and buffer. Use `winid` parameter to retrieve
     information about the current buffer from a callback.
@@ -166,6 +166,15 @@ Each component may contain _any_ of the following fields:
     on the local buffer/window the component is displayed into from
     within the callback, as they are shared between all representation
     of the _same_ component.
+    Please see the recipes to learn _how to propagate information about
+    the window/buffer the clicked component belongs to_.
+- `update`:
+  - Type: `function(self) -> boolean` or `string` or `table<string>`.
+  - Description: Control when the component should be updated or return a per-window
+    cached value.
+    If `update` is a function, the component will be updated whenever the function
+    return value is `true`; else, a `string` or a `table` of strings will be
+    interpreted as autocommand event names that should trigger the component evaluation.
 - `{...}`:
   - Type: `list`
   - Description: The component progeny. Each item of the list is a component
@@ -187,6 +196,11 @@ Each component may contain _any_ of the following fields:
     example, you can compute some values that will be accessed from other
     functions within the component genealogy (even "global" statusline
     variables).
+- `after`:
+  - Type: `function(self) -> any`
+  - Description: This function is called after the component has evaluated all of its
+    children and can be used to alter the state of the component before it returns
+    the output string `self.stl`.
 - `static`:
   - Type: `table`
   - Description: This is a container for static variables, that is, variables
@@ -211,8 +225,8 @@ There are two distinct phases in the life of a StatusLine object component: its
 _creation_ (instantiation) and its _evaluation_. When creating the "blueprint"
 tables, the user instructs the actual constructor on the attributes and methods
 of the component. The fields `static` and `restrict` will have a meaning only
-during the instantiation phase, while `condition`, `init`, `hl`, `provider` and
-`pick_child` are evaluated (in this order) every time the statusline is
+during the instantiation phase, while `condition`, `update`, `init`, `hl`,
+`on_click`, `provider` and `pick_child` are evaluated (in this order) every time the statusline is
 refreshed.
 
 Confused yet? Don't worry, everything will come together in the [Recipes](#recipes) examples.

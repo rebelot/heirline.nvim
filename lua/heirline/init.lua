@@ -10,6 +10,19 @@ function M.get_highlights()
     return require("heirline.highlights").get_highlights()
 end
 
+local au_ids = {}
+
+function M.get_au_ids()
+    return au_ids
+end
+
+function M.clear_autocommands()
+    for i = 1, #au_ids, 1 do
+        local au_id = table.remove(au_ids)
+        vim.api.nvim_del_autocmd(au_id)
+    end
+end
+
 function M.load()
     vim.g.qf_disable_statusline = true
     vim.o.statusline = "%{%v:lua.require'heirline'.eval_statusline()%}"
@@ -19,6 +32,8 @@ function M.load()
 end
 
 function M.setup(statusline, winbar)
+    M.clear_autocommands()
+    M.reset_highlights()
     M.statusline = StatusLine:new(statusline)
     if winbar then
         M.winbar = StatusLine:new(winbar)

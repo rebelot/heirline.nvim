@@ -8,7 +8,11 @@ local default_restrict = {
     condition = true,
     restrict = true,
     pick_child = true,
+    after = true,
     on_click = true,
+    update = true,
+    stl = true,
+    _win_stl = true,
 }
 
 local StatusLine = {
@@ -20,10 +24,22 @@ function StatusLine:new(child, index)
     child = child or {}
     local new = {}
 
-    if type(child.hl) == "function" then
-        new.hl = child.hl
-    elseif type(child.hl) == "table" then
-        new.hl = vim.tbl_extend("keep", child.hl, {})
+    if child.hl then
+        local hl_type = type(child.hl)
+        if hl_type == "function" then
+            new.hl = child.hl
+        elseif hl_type == "table" then
+            new.hl = vim.tbl_extend("keep", child.hl, {})
+        end
+    end
+
+    if child.update then
+        local update_type = type(child.update)
+        if vim.tbl_contains({ "function", "string" }, update_type) then
+            new.update = child.update
+        elseif update_type == "table" then
+            new.update = vim.tbl_extend("keep", child.update, {})
+        end
     end
 
     new.condition = child.condition
@@ -31,6 +47,7 @@ function StatusLine:new(child, index)
     new.init = child.init
     new.provider = child.provider
     new.stop_when = child.stop_when
+    new.after = child.after
     new.on_click = child.on_click and vim.tbl_extend("keep", child.on_click, {})
     new.restrict = child.restrict and vim.tbl_extend("keep", child.restrict, {})
 
@@ -132,9 +149,47 @@ local function register_global_function(component)
     return "v:lua." .. func_name
 end
 
+local function update_autocmd(component)
+    local events = component.update
+    local id = vim.api.nvim_create_autocmd(events, {
+        callback = function()
+            component._unlock_from_au = true
+        end,
+        desc = "Heirline update au for " .. vim.inspect(component.id),
+    })
+    component._update_autocmd = true
+    table.insert(require("heirline").get_au_ids(), id)
+end
+
 function StatusLine:eval()
     if self.condition and not self:condition() then
+        -- self.stl = ''
         return ""
+    end
+
+    if self.update then
+        self._locked = true
+
+        if type(self.update) == "function" then
+            self._locked = not self:update()
+        elseif not self._update_autocmd then
+            update_autocmd(self)
+        end
+
+        if self._unlock_from_au or not self._locked then
+            self._win_stl = nil -- clear per-window cached stl
+        end
+
+        if self._locked then
+            local win_stl = self:get_win_attr("_win_stl")
+            if win_stl then
+                return win_stl
+            end
+        end
+
+        if self._unlock_from_au then
+            self._unlock_from_au = false
+        end
     end
 
     if self.init then
@@ -184,6 +239,14 @@ function StatusLine:eval()
     end
 
     self.stl = table.concat(stl, "")
+
+    if self.after then
+        self:after()
+    end
+
+    if self.update then
+        self:set_win_attr("_win_stl", self.stl)
+    end
 
     return self.stl
 end
