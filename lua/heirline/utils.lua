@@ -82,35 +82,35 @@ function M.make_flexible_component(priority, ...)
     local new = M.insert({}, ...)
 
     new.static = {
-        priority = priority,
+        _priority = priority,
     }
     new.init = function(self)
         if not vim.tbl_contains(self.flexible_components, self) then
             table.insert(self.flexible_components, self)
         end
-        self:set_win_attr("win_child_index", nil, 1)
-        self.pick_child = { self:get_win_attr("win_child_index") }
+        self:set_win_attr("_win_child_index", nil, 1)
+        self.pick_child = { self:get_win_attr("_win_child_index") }
     end
-    new.restrict = { win_child_index = true }
+    new.restrict = { _win_child_index = true }
 
     return new
 end
 
 local function next_child(self)
-    local pi = self:get_win_attr("win_child_index") + 1
+    local pi = self:get_win_attr("_win_child_index") + 1
     if pi > #self then
         return false
     end
-    self:set_win_attr("win_child_index", pi)
+    self:set_win_attr("_win_child_index", pi)
     return true
 end
 
 local function prev_child(self)
-    local pi = self:get_win_attr("win_child_index") - 1
+    local pi = self:get_win_attr("_win_child_index") - 1
     if pi < 1 then
         return false
     end
-    self:set_win_attr("win_child_index", pi)
+    self:set_win_attr("_win_child_index", pi)
     return true
 end
 
@@ -145,7 +145,7 @@ local function group_flexible_components(statusline, mode)
             --     priority = ec.priority > cur_priority + mode and ec.priority or cur_priority + mode
             -- end
         else
-            priority = component.priority
+            priority = component._priority
         end
 
         prev_component = component
