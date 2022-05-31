@@ -30,6 +30,7 @@
   - [Lion's finesse](#lions-finesse)
   - [Winbar](#winbar) :new:
 - [A classic: Change multiple background colors based on Vi Mode](#a-classic-change-multiple-background-colors-based-on-vi-mode)
+- [Click it!](#click-it) :new:
 - [Theming](#theming)
 
 ## Main concepts
@@ -259,7 +260,8 @@ explaining the `StatusLine` object base methods and attributes:
   root.
 - `{set,get}_win_attr(self, attr, default)`: Set or get a window-local
   component attribute. If the attribute is not defined, sets a `default` value.
-- `stl`: the last output value of the component's evaluation.
+- `stl`: the __last__ output value of the component's evaluation.
+- `winnr`: window number of the __last__ window the component was evaluated into.
 
 ## Builtin conditions and utilities
 
@@ -455,6 +457,10 @@ local ViMode = {
         local mode = self.mode:sub(1, 1) -- get only the first mode character
         return { fg = self.mode_colors[mode], bold = true, }
     end,
+    -- Re-evaluate the component only on ModeChanged event!
+    -- This is not required in any way, but it's there, and it's a small
+    -- performance improvement.
+    update = 'ModeChanged'
 }
 ```
 
@@ -646,6 +652,7 @@ here.
 
 local LSPActive = {
     condition = conditions.lsp_attached,
+    update = {'LspAttach', 'LspDetach'},
 
     -- You can keep it simple,
     -- provider = " [LSP]",
@@ -708,6 +715,8 @@ local Diagnostics = {
         self.hints = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.HINT })
         self.info = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.INFO })
     end,
+
+    update = { "DiagnosticChanged", "BuEnter" },
 
     {
         provider = "![",
@@ -1394,6 +1403,112 @@ And you can go crazy surrounding all the blocks you want with a little help from
 ```lua
 utils.surround({ "", "" }, function(self) return self:mode_color() end, {Ruler, hl = {fg = 'black'}} ),
 -- we are surrounding the component and adjusting the foreground in one go!
+```
+
+## Click it!
+
+You can specify a function callbkack to be executed when clicking the component!
+Here are some examples referring to the abovementioned components:
+
+**Diagnostics on_click**
+
+```lua
+local Diagnostics = {
+
+    on_click = {
+        callback = function()
+            require("trouble").toggle({ mode = "document_diagnostics" })
+            -- or
+            -- vim.diagnostic.setqflist()
+        end,
+        name = "heirline_diagnostics",
+    },
+    ...
+}
+```
+
+**Git on_click**
+
+```lua
+local Git = {
+    on_click = {
+        callback = function()
+            -- If you want to use Fugitive:
+            -- vim.cmd("G")
+
+            -- If you prefer Lazygit
+            -- use vim.defer_fn() if the callback requires
+            -- opening of a floating window
+            -- (this also applies to telescope)
+            vim.defer_fn(function()
+                vim.cmd("Lazygit")
+            end, 100)
+        end,
+        name = "heirline_git",
+    },
+    ...
+}
+```
+
+**Window Close button**: Let the callback know from which window it was clicked from!
+
+The following is the recommended way of achieving that:
+```lua
+on_click = {
+    callback = function(_, winid)
+        -- winid is the window id of the window the component was clicked from
+    end,
+    -- A dynamic name + update are required whenever
+    -- we need to register a closure for each instance of the
+    -- component displayed in the current tab.
+    name = function(self)
+        return "heirline_button_name" .. self.winnr
+    end,
+    update = true,
+}
+```
+
+```lua
+local CloseButton = {
+    condition = function(self)
+        return not vim.bo.modified
+    end,
+    -- a small performance improvement:
+    -- re register the component callback only on layout/buffer changes.
+    update = {'WinNew', 'WinClosed', 'BufEnter'},
+    { provider = " " },
+    {
+        provider = "",
+        hl = { fg = "gray" },
+        on_click = {
+            callback = function(_, winid)
+                vim.api.nvim_win_close(winid, true)
+            end,
+            name = function(self)
+                return "heirline_close_button_" .. self.winnr
+            end,
+            update = true,
+        },
+    },
+}
+
+-- Use it anywhere!
+local WinBarFileName = utils.surround({ "", "" }, colors.bright_bg, {
+    hl = function()
+        if not conditions.is_active() then
+            return { fg = "gray", force = true }
+        end
+    end,
+    FileNameBlock,
+    Space,
+    CloseButton,
+})
+```
+
+**Debugger on_click**: step-over, step-into, next, previous, stop buttons
+
+```lua
+--    coming soon!
 ```
 
 ## Theming
