@@ -19,16 +19,20 @@ thought of as a statusline API.
 Heirline picks up from other popular customizable statusline plugins like
 [galaxyline](https://github.com/NTBBloodbath/galaxyline.nvim) and
 [feline](https://github.com/feline-nvim/feline.nvim) but removes all the
-hard-coded bloat and offers you thousands times more freedom. But freedom has a
+hard-coded guides and offers you thousands times more freedom. But freedom has a
 price: responsibility. I don't get to tell you what your statusline should do.
 You're in charge! With Heirline, you have a framework to easily implement
 whatever you can imagine, from simple to complex rules!
 
-Heirline was deigned with these main features in mind:
+## Features:
 
-- Active/inactive and buftype/filetype/bufname custom statuslines.
-- Modularity: statusline components can be reutilized and will behave according to their position in the genealogical tree.
-- Seamless surrounding and coloring of specific components.
+- **Conditionals**: Build custom active/inactive and buftype/filetype/bufname statuslines or single components.
+- **Highlight propagation**: Seamlessly surround components within separators and/or set the (dynamic) coloring of a bunch of components at once.
+- **Modularity**: Statusline components can be reutilized/rearranged and will behave according to their position in the genealogical tree.
+- **Update triggers**: Re-evaluate components only when some condition is met or specific autocommand events are fired.
+- **Clickable**: Write pure lua callbacks to be executed when clicking a component.
+- **Dynamic resizing**: Specify how components should resize depending on available space.
+- **Full control**: You have hooks to fully control the statusline evaluation cycle.
 
 Heirline is _not_ for everyone, heirline is for people who like tailoring their own tools (and also like lua):
 
@@ -60,7 +64,7 @@ require'heirline'.setup(statusline, winbar)
 Calling `setup` will load your statusline. To learn how to write a StatusLine, see the [docs](cookbook.md).
 
 ### Donate
+
 Buy me coffee and support my work ;)
 
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?business=VNQPHGW4JEM3S&no_recurring=0&item_name=Buy+me+coffee+and+support+my+work+%3B%29&currency_code=EUR)
-
