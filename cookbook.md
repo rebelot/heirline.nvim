@@ -113,7 +113,9 @@ Each component may contain _any_ of the following fields:
     through file), `%-05.10(` `%)` (to control text alignment and padding),
     etc. For more, see `:h 'statusline'`. To print an actual `%`, use `%%`.
 - `hl`:
-  - Type: `table` or `function(self) -> table`. The table may contain any of:
+  - Type: `table|string` or `function(self) -> table|string|nil`.
+    If `hl` is a string, it will be interpreted as the name of an already defined highlight group.
+    If `hl` is a table, it may contain any of:
     - `fg`: The foreground color. Type: `string` to hex color code or vim
       standard color name (e.g.: `"#FFFFFF"`, `"red"`).
     - `bg`: The background color. Type: as above.
@@ -260,8 +262,8 @@ explaining the `StatusLine` object base methods and attributes:
   root.
 - `{set,get}_win_attr(self, attr, default)`: Set or get a window-local
   component attribute. If the attribute is not defined, sets a `default` value.
-- `stl`: the __last__ output value of the component's evaluation.
-- `winnr`: window number of the __last__ window the component was evaluated into.
+- `stl`: the **last** output value of the component's evaluation.
+- `winnr`: window number of the **last** window the component was evaluated into.
 
 ## Builtin conditions and utilities
 
@@ -1453,6 +1455,7 @@ local Git = {
 **Window Close button**: Let the callback know from which window it was clicked from!
 
 The following is the recommended way of achieving that:
+
 ```lua
 on_click = {
     callback = function(_, winid)

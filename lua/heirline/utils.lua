@@ -1,20 +1,13 @@
 local M = {}
 
-function M.get_highlight(hlname)
-    local hl = vim.api.nvim_get_hl_by_name(hlname, true)
-    setmetatable(hl, {
-        __index = function(t, k)
-            if k == "fg" then
-                return t.foreground
-            elseif k == "bg" then
-                return t.background
-            elseif k == "sp" then
-                return t.special
-            else
-                return rawget(t, k)
-            end
-        end,
-    })
+function M.get_highlight(name)
+    local hl = vim.api.nvim_get_hl_by_name(name, true)
+    hl.fg = hl.foreground
+    hl.bg = hl.background
+    hl.sp = hl.special
+    hl.foreground = nil
+    hl.backgroung = nil
+    hl.special = nil
     return hl
 end
 

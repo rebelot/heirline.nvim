@@ -16,13 +16,16 @@ end
 
 local function name_hl(hl)
     local style = vim.tbl_filter(function(value)
-        return not vim.tbl_contains({ "background", "foreground", "special" }, value)
+        return not vim.tbl_contains({ "bg", "fg", "sp" }, value)
     end, vim.tbl_keys(hl))
     return "Stl"
-        .. (hl.foreground and hl.foreground:gsub("#", "") or "_")
-        .. (hl.background and hl.background:gsub("#", "") or "_")
+        .. (hl.fg and hl.fg:gsub("#", "") or "")
+        .. "_"
+        .. (hl.bg and hl.bg:gsub("#", "") or "")
+        .. "_"
         .. table.concat(style, "")
-        .. (hl.special and hl.special:gsub(",", "") or "")
+        .. "_"
+        .. (hl.sp and hl.sp:gsub("#", "") or "")
 end
 
 local function hex(val)
@@ -35,30 +38,10 @@ end
 
 local function normalize_hl(hl)
     local fixed_hl = vim.tbl_extend("force", hl, {})
-    fixed_hl.foreground = hex(hl.fg or hl.foreground)
-    fixed_hl.background = hex(hl.bg or hl.background)
-    fixed_hl.special = hex(hl.sp or hl.special or hl.guisp)
-    fixed_hl.fg = nil
-    fixed_hl.bg = nil
-    fixed_hl.sp = nil
+    fixed_hl.fg = hex(hl.fg or hl.foreground)
+    fixed_hl.bg = hex(hl.bg or hl.background)
+    fixed_hl.sp = hex(hl.sp or hl.special or hl.guisp)
     fixed_hl.force = nil
-
-    if fixed_hl.guisp then
-        vim.notify_once("[Heirline]: guisp field is deprecated, use sp or special", vim.log.levels.WARN)
-        fixed_hl.guisp = nil
-    end
-
-    if hl.style then
-        vim.notify_once(
-            "[Heirline]: style field is deprecated, use fields supported by nvim_set_hl. "
-            .. "Example: hl = { fg = 'red', bold = true }",
-            vim.log.levels.WARN
-        )
-        for _, val in ipairs(vim.fn.split(hl.style, ",")) do
-            fixed_hl[val] = true
-        end
-        fixed_hl.style = nil
-    end
     return fixed_hl
 end
 

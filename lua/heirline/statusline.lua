@@ -30,6 +30,8 @@ function StatusLine:new(child, index)
             new.hl = child.hl
         elseif hl_type == "table" then
             new.hl = vim.tbl_extend("keep", child.hl, {})
+        elseif hl_type == 'string' then
+            new.hl = utils.get_highlight(child.hl)
         end
     end
 
@@ -199,6 +201,11 @@ function StatusLine:eval()
     local stl = {}
 
     local hl = type(self.hl) == "function" and (self:hl() or {}) or self.hl -- self raw hl
+
+    if type(hl) == 'string' then
+        hl = utils.get_highlight(hl)
+    end
+
     local parent_hl = self:nonlocal("merged_hl")
 
     if parent_hl.force then
