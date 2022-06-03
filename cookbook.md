@@ -1409,7 +1409,7 @@ utils.surround({ "", "" }, function(self) return self:mode_color() end, {R
 
 ## Click it!
 
-You can specify a function callbkack to be executed when clicking the component!
+You can specify a function callback to be executed when clicking the component!
 Here are some examples referring to the abovementioned components:
 
 **Diagnostics on_click**
