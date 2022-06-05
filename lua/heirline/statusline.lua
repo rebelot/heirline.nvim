@@ -151,16 +151,15 @@ local function register_global_function(component)
     return "v:lua." .. func_name
 end
 
-local function update_autocmd(component)
+local function register_update_autocmd(component)
     local events = component.update
     local id = vim.api.nvim_create_autocmd(events, {
         callback = function()
-            component._unlock_from_au = true
+            component._win_stl = nil
         end,
-        desc = "Heirline update au for " .. vim.inspect(component.id),
+        desc = "Heirline update autocmd for " .. vim.inspect(component.id),
     })
-    component._update_autocmd = true
-    table.insert(require("heirline").get_au_ids(), id)
+    return id
 end
 
 function StatusLine:eval()
@@ -170,27 +169,21 @@ function StatusLine:eval()
     end
 
     if self.update then
-        self._locked = true
 
         if type(self.update) == "function" then
-            self._locked = not self:update()
-        elseif not self._update_autocmd then
-            update_autocmd(self)
-        end
-
-        if self._unlock_from_au or not self._locked then
-            self._win_stl = nil -- clear per-window cached stl
-        end
-
-        if self._locked then
-            local win_stl = self:get_win_attr("_win_stl")
-            if win_stl then
-                return win_stl
+            if self:update() then
+                self._win_stl = nil
             end
+
+        elseif not self._registered_update_autocmd then
+            local au_id = register_update_autocmd(self)
+            self._registered_update_autocmd = true
+            table.insert(require("heirline").get_au_ids(), au_id)
         end
 
-        if self._unlock_from_au then
-            self._unlock_from_au = false
+        local win_stl = self:get_win_attr("_win_stl")
+        if win_stl then
+            return win_stl
         end
     end
 
