@@ -387,6 +387,13 @@ local ViMode = {
     -- evaluation and store it as a component attribute
     init = function(self)
         self.mode = vim.fn.mode(1) -- :h mode()
+
+        -- execute this only once, this is required if you want the ViMode
+        -- component to be updated on operator pending mode
+        if not self.once then
+            vim.api.nvim_create_autocmd("ModeChanged", {command = 'redrawstatus'})
+            self.once = true
+        end
     end,
     -- Now we define some dictionaries to map the output of mode() to the
     -- corresponding string and color. We can put these into `static` to compute
