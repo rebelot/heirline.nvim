@@ -10,22 +10,19 @@ function M.get_highlights()
     return require("heirline.highlights").get_highlights()
 end
 
-function M.load()
-    vim.g.qf_disable_statusline = true
-    vim.o.statusline = "%{%v:lua.require'heirline'.eval_statusline()%}"
-    if M.winbar then
-        vim.o.winbar = "%{%v:lua.require'heirline'.eval_winbar()%}"
-    end
 end
 
 function M.setup(statusline, winbar)
+    vim.g.qf_disable_statusline = true
     vim.api.nvim_create_augroup("Heirline_update_autocmds", { clear = true })
     M.reset_highlights()
+
     M.statusline = StatusLine:new(statusline)
+    vim.o.statusline = "%{%v:lua.require'heirline'.eval_statusline()%}"
     if winbar then
         M.winbar = StatusLine:new(winbar)
+        vim.o.winbar = "%{%v:lua.require'heirline'.eval_winbar()%}"
     end
-    M.load()
 end
 
 function M.eval_statusline()
