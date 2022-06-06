@@ -1310,10 +1310,29 @@ to the new Neovim `winbar`!
 **NOTE**: `winbar` is set _locally_ using a `BufWinEnter` autocommand,
 this way, it is possible to disable showing the `winbar` on a per-window basis.
 This can be accomplished directly by Heirline during component evaluation (see example below)
-or by defining your own autocommands somewhere else, e.g.:
+and/or by defining your own autocommands somewhere else, e.g.:
 
 ```vim
 autocmd FileType foo setlocal winbar=
+```
+
+or
+
+```lua
+autocmd("User", {
+    pattern = 'HeirlineInitWinbar',
+    callback = function(args)
+        local buf = args.buf
+        local buftype = vim.tbl_contains(
+            { "terminal", "prompt", "nofile", "help", "quickfix" },
+            vim.bo[buf].buftype
+        )
+        local filetype = vim.tbl_contains({ "gitcommit", "fugitive" }, vim.bo[buf].filetype)
+        if buftype or filetype then
+            vim.opt_local.winbar = nil
+        end
+    end,
+})
 ```
 
 ```lua
