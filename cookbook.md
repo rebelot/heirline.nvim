@@ -1307,6 +1307,15 @@ local FelineStyle = {
 Everything we talked about for the statusline can be seamlessly applied
 to the new Neovim `winbar`!
 
+**NOTE**: `winbar` is set _locally_ using a `BufWinEnter` autocommand,
+this way, it is possible to disable showing the `winbar` on a per-window basis.
+This can be accomplished directly by Heirline during component evaluation (see example below)
+or by defining your own autocommands somewhere else, e.g.:
+
+```vim
+autocmd FileType foo setlocal winbar=
+```
+
 ```lua
 local WinBars = {
     init = utils.pick_child_on_condition,
@@ -1317,7 +1326,9 @@ local WinBars = {
                 filetype = { "^git.*", "fugitive" },
             })
         end,
-        provider = "",
+        init = function()
+            vim.opt_local.winbar = nil
+        end
     },
     {   -- A special winbar for terminals
         condition = function()
