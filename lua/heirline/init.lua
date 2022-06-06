@@ -15,7 +15,6 @@ local function setup_local_winbar_with_autocmd()
     vim.api.nvim_create_autocmd("BufWinEnter", {
         callback = function()
             vim.opt_local.winbar = "%{%v:lua.require'heirline'.eval_winbar()%}"
-            vim.cmd('redrawstatus')
         end,
         group = augrp_id,
         desc = "Heirline: set window-local winbar",
