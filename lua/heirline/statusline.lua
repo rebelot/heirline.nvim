@@ -158,6 +158,7 @@ local function register_update_autocmd(component)
             component._win_stl = nil
         end,
         desc = "Heirline update autocmd for " .. vim.inspect(component.id),
+        group = 'Heirline_update_autocmds'
     })
     return id
 end
@@ -178,7 +179,6 @@ function StatusLine:eval()
         elseif not self._registered_update_autocmd then
             local au_id = register_update_autocmd(self)
             self._registered_update_autocmd = true
-            table.insert(require("heirline").get_au_ids(), au_id)
         end
 
         local win_stl = self:get_win_attr("_win_stl")
