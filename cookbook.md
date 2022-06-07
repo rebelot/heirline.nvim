@@ -6,7 +6,7 @@
 - [Component fields](#component-fields)
   - [The StatusLine life cycle](#the-statusline-life-cycle)
   - [StatusLine Base Methods and Attributes](#statusline-base-methods-and-attributes)
-- [Builtin conditions and utilities](#builtin-conditions-and-utilities)
+- [Builtin functions](#builtin-functions)
 - [Recipes](#recipes)
   - [Getting started](#getting-started)
   - [Colors, colors, more colors!](#colors-colors-more-colors)
@@ -116,12 +116,15 @@ Each component may contain _any_ of the following fields:
   - Type: `table|string` or `function(self) -> table|string|nil`.
     If `hl` is a string, it will be interpreted as the name of an already defined highlight group.
     If `hl` is a table, it may contain any of:
-    - `fg`: The foreground color. Type: `string` to hex color code or vim
-      standard color name (e.g.: `"#FFFFFF"`, `"red"`).
+    - `fg`: The foreground color. Type: `string` to hex color code, color alias
+      defined by `load_colors()` (see [[#colors-colors-more-colors]])
+      or fallback to vim standard color name (e.g.: `"#FFFFFF"`, `"red"`);
+      `integer` to 24-bit color.
     - `bg`: The background color. Type: as above.
     - `sp`: The underline/undercurl color, if any. Type: as above.
     - Style fields supported by `synIDattrstyle()`: Example: `{ bold = true, underline = true }`
     - `ctermfg`, `ctermbg`, `cterm` fields as described in `:h nvim_set_hl` for 8-bit colors.
+      Type: `integer` to 8-bit color, `string` to color name alias or default color name.
     - `force`: Control whether the parent's `hl` fields will override child's hl.
       Type: `bool`.
   - Description: `hl` controls the colors of what is printed by the component's
@@ -266,7 +269,17 @@ explaining the `StatusLine` object base methods and attributes:
 - `stl`: the **last** output value of the component's evaluation.
 - `winnr`: window number of the **last** window the component was evaluated into.
 
-## Builtin conditions and utilities
+## Builtin functions
+
+Setup functions:
+
+- `setup(statusline, winbar?)`: Instantiate the statusline and optionally the winbar.
+- `load_colors(colors)`: Define color name aliases. `colors` is a `table` of the form
+  `color_name = color_value`, where `color_value` can be:
+  - `string`: hex code or default color name
+  - `integer`: 24-bit or 8-bit color value depending on the value of `termguicolors` option.
+- `clear_colors()`: Clear all color aliases.
+- `reset_highlights()`: Clear the cache of dynamically defined highlights.
 
 While heirline does not provide any default component, it defines a few useful
 test and utility functions to aid in writing components and their conditions.
@@ -348,24 +361,22 @@ is your friend. To create themes and have your colors updated on-demand, see
 
 ```lua
 local colors = {
+    bright_bg = utils.get_highlight("Folded").bg,
     red = utils.get_highlight("DiagnosticError").fg,
+    dark_red = utils.get_highlight("DiffDelete").bg,
     green = utils.get_highlight("String").fg,
     blue = utils.get_highlight("Function").fg,
     gray = utils.get_highlight("NonText").fg,
-    orange = utils.get_highlight("DiagnosticWarn").fg,
+    orange = utils.get_highlight("Constant").fg,
     purple = utils.get_highlight("Statement").fg,
     cyan = utils.get_highlight("Special").fg,
-    diag = {
-        warn = utils.get_highlight("DiagnosticWarn").fg,
-        error = utils.get_highlight("DiagnosticError").fg,
-        hint = utils.get_highlight("DiagnosticHint").fg,
-        info = utils.get_highlight("DiagnosticInfo").fg,
-    },
-    git = {
-        del = utils.get_highlight("diffDeleted").fg,
-        add = utils.get_highlight("diffAdded").fg,
-        change = utils.get_highlight("diffChanged").fg,
-    },
+    diag_warn = utils.get_highlight("DiagnosticWarn").fg,
+    diag_error = utils.get_highlight("DiagnosticError").fg,
+    diag_hint = utils.get_highlight("DiagnosticHint").fg,
+    diag_info = utils.get_highlight("DiagnosticInfo").fg,
+    git_del = utils.get_highlight("diffDeleted").fg,
+    git_add = utils.get_highlight("diffAdded").fg,
+    git_change = utils.get_highlight("diffChanged").fg,
 }
 ```
 
@@ -373,6 +384,15 @@ Perhaps, your favorite colorscheme already provides a way to get the theme color
 
 ```lua
 local colors = require'kanagawa.colors'.setup() -- wink
+```
+
+Now we can load the colors using `load_colors()` function,
+that will create color name aliases.
+This _is not_ required (you can always use color values directly),
+but it will be useful.
+
+```lua
+require('heirline').load_colors(colors)
 ```
 
 ### Crash course: the ViMode
@@ -437,19 +457,19 @@ local ViMode = {
             t = "T",
         },
         mode_colors = {
-            n = colors.red ,
-            i = colors.green,
-            v = colors.cyan,
-            V =  colors.cyan,
-            ["\22"] =  colors.cyan,
-            c =  colors.orange,
-            s =  colors.purple,
-            S =  colors.purple,
-            ["\19"] =  colors.purple,
-            R =  colors.orange,
-            r =  colors.orange,
-            ["!"] =  colors.red,
-            t =  colors.red,
+            n = "red" ,
+            i = "green",
+            v = "cyan",
+            V =  "cyan",
+            ["\22"] =  "cyan",
+            c =  "orange",
+            s =  "purple",
+            S =  "purple",
+            ["\19"] =  "purple",
+            R =  "orange",
+            r =  "orange",
+            ["!"] =  "red",
+            t =  "red",
         }
     },
     -- We can now access the value of mode() that, by now, would have been
@@ -527,11 +547,11 @@ local FileName = {
 local FileFlags = {
     {
         provider = function() if vim.bo.modified then return "[+]" end end,
-        hl = { fg = colors.green }
+        hl = { fg = "green" }
 
     }, {
         provider = function() if (not vim.bo.modifiable) or vim.bo.readonly then return "" end end,
-        hl = { fg = colors.orange }
+        hl = { fg = "orange" }
     }
 }
 
@@ -544,7 +564,7 @@ local FileNameModifer = {
     hl = function()
         if vim.bo.modified then
             -- use `force` because we need to override the child's hl foreground
-            return { fg = colors.cyan, bold = true, force=true }
+            return { fg = "cyan", bold = true, force=true }
         end
     end,
 }
@@ -649,7 +669,7 @@ local ScrollBar ={
         local i = math.floor((curr_line - 1) / lines * #self.sbar) + 1
         return string.rep(self.sbar[i], 2)
     end,
-    hl = { fg = colors.blue, bg = colors.bright_bg },
+    hl = { fg = "blue", bg = "bright_bg" },
 }
 ```
 
@@ -675,7 +695,7 @@ local LSPActive = {
         end
         return " [" .. table.concat(names, " ") .. "]"
     end,
-    hl = { fg = colors.green, bold = true },
+    hl = { fg = "green", bold = true },
 }
 ```
 
@@ -688,7 +708,7 @@ local LSPActive = {
 -- Note: check "j-hui/fidget.nvim" for a nice statusline-free alternative.
 local LSPMessages = {
     provider = require("lsp-status").status,
-    hl = { fg = colors.gray },
+    hl = { fg = "gray" },
 }
 ```
 
@@ -699,7 +719,7 @@ local LSPMessages = {
 local Gps = {
     condition = require("nvim-gps").is_available,
     provider = require("nvim-gps").get_location,
-    hl = { fg = colors.gray },
+    hl = { fg = "gray" },
 }
 ```
 
@@ -736,25 +756,25 @@ local Diagnostics = {
             -- 0 is just another output, we can decide to print it or not!
             return self.errors > 0 and (self.error_icon .. self.errors .. " ")
         end,
-        hl = { fg = colors.diag.error },
+        hl = { fg = "diag_error" },
     },
     {
         provider = function(self)
             return self.warnings > 0 and (self.warn_icon .. self.warnings .. " ")
         end,
-        hl = { fg = colors.diag.warn },
+        hl = { fg = "diag_warn" },
     },
     {
         provider = function(self)
             return self.info > 0 and (self.info_icon .. self.info .. " ")
         end,
-        hl = { fg = colors.diag.info },
+        hl = { fg = "diag_info" },
     },
     {
         provider = function(self)
             return self.hints > 0 and (self.hint_icon .. self.hints)
         end,
-        hl = { fg = colors.diag.hint },
+        hl = { fg = "diag_hint" },
     },
     {
         provider = "]",
@@ -771,7 +791,7 @@ actual count. Just replace the children with something like this.
         condition = function(self) return self.errors > 0 end,
         {
             provider = function(self) return self.error_icon end,
-            hl = { fg = colors.diag.error },
+            hl = { fg = "diag_error" },
         },
         {
             provider = function(self) return self.errors .. " " end,
@@ -804,7 +824,7 @@ local Git = {
         self.has_changes = self.status_dict.added ~= 0 or self.status_dict.removed ~= 0 or self.status_dict.changed ~= 0
     end,
 
-    hl = { fg = colors.orange },
+    hl = { fg = "orange" },
 
 
     {   -- git branch name
@@ -825,21 +845,21 @@ local Git = {
             local count = self.status_dict.added or 0
             return count > 0 and ("+" .. count)
         end,
-        hl = { fg = colors.git.add },
+        hl = { fg = "git_add" },
     },
     {
         provider = function(self)
             local count = self.status_dict.removed or 0
             return count > 0 and ("-" .. count)
         end,
-        hl = { fg = colors.git.del },
+        hl = { fg = "git_del" },
     },
     {
         provider = function(self)
             local count = self.status_dict.changed or 0
             return count > 0 and ("~" .. count)
         end,
-        hl = { fg = colors.git.change },
+        hl = { fg = "git_change" },
     },
     {
         condition = function(self)
@@ -937,7 +957,7 @@ local WorkDir = {
         local trail = cwd:sub(-1) == '/' and '' or "/"
         return icon .. cwd  .. trail
     end,
-    hl = { fg = colors.blue, bold = true },
+    hl = { fg = "blue", bold = true },
 }
 ```
 
@@ -955,7 +975,7 @@ local TerminalName = {
         local tname, _ = vim.api.nvim_buf_get_name(0):gsub(".*:", "")
         return " " .. tname
     end,
-    hl = { fg = colors.blue, bold = true },
+    hl = { fg = "blue", bold = true },
 }
 ```
 
@@ -1007,7 +1027,7 @@ local Spell = {
         return vim.wo.spell
     end,
     provider = 'SPELL ',
-    hl = { bold = true, fg = colors.orange}
+    hl = { bold = true, fg = "orange"}
 }
 ```
 
@@ -1087,7 +1107,7 @@ local WorkDir = {
         local cwd = vim.fn.getcwd(0)
         self.cwd = vim.fn.fnamemodify(cwd, ":~")
     end,
-    hl = { fg = colors.blue, bold = true },
+    hl = { fg = "blue", bold = true },
 
     utils.make_flexible_component(1, {
         -- evaluates to the full-lenth path
@@ -1164,7 +1184,7 @@ Assembling your favorite components and doing last-minute adjustments is easy!
 
 ```lua
 
-ViMode = utils.surround({ "", "" }, colors.bright_bg, { ViMode, Snippets })
+ViMode = utils.surround({ "", "" }, "bright_bg", { ViMode, Snippets })
 
 local DefaultStatusline = {
     ViMode, Space, FileName, Space, Git, Space, Diagnostics, Align,
@@ -1206,7 +1226,7 @@ local TerminalStatusline = {
         return conditions.buffer_matches({ buftype = { "terminal" } })
     end,
 
-    hl = { bg = colors.dark_red },
+    hl = { bg = "dark_red" },
 
     -- Quickly add a condition to the ViMode to only show it when buffer is active!
     { condition = conditions.is_active, ViMode, Space }, FileType, Space, TerminalName, Align,
@@ -1234,15 +1254,9 @@ local StatusLines = {
 
     hl = function()
         if conditions.is_active() then
-            return {
-                fg = utils.get_highlight("StatusLine").fg,
-                bg = utils.get_highlight("StatusLine").bg
-            }
+            return "StatusLine"
         else
-            return {
-                fg = utils.get_highlight("StatusLineNC").fg,
-                bg = utils.get_highlight("StatusLineNC").bg
-            }
+            return "StatusLineNC"
         end
     end,
 
@@ -1325,7 +1339,7 @@ vim.api.nvim_create_autocmd("User", {
     callback = function(args)
         local buf = args.buf
         local buftype = vim.tbl_contains(
-            { "terminal", "prompt", "nofile", "help", "quickfix" },
+            { "prompt", "nofile", "help", "quickfix" },
             vim.bo[buf].buftype
         )
         local filetype = vim.tbl_contains({ "gitcommit", "fugitive" }, vim.bo[buf].filetype)
@@ -1354,7 +1368,7 @@ local WinBars = {
         condition = function()
             return conditions.buffer_matches({ buftype = { "terminal" } })
         end,
-        utils.surround({ "", "" }, colors.dark_red, {
+        utils.surround({ "", "" }, "dark_red", {
             FileType,
             Space,
             TerminalName,
@@ -1364,10 +1378,10 @@ local WinBars = {
         condition = function()
             return not conditions.is_active()
         end,
-        utils.surround({ "", "" }, colors.bright_bg, { hl = { fg = "gray", force = true }, FileNameBlock }),
+        utils.surround({ "", "" }, "bright_bg", { hl = { fg = "gray", force = true }, FileNameBlock }),
     },
     -- A winbar for regular files
-    utils.surround({ "", "" }, colors.bright_bg, FileNameBlock),
+    utils.surround({ "", "" }, "bright_bg", FileNameBlock),
 }
 
 require("heirline").setup(StatusLines, WinBars)
@@ -1377,41 +1391,30 @@ require("heirline").setup(StatusLines, WinBars)
 
 You may feel nostalgic about the good ol' Airline Style, where multiple
 sections used to change background color based on the current mode.
-Fear not! We can conveniently do that by making the mode-dominant color
-visible to all components in one go.
+Fear not! We can conveniently do that by creating a statusline-global
+utility function that retrieves the current mode color. This will be
+visible by all components.
 
 ```lua
 local StatusLines = {
 
-    hl = function()
-        if conditions.is_active() then
-            return {
-                fg = utils.get_highlight("StatusLine").fg,
-                bg = utils.get_highlight("StatusLine").bg,
-            }
-        else
-            return {
-                fg = utils.get_highlight("StatusLineNC").fg,
-                bg = utils.get_highlight("StatusLineNC").bg,
-            }
-        end
-    end,
+    ...,
 
     static = {
         mode_colors = {
-            n = colors.red,
-            i = colors.green,
-            v = colors.cyan,
-            V = colors.cyan,
-            ["\22"] = colors.cyan,
-            c = colors.orange,
-            s = colors.purple,
-            S = colors.purple,
-            ["\19"] = colors.purple,
-            R = colors.orange,
-            r = colors.orange,
-            ["!"] = colors.red,
-            t = colors.green,
+            n = "red",
+            i = "green",
+            v = "cyan",
+            V = "cyan",
+            ["\22"] = "cyan",
+            c = "orange",
+            s = "purple",
+            S = "purple",
+            ["\19"] = "purple",
+            R = "orange",
+            r = "orange",
+            ["!"] = "red",
+            t = "green",
         },
         mode_color = function(self)
             local mode = conditions.is_active() and vim.fn.mode() or "n"
@@ -1534,7 +1537,7 @@ local CloseButton = {
 }
 
 -- Use it anywhere!
-local WinBarFileName = utils.surround({ "", "" }, colors.bright_bg, {
+local WinBarFileName = utils.surround({ "", "" }, "bright_bg", {
     hl = function()
         if not conditions.is_active() then
             return { fg = "gray", force = true }
@@ -1555,54 +1558,41 @@ local WinBarFileName = utils.surround({ "", "" }, colors.bright_bg, {
 ## Theming
 
 You can change the colors of the statusline automatically whenever you change
-your colorscheme. To do so, just setup a `ColorScheme` event autocommand that
-will reset heirline highlights and re-source your config!
-
-You can achieve that in two ways:
-
-1. Wrapping the generation of the statusline blueprints (components) into a function
+your colorscheme. To do so, you need to set up a `ColorScheme` event autocommand that
+will reset heirline highlights, re-evaluate and load the new colors.
 
 ```lua
--- beginning of your heirline config file
-local M = {}
-function M.setup()
-
-... -- wrap everything into a function
-
-require("heirline").setup(StatusLines)
+local function setup_colors()
+    return {
+        bright_bg = utils.get_highlight("Folded").bg,
+        red = utils.get_highlight("DiagnosticError").fg,
+        dark_red = utils.get_highlight("DiffDelete").bg,
+        green = utils.get_highlight("String").fg,
+        blue = utils.get_highlight("Function").fg,
+        gray = utils.get_highlight("NonText").fg,
+        orange = utils.get_highlight("Constant").fg,
+        purple = utils.get_highlight("Statement").fg,
+        cyan = utils.get_highlight("Special").fg,
+        diag_warn = utils.get_highlight("DiagnosticWarn").fg,
+        diag_error = utils.get_highlight("DiagnosticError").fg,
+        diag_hint = utils.get_highlight("DiagnosticHint").fg,
+        diag_info = utils.get_highlight("DiagnosticInfo").fg,
+        git_del = utils.get_highlight("diffDeleted").fg,
+        git_add = utils.get_highlight("diffAdded").fg,
+        git_change = utils.get_highlight("diffChanged").fg,
+    }
 end
+require('heirline').load_colors(setup_colors())
 
--- setup the autocommand
-vim.cmd[[
-augroup heirline
-    autocmd!
-    autocmd ColorScheme * lua require'heirline'.reset_highlights(); require'plugins.heirline'.setup()
-augroup END
-]]
+vim.api.nvim_create_augroup("Heirline", { clear = true })
+vim.api.nvim_create_autocmd("ColorScheme", {
+    callback = function()
+        require('heirline').reset_highlights()
+        require('heirline').load_colors(setup_colors())
+    end,
+    group = "Heirline",
+})
 
-M.setup() -- call setup when the file is required the first time
-return M
-
--- end of your heirline config file
-```
-
-2. Using `:luafile` to reload your config.
-
-```lua
--- beginning of your heirline config file, no need to wrap anything
-
-...
-
-vim.cmd[[
-augroup heirline
-    autocmd!
-    autocmd ColorScheme * lua require'heirline'.reset_highlights(); vim.cmd('luafile <path-to-this-file>')
-augroup END
-]]
-
-require("heirline").setup(statuslines)
-
--- end of your heirline config file
 ```
 
 <p align="center">

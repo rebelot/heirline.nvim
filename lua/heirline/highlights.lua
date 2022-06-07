@@ -2,8 +2,24 @@ local M = {}
 
 local defined_highlights = {}
 
+local loaded_colors = {}
+
 function M.reset_highlights()
     defined_highlights = {}
+end
+
+function M.load_colors(colors)
+    for c, v in pairs(colors) do
+        loaded_colors[c] = v
+    end
+end
+
+function M.clear_colors()
+    loaded_colors = {}
+end
+
+function M.get_loaded_colors()
+    return vim.tbl_extend("force", loaded_colors, {})
 end
 
 function M.get_highlights()
@@ -32,12 +48,7 @@ local function name_cterm_hl(hl)
     local style = vim.tbl_filter(function(value)
         return not vim.tbl_contains({ "bg", "fg", "sp", "ctermbg", "ctermfg", "cterm" }, value)
     end, vim.tbl_keys(hl.cterm or hl))
-    return "Stl"
-        .. (hl.ctermfg or "")
-        .. "_"
-        .. (hl.ctermbg or "")
-        .. "_"
-        .. table.concat(style, "")
+    return "Stl" .. (hl.ctermfg or "") .. "_" .. (hl.ctermbg or "") .. "_" .. table.concat(style, "")
 end
 
 local function hex(val)
@@ -48,15 +59,24 @@ local function hex(val)
     end
 end
 
+local function get_color(val)
+    if type(val) == "string" then
+        return loaded_colors[val] or val
+    else
+        return val
+    end
+end
+
 local function normalize_hl(hl)
     local fixed_hl = vim.tbl_extend("force", hl, {})
-    fixed_hl.fg = hex(hl.fg or hl.foreground)
-    fixed_hl.bg = hex(hl.bg or hl.background)
-    fixed_hl.sp = hex(hl.sp or hl.special or hl.guisp)
+    fixed_hl.fg = hex(get_color(hl.fg or hl.foreground))
+    fixed_hl.bg = hex(get_color(hl.bg or hl.background))
+    fixed_hl.sp = hex(get_color(hl.sp or hl.special))
+    fixed_hl.ctermfg = get_color(hl.ctermfg)
+    fixed_hl.ctermbg = get_color(hl.ctermbg)
     fixed_hl.force = nil
     return fixed_hl
 end
-
 
 local name_hl = vim.o.termguicolors and name_rgb_hl or name_cterm_hl
 function M.eval_hl(hl)
