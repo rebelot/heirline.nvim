@@ -1320,7 +1320,7 @@ autocmd FileType foo setlocal winbar=
 or
 
 ```lua
-autocmd("User", {
+vim.api.nvim_create_autocmd("User", {
     pattern = 'HeirlineInitWinbar',
     callback = function(args)
         local buf = args.buf
