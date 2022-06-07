@@ -121,6 +121,7 @@ Each component may contain _any_ of the following fields:
     - `bg`: The background color. Type: as above.
     - `sp`: The underline/undercurl color, if any. Type: as above.
     - Style fields supported by `synIDattrstyle()`: Example: `{ bold = true, underline = true }`
+    - `ctermfg`, `ctermbg`, `cterm` fields as described in `:h nvim_set_hl` for 8-bit colors.
     - `force`: Control whether the parent's `hl` fields will override child's hl.
       Type: `bool`.
   - Description: `hl` controls the colors of what is printed by the component's

@@ -14,9 +14,9 @@ local function make_hl(hl_name, hl)
     vim.api.nvim_set_hl(0, hl_name, hl)
 end
 
-local function name_hl(hl)
+local function name_rgb_hl(hl)
     local style = vim.tbl_filter(function(value)
-        return not vim.tbl_contains({ "bg", "fg", "sp" }, value)
+        return not vim.tbl_contains({ "bg", "fg", "sp", "ctermbg", "ctermfg", "cterm" }, value)
     end, vim.tbl_keys(hl))
     return "Stl"
         .. (hl.fg and hl.fg:gsub("#", "") or "")
@@ -26,6 +26,18 @@ local function name_hl(hl)
         .. table.concat(style, "")
         .. "_"
         .. (hl.sp and hl.sp:gsub("#", "") or "")
+end
+
+local function name_cterm_hl(hl)
+    local style = vim.tbl_filter(function(value)
+        return not vim.tbl_contains({ "bg", "fg", "sp", "ctermbg", "ctermfg", "cterm" }, value)
+    end, vim.tbl_keys(hl.cterm or hl))
+    return "Stl"
+        .. (hl.ctermfg or "")
+        .. "_"
+        .. (hl.ctermbg or "")
+        .. "_"
+        .. table.concat(style, "")
 end
 
 local function hex(val)
@@ -45,6 +57,8 @@ local function normalize_hl(hl)
     return fixed_hl
 end
 
+
+local name_hl = vim.o.termguicolors and name_rgb_hl or name_cterm_hl
 function M.eval_hl(hl)
     if vim.tbl_isempty(hl) then
         return "", ""
