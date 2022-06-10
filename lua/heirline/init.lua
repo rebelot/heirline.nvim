@@ -10,6 +10,9 @@ function M.get_highlights()
     return require("heirline.highlights").get_highlights()
 end
 
+---Load color aliases
+---@param colors table<string, string|integer>
+---@return nil
 function M.load_colors(colors)
     return require("heirline.highlights").load_colors(colors)
 end
@@ -30,6 +33,9 @@ local function setup_local_winbar_with_autocmd()
     })
 end
 
+---Setup statusline and winbar
+---@param statusline table
+---@param winbar? table
 function M.setup(statusline, winbar)
     vim.g.qf_disable_statusline = true
     vim.api.nvim_create_augroup("Heirline_update_autocmds", { clear = true })
@@ -43,6 +49,7 @@ function M.setup(statusline, winbar)
     end
 end
 
+---@return string
 function M.eval_statusline()
     M.statusline.winnr = vim.api.nvim_win_get_number(0)
     M.statusline.flexible_components = {}
@@ -51,6 +58,7 @@ function M.eval_statusline()
     return out
 end
 
+---@return string
 function M.eval_winbar()
     M.winbar.winnr = vim.api.nvim_win_get_number(0)
     M.winbar.flexible_components = {}

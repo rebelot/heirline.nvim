@@ -13,13 +13,33 @@ local default_restrict = {
     update = true,
     stl = true,
     _win_stl = true,
+    _au_id = true,
 }
 
+---@class StatusLine
+---@field condition? function
+---@field init? function
+---@field provider? function | string
+---@field hl? function | table | string
+---@field restrict? table
+---@field after? function
+---@field update? function | table
+---@field on_click? function | table
+---@field stl string
+---@field id table<integer>
+---@field winnr integer
+---@field _win_stl? table
+---@field _au_id? integer
+---@field pick_child? table<integer>
 local StatusLine = {
     hl = {},
     merged_hl = {},
 }
 
+---Initialize a new statusline object
+---@param child table
+---@param index? integer
+---@return StatusLine
 function StatusLine:new(child, index)
     child = child or {}
     local new = {}
@@ -79,6 +99,8 @@ function StatusLine:new(child, index)
     return new
 end
 
+--- Broadcast a function that will be executed by every component
+---@param func function
 function StatusLine:broadcast(func)
     for i, c in ipairs(self) do
         func(c)
@@ -86,6 +108,9 @@ function StatusLine:broadcast(func)
     end
 end
 
+--- Get the component where func(component) evaluates to true
+---@param func function predicate
+---@return StatusLine
 function StatusLine:find(func)
     if func(self) then
         return self
@@ -98,6 +123,9 @@ function StatusLine:find(func)
     end
 end
 
+--- Get the component with id == `id`
+---@param id table<integer>
+---@return StatusLine
 function StatusLine:get(id)
     id = id or {}
     local curr = self
@@ -107,10 +135,16 @@ function StatusLine:get(id)
     return curr
 end
 
+--- Get attribute `attr` value from parent component
+---@param attr string
+---@return any
 function StatusLine:nonlocal(attr)
     return getmetatable(self).__index(self, attr)
 end
 
+--- Get attribute `attr` value from component
+---@param attr string
+---@return any
 function StatusLine:local_(attr)
     local orig_mt = getmetatable(self)
     setmetatable(self, {})
@@ -119,12 +153,20 @@ function StatusLine:local_(attr)
     return result
 end
 
+--- Set window-nr attribute
+---@param attr string
+---@param val any
+---@param default any
 function StatusLine:set_win_attr(attr, val, default)
     local winnr = self.winnr
     self[attr] = self[attr] or {}
     self[attr][winnr] = val or (self[attr][winnr] or default)
 end
 
+--- Get window-nr attribute
+---@param attr string
+---@param default any
+---@return any
 function StatusLine:get_win_attr(attr, default)
     local winnr = self.winnr
     self[attr] = self[attr] or {}
@@ -132,6 +174,8 @@ function StatusLine:get_win_attr(attr, default)
     return self[attr][winnr]
 end
 
+---@param component StatusLine
+---@return string
 local function register_global_function(component)
     local on_click = component.on_click
     local winid = vim.api.nvim_get_current_win()
@@ -151,18 +195,34 @@ local function register_global_function(component)
     return "v:lua." .. func_name
 end
 
+---@param component StatusLine
 local function register_update_autocmd(component)
-    local events = component.update
+    local events, callback
+    if type(component.update) == "string" then
+        events = component.update
+    else
+        events = {}
+        for i, e in ipairs(component.update) do
+            table.insert(events, e)
+        end
+        callback = component.update.callback
+    end
+
     local id = vim.api.nvim_create_autocmd(events, {
         callback = function()
             component._win_stl = nil
+            if callback then
+                callback(component)
+            end
         end,
         desc = "Heirline update autocmd for " .. vim.inspect(component.id),
-        group = 'Heirline_update_autocmds'
+        group = "Heirline_update_autocmds",
     })
-    return id
+    component._au_id = id
 end
 
+---Evaluate component and its children recursively
+---@return string
 function StatusLine:eval()
     if self.condition and not self:condition() then
         -- self.stl = ''
@@ -170,15 +230,14 @@ function StatusLine:eval()
     end
 
     if self.update then
-
         if type(self.update) == "function" then
             if self:update() then
                 self._win_stl = nil
             end
-
-        elseif not self._registered_update_autocmd then
-            local au_id = register_update_autocmd(self)
-            self._registered_update_autocmd = true
+        else
+            if not self._au_id then
+                register_update_autocmd(self)
+            end
         end
 
         local win_stl = self:get_win_attr("_win_stl")

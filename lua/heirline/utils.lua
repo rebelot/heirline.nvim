@@ -2,6 +2,9 @@ local M = {}
 
 local TERMGUICOLORS = vim.o.termguicolors
 
+---Get highlight properties for a given highlight name
+---@param name string
+---@return table
 function M.get_highlight(name)
     local hl = vim.api.nvim_get_hl_by_name(name, TERMGUICOLORS)
     if TERMGUICOLORS then
@@ -21,10 +24,19 @@ function M.get_highlight(name)
     return hl
 end
 
+---Copy the given component
+---@param block table
+---@param with? table
+---@return table
 function M.clone(block, with)
     return vim.tbl_deep_extend("force", block, with or {})
 end
 
+---Surround component with separators and adjust coloring
+---@param delimiters table<string>
+---@param color string | function
+---@param component table
+---@return table
 function M.surround(delimiters, color, component)
     component = M.clone(component)
 
@@ -67,6 +79,11 @@ function M.surround(delimiters, color, component)
     }
 end
 
+---return a copy of `destination` component where each `child` in `...`
+---(variable arguments) is appended to its children (if any).
+---@param destination table
+---@vararg table
+---@return table
 function M.insert(destination, ...)
     local children = { ... }
     local new = M.clone(destination)
@@ -77,10 +94,17 @@ function M.insert(destination, ...)
     return new
 end
 
+---Calculate the length of a format-string
+---@param str string
+---@return integer
 function M.count_chars(str)
     return vim.api.nvim_eval_statusline(str, { winid = 0, maxwidth = 0 }).width
 end
 
+---Create a flexible component
+---@param priority integer
+---@vararg table
+---@return table
 function M.make_flexible_component(priority, ...)
     local new = M.insert({}, ...)
 
