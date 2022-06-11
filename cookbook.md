@@ -716,9 +716,53 @@ local LSPMessages = {
 
 ```lua
 -- Awesome plugin
+
+-- The easy way.
 local Gps = {
     condition = require("nvim-gps").is_available,
     provider = require("nvim-gps").get_location,
+    hl = { fg = "gray" },
+}
+
+-- Full nerd (with icon colors)!
+local Gps = {
+    condition = require("nvim-gps").is_available,
+    static = {
+        -- resolve highlight colors
+        type_map = {
+            ["container-name"] = "Identifier",
+            ["method-name"] = "Method",
+            ["function-name"] = "Function",
+            ["class-name"] = "Type",
+            ["tag-name"] = 'Tag',
+        },
+    },
+    init = function(self)
+        local data = require("nvim-gps").get_data()
+        local children = {}
+
+        -- create a child for each level
+        for i, d in ipairs(data) do
+            local child = {
+                {
+                    provider = d.icon,
+                    hl = self.type_map[d.type],
+                },
+                {
+                    provider = d.text,
+                },
+            }
+            -- put a separator if needed
+            if #data > 1 and i < #data then
+                table.insert(child, {
+                    provider = " > ",
+                })
+            end
+            table.insert(children, child)
+        end
+        -- instantiate the chilren
+        self[1] = self:new(children, 1)
+    end,
     hl = { fg = "gray" },
 }
 ```
