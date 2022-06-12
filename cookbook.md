@@ -712,47 +712,72 @@ local LSPMessages = {
 }
 ```
 
-[Nvim Gps](https://github.com/SmiteshP/nvim-gps)
+[Nvim Navic](https://github.com/SmiteshP/nvim-navic)
+
+Show current location using LSP document symbols.
+This example shows that it is possible to dynamically instantiate
+new children.
 
 ```lua
 -- Awesome plugin
 
 -- The easy way.
-local Gps = {
-    condition = require("nvim-gps").is_available,
-    provider = require("nvim-gps").get_location,
-    hl = { fg = "gray" },
+local Navic = {
+    condition = require("nvim-navic").is_available,
+    provider = require("nvim-navic").get_location,
 }
 
 -- Full nerd (with icon colors)!
-local Gps = {
-    condition = require("nvim-gps").is_available,
+local Navic = {
+    condition = require("nvim-navic").is_available,
     static = {
-        -- resolve highlight colors
-        type_map = {
-            ["container-name"] = "Identifier",
-            ["method-name"] = "Method",
-            ["function-name"] = "Function",
-            ["class-name"] = "Type",
-            ["tag-name"] = 'Tag',
+        -- create a type highlight map
+        type_hl = {
+            File = "Directory",
+            Module = "Include",
+            Namespace = "TSNamespace",
+            Package = "Include",
+            Class = "Struct",
+            Method = "Method",
+            Property = "TSProperty",
+            Field = "TSField",
+            Constructor = "TSConstructor ",
+            Enum = "TSField",
+            Interface = "Type",
+            Function = "Function",
+            Variable = "TSVariable",
+            Constant = "Constant",
+            String = "String",
+            Number = "Number",
+            Boolean = "Boolean",
+            Array = "TSField",
+            Object = "Type",
+            Key = "TSKeyword",
+            Null = "Comment",
+            EnumMember = "TSField",
+            Struct = "Struct",
+            Event = "Keyword",
+            Operator = "Operator",
+            TypeParameter = "Type",
         },
     },
     init = function(self)
-        local data = require("nvim-gps").get_data()
+        local data = require("nvim-navic").get_data() or {}
         local children = {}
-
         -- create a child for each level
         for i, d in ipairs(data) do
             local child = {
                 {
                     provider = d.icon,
-                    hl = self.type_map[d.type],
+                    hl = self.type_hl[d.type],
                 },
                 {
-                    provider = d.text,
+                    provider = d.name,
+                    -- highlight icon only or location name as well
+                    -- hl = self.type_hl[d.type],
                 },
             }
-            -- put a separator if needed
+            -- add a separator only if needed
             if #data > 1 and i < #data then
                 table.insert(child, {
                     provider = " > ",
@@ -760,7 +785,7 @@ local Gps = {
             end
             table.insert(children, child)
         end
-        -- instantiate the chilren
+        -- instantiate the new child
         self[1] = self:new(children, 1)
     end,
     hl = { fg = "gray" },
@@ -1196,10 +1221,10 @@ local FileName = {
 }
 ```
 
-**Flexible Gps** _a.k.a._ make it disappear
+**Flexible Navic** _a.k.a._ make it disappear
 
 ```lua
-local Gps = utils.make_flexible_component(3, Gps, { provider = "" })
+local Navic = utils.make_flexible_component(3, Navic, { provider = "" })
 ```
 
 ## Putting it all together: Conditional Statuslines
@@ -1232,7 +1257,7 @@ ViMode = utils.surround({ "", "" }, "bright_bg", { ViMode, Snippets })
 
 local DefaultStatusline = {
     ViMode, Space, FileName, Space, Git, Space, Diagnostics, Align,
-    Gps, DAPMessages, Align,
+    Navic, DAPMessages, Align,
     LSPActive, Space, LSPMessages, Space, UltTest, Space, FileType, Space, Ruler, Space, ScrollBar
 }
 ```
