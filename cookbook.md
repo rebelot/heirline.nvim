@@ -1562,6 +1562,22 @@ local Git = {
 }
 ```
 
+**LSPActive on_click**
+
+```lua
+local LSPActive = {
+    on_click = {
+        callback = function()
+            vim.defer_fn(function()
+                vim.cmd("LspInfo")
+            end, 100)
+        end,
+        name = "heirline_LSP",
+    },
+    ...
+}
+```
+
 **Window Close button**: Let the callback know from which window it was clicked from!
 
 The following is the recommended way of achieving that:
