@@ -95,7 +95,7 @@ don't let the detailed description discourage you! Just keep one thing in mind:
 whenever you see a function, know that the function is executed in the context
 of the buffer and window the statusline belongs to. (The indices of the actual
 buffer and window you're in are stored in the default vim global variables
-`vim.g.actual_curbuf` and `vim.g.acutal_curwin`.)
+`vim.g.actual_curbuf` and `vim.g.actual_curwin`.)
 
 Each component may contain _any_ of the following fields:
 
@@ -634,7 +634,7 @@ local FileSize = {
 local FileLastModified = {
     -- did you know? Vim is full of functions!
     provider = function()
-        local ftime = vim.fn.getftime(vim.api.nvim_buf_gett_name(0))
+        local ftime = vim.fn.getftime(vim.api.nvim_buf_get_name(0))
         return (ftime > 0) and os.date("%c", ftime)
     end
 }
