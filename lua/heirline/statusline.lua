@@ -197,7 +197,7 @@ end
 
 ---@param component StatusLine
 local function register_update_autocmd(component)
-    local events, callback
+    local events, callback, pattern
     if type(component.update) == "string" then
         events = component.update
     else
@@ -206,13 +206,15 @@ local function register_update_autocmd(component)
             table.insert(events, e)
         end
         callback = component.update.callback
+        pattern = component.update.pattern
     end
 
     local id = vim.api.nvim_create_autocmd(events, {
-        callback = function()
+        pattern = pattern,
+        callback = function(args)
             component._win_stl = nil
             if callback then
-                callback(component)
+                callback(component, args)
             end
         end,
         desc = "Heirline update autocmd for " .. vim.inspect(component.id),
