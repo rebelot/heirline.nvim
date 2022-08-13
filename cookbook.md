@@ -51,11 +51,11 @@ component is called a `child`, and will inherit the fields of its `parent`.
 There is no limit in how many components can be nested into each other.
 
 ```lua
-local statusline = {
+local StatusLine = {
 {...}, {...}, {..., {...}, {...}, {..., {...}, {..., {...}}}}
 }
 
-local winbar = {{...}, {{...}, {...}}}
+local WinBar = {{...}, {{...}, {...}}}
 
 -- the winbar parameter is optional!
 require'heirline'.setup(statusline, winbar)
@@ -76,11 +76,9 @@ local statusline = {
     {Component1, Sub1},
     Component2,
 }
-
-require'heirline'.setup(statusline)
 ```
 
-After calling `require'heirline'.setup(statusline[, winbar])`, your `StatusLine` object
+After calling `setup()`, your `StatusLine` object
 will be created, and you can find its handle at `require'heirline'.statusline`
 (and `require'heirline'.winbar`).
 Any modification to the object itself will reflect in real time on your statusline!
@@ -176,12 +174,15 @@ Each component may contain _any_ of the following fields:
     Please see the recipes to learn _how to propagate information about
     the window/buffer the clicked component belongs to_.
 - `update`:
-  - Type: `function(self) -> boolean` or `string` or `table<string>`.
+  - Type: `function(self) -> boolean` or `string` or `table`.
   - Description: Control when the component should be updated or return a per-window
     cached value.
     If `update` is a function, the component will be updated whenever the function
     return value is `true`; else, a `string` or a `table` of strings will be
     interpreted as autocommand event names that should trigger the component evaluation.
+    Additionally, when `update` is a `table`, the fields `pattern` and `callback` can be set (`:h nvim_create_autocmd`);
+    The callback will be executed after the component window-local cache is cleared will have the signature `callback(component, args)`,
+    where `args` are the arguments described in `:h nvim_create_autocmd`.
 - `{...}`:
   - Type: `list`
   - Description: The component progeny. Each item of the list is a component
