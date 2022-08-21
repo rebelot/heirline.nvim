@@ -140,7 +140,7 @@ Each component may contain _any_ of the following fields:
 - `on_click`:
   - Type: `table` with the following fields:
     - `callback`: (vim/)lua function to be called on mouse click(s). The function
-      has the signature `function(self, winid, minwid, nclicks, button)`
+      has the signature `function(self, minwid, nclicks, button)`
       (see `:h 'statusline'` description for `@`). If a `string` is provided,
       it is interpreted as the _raw_ function name (`v:lua.` is not prepended)
       of an already defined function accessible from vim global scope.
@@ -150,7 +150,8 @@ Each component may contain _any_ of the following fields:
     - `update`: whether the function should be registered even if
       it already exists in the global namespace.
       This is useful for dynamically registering different callbacks.
-      Omit this field if you are registering only one function.
+    - `minwid`: integer data that can be passed to callback.
+      Useful to pass window/buffer handlers. Type: `number` or `function -> number`
       Type: `boolean` (optional).
   - Description: Specify a function to be called when clicking on the component (including its progeny);
     Lua functions are automatically registered in the global scope with the name provided
@@ -1585,16 +1586,15 @@ The following is the recommended way of achieving that:
 
 ```lua
 on_click = {
-    callback = function(_, winid)
+    -- get the window id of the window in which the component was evaluated
+    minwid = function()
+        return vim.api.nvim_get_current_win()
+    end,
+    callback = function(_, minwid)
         -- winid is the window id of the window the component was clicked from
+        local winid = minwid
+        -- do something with the window id
     end,
-    -- A dynamic name + update are required whenever
-    -- we need to register a closure for each instance of the
-    -- component displayed in the current tab.
-    name = function(self)
-        return "heirline_button_name" .. self.winnr
-    end,
-    update = true,
 }
 ```
 
@@ -1611,13 +1611,13 @@ local CloseButton = {
         provider = "",
         hl = { fg = "gray" },
         on_click = {
-            callback = function(_, winid)
-                vim.api.nvim_win_close(winid, true)
+            minwid = function()
+                return vim.api.nvim_get_current_win()
             end,
-            name = function(self)
-                return "heirline_close_button_" .. self.winnr
+            callback = function(_, minwid)
+                vim.api.nvim_win_close(minwid, true)
             end,
-            update = true,
+            name = "heirline_winbar_close_button"
         },
     },
 }

@@ -178,7 +178,6 @@ end
 ---@return string
 local function register_global_function(component)
     local on_click = component.on_click
-    local winid = vim.api.nvim_get_current_win()
 
     if type(on_click.callback) == "string" then
         return on_click.callback
@@ -190,7 +189,7 @@ local function register_global_function(component)
     end
 
     _G[func_name] = function(minwid, nclicks, button)
-        on_click.callback(component, winid, minwid, nclicks, button)
+        on_click.callback(component, minwid, nclicks, button)
     end
     return "v:lua." .. func_name
 end
@@ -270,7 +269,8 @@ function StatusLine:eval()
 
     if self.on_click then
         local func_name = register_global_function(self)
-        table.insert(stl, "%@" .. func_name .. "@")
+        local minwid = type(self.on_click.minwid) == "function" and self.on_click.minwid(self) or self.on_click.minwid or ""
+        table.insert(stl, "%" .. minwid .. "@" .. func_name .. "@")
     end
 
     if self.provider then
