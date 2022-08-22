@@ -182,7 +182,7 @@ Each component may contain _any_ of the following fields:
     return value is `true`; else, a `string` or a `table` of strings will be
     interpreted as autocommand event names that should trigger the component evaluation.
     Additionally, when `update` is a `table`, the fields `pattern` and `callback` can be set (`:h nvim_create_autocmd`);
-    The callback will be executed after the component window-local cache is cleared will have the signature `callback(component, args)`,
+    The callback will have the signature `callback(component, args)`,
     where `args` are the arguments described in `:h nvim_create_autocmd`.
 - `{...}`:
   - Type: `list`
@@ -414,7 +414,10 @@ local ViMode = {
         -- execute this only once, this is required if you want the ViMode
         -- component to be updated on operator pending mode
         if not self.once then
-            vim.api.nvim_create_autocmd("ModeChanged", {command = 'redrawstatus'})
+            vim.api.nvim_create_autocmd("ModeChanged", {
+                pattern = "[^c]*:[^c]*"
+                command = 'redrawstatus'
+            })
             self.once = true
         end
     end,
@@ -492,7 +495,14 @@ local ViMode = {
     -- Re-evaluate the component only on ModeChanged event!
     -- This is not required in any way, but it's there, and it's a small
     -- performance improvement.
-    update = 'ModeChanged'
+    update = {
+        "ModeChanged",
+        -- if you add this, you don't need to set the autocommand during init
+        pattern = "[^c]*:[^c]*",
+        callback = function()
+            vim.cmd("redrawstatus")
+        end,
+    },
 }
 ```
 
