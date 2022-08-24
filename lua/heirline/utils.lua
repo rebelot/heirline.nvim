@@ -1,24 +1,22 @@
 local M = {}
 
-local TERMGUICOLORS = vim.o.termguicolors
-
 ---Get highlight properties for a given highlight name
 ---@param name string
 ---@return table
 function M.get_highlight(name)
-    local hl = vim.api.nvim_get_hl_by_name(name, TERMGUICOLORS)
-    if TERMGUICOLORS then
+    local hl = vim.api.nvim_get_hl_by_name(name, vim.o.termguicolors)
+    if vim.o.termguicolors then
         hl.fg = hl.foreground
         hl.bg = hl.background
         hl.sp = hl.special
         hl.foreground = nil
-        hl.backgroung = nil
+        hl.background = nil
         hl.special = nil
     else
         hl.ctermfg = hl.foreground
         hl.ctermbg = hl.background
         hl.foreground = nil
-        hl.backgroung = nil
+        hl.background = nil
         hl.special = nil
     end
     return hl
@@ -187,13 +185,13 @@ local function group_flexible_components(statusline, mode)
     return priority_groups, priorities
 end
 
-function M.expand_or_contract_flexible_components(statusline, is_winbar, out)
+function M.expand_or_contract_flexible_components(statusline, full_width, out)
     if not statusline.flexible_components or not next(statusline.flexible_components) then
         return
     end
 
     local winw
-    if vim.o.laststatus == 3 and not is_winbar then
+    if full_width then
         winw = vim.o.columns
     else
         winw = vim.api.nvim_win_get_width(0)
@@ -257,6 +255,141 @@ function M.pick_child_on_condition(self)
             table.insert(self.pick_child, i)
             break
         end
+    end
+end
+
+local function get_bufs()
+    return vim.tbl_filter(function(bufnr)
+        return vim.api.nvim_buf_is_loaded(bufnr) and vim.bo[bufnr].buflisted
+    end, vim.api.nvim_list_bufs())
+end
+
+function M.make_buflist(buffer_component, right_trunc, left_trunc)
+    right_trunc = right_trunc
+        or require("heirline.statusline"):new({
+            provider = "%=>",
+            hl = { fg = "gray" },
+        })
+
+    left_trunc = left_trunc
+        or require("heirline.statusline"):new({
+            provider = "<",
+            hl = { fg = "gray" },
+        })
+
+    local bufferline = {
+        static = {
+            left_trunc = left_trunc,
+            right_trunc = right_trunc,
+        },
+        init = function(self)
+            if vim.tbl_isempty(self._buflist) then
+                table.insert(self._buflist, self)
+            end
+
+            local bufs = get_bufs()
+            for i, bufnr in ipairs(bufs) do
+                if not (self[i] and bufnr == self[i].bufnr) then
+                    self[i] = require("heirline.statusline"):new(buffer_component, i)
+                    self[i].bufnr = bufnr
+                end
+                if bufnr == tonumber(vim.g.actual_curbuf) then
+                    self[i].is_active = true
+                    self.active_child = i
+                else
+                    self[i].is_active = false
+                end
+            end
+            if #self > #bufs then
+                for i = #self, #bufs + 1, -1 do
+                    self[i] = nil
+                end
+            end
+        end,
+        after = function(self)
+            if not self._eval_buflist then
+                self.stl = "#BUFLIST#"
+                return
+            end
+            self.stl = ""
+            -- local maxwidth = vim.o.columns
+            local maxwidth = self._maxwidth - 2
+
+            local page = {}
+            local active_page
+            local page_length = 0
+            local page_start = 1
+            local page_end = #self
+            for i, child in ipairs(self) do
+                local len = M.count_chars(child.stl)
+                page_length = page_length + len
+                if page_length <= maxwidth then
+                    table.insert(page, child)
+                else
+                    if not active_page then
+                        page_length = len
+                        page = { child }
+                        page_start = i
+                    else
+                        page_end = i
+                        break
+                    end
+                end
+                if child.is_active then
+                    active_page = page
+                end
+            end
+            if page_start > 1 then
+                self.stl = self.left_trunc:eval()
+            end
+            for _, child in ipairs(page) do
+                self.stl = self.stl .. child.stl
+            end
+            if page_end < #self then
+                self.stl = self.stl .. self.right_trunc:eval()
+            end
+        end,
+    }
+    return bufferline
+end
+
+function M.page_buflist(self)
+    self.stl = ""
+    -- local maxwidth = vim.o.columns
+    local maxwidth = self._maxwidth - 2
+
+    local page = {}
+    local active_page
+    local page_length = 0
+    local page_start = 1
+    local page_end = #self
+    for i, child in ipairs(self) do
+        local len = M.count_chars(child.stl)
+        page_length = page_length + len
+        if page_length <= maxwidth then
+            table.insert(page, child)
+        else
+            if not active_page then
+                page_length = len
+                page = { child }
+                page_start = i
+            else
+                page_end = i
+                break
+            end
+        end
+        if child.is_active then
+            active_page = page
+        end
+    end
+    if page_start > 1 then
+        self.stl = self.left_trunc:eval()
+    end
+    for _, child in ipairs(page) do
+        self.stl = self.stl .. child.stl
+    end
+    if page_end < #self then
+        self.stl = self.stl .. self.right_trunc:eval()
     end
 end
 

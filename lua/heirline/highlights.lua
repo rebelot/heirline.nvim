@@ -84,12 +84,12 @@ local function normalize_hl(hl)
     return fixed_hl
 end
 
-local name_hl = vim.o.termguicolors and name_rgb_hl or name_cterm_hl
 function M.eval_hl(hl)
     if vim.tbl_isempty(hl) then
         return "", ""
     end
     hl = normalize_hl(hl)
+    local name_hl = vim.o.termguicolors and name_rgb_hl or name_cterm_hl
     local hl_name = name_hl(hl)
     if not defined_highlights[hl_name] then
         make_hl(hl_name, hl)
