@@ -6,6 +6,10 @@ function M.is_active()
     return winid == curwin
 end
 
+function M.is_not_active()
+    return not M.is_active()
+end
+
 local function pattern_list_match(str, pattern_list)
     for _, pattern in ipairs(pattern_list) do
         if str:find(pattern) then

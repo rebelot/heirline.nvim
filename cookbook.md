@@ -291,6 +291,7 @@ These functions are accessible via `require'heirline.conditions'` and
 **Built-in conditions**:
 
 - `is_active()`: returns true if the statusline's window is the active window.
+- `is_not_active()`: returns true if the statusline's window is _not_ the active window.
 - `buffer_matches(patterns)`: Returns true whenever a buffer attribute
   (`filetype`,`buftype` or `bufname`) matches any of the lua patterns in the
   corresponding list.
@@ -1279,10 +1280,7 @@ fill the whole statusline with the same color!
 
 ```lua
 local InactiveStatusline = {
-    condition = function()
-        return not conditions.is_active()
-    end,
-
+    condition = conditions.is_not_active,
     FileType, Space, FileName, Align,
 }
 ```
