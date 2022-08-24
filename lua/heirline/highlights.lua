@@ -30,25 +30,31 @@ local function make_hl(hl_name, hl)
     vim.api.nvim_set_hl(0, hl_name, hl)
 end
 
+local function get_hl_style(hl)
+    local style = {}
+    local valid_styles = { "bold", "standout", "underline", "undercurl", "underdouble", "underdotted", "underdashed", "strikethrough", "italic", "reverse" }
+    for _, v in ipairs(valid_styles) do
+        if hl[v] then
+            table.insert(style, v)
+        end
+    end
+    return table.concat(style, "")
+
+end
+
 local function name_rgb_hl(hl)
-    local style = vim.tbl_filter(function(value)
-        return not vim.tbl_contains({ "bg", "fg", "sp", "ctermbg", "ctermfg", "cterm" }, value)
-    end, vim.tbl_keys(hl))
     return "Stl"
         .. (hl.fg and hl.fg:gsub("#", "") or "")
         .. "_"
         .. (hl.bg and hl.bg:gsub("#", "") or "")
         .. "_"
-        .. table.concat(style, "")
+        .. get_hl_style(hl)
         .. "_"
         .. (hl.sp and hl.sp:gsub("#", "") or "")
 end
 
 local function name_cterm_hl(hl)
-    local style = vim.tbl_filter(function(value)
-        return not vim.tbl_contains({ "bg", "fg", "sp", "ctermbg", "ctermfg", "cterm" }, value)
-    end, vim.tbl_keys(hl.cterm or hl))
-    return "Stl" .. (hl.ctermfg or "") .. "_" .. (hl.ctermbg or "") .. "_" .. table.concat(style, "")
+    return "Stl" .. (hl.ctermfg or "") .. "_" .. (hl.ctermbg or "") .. "_" .. get_hl_style(hl.cterm or hl)
 end
 
 local function hex(val)
