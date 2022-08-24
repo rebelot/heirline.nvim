@@ -38,7 +38,7 @@ end
 ---Setup statusline and winbar
 ---@param statusline table
 ---@param winbar? table
-function M.setup(statusline, winbar)
+function M.setup(statusline, winbar, tabline)
     vim.g.qf_disable_statusline = true
     vim.api.nvim_create_augroup("Heirline_update_autocmds", { clear = true })
     M.reset_highlights()
@@ -49,6 +49,11 @@ function M.setup(statusline, winbar)
         M.winbar = StatusLine:new(winbar)
         setup_local_winbar_with_autocmd()
     end
+    if tabline then
+        M.tabline = StatusLine:new(tabline)
+        vim.o.showtabline = 2
+        vim.o.tabline = "%{%v:lua.require'heirline'.eval_tabline()%}"
+    end
 end
 
 ---@return string
@@ -56,7 +61,7 @@ function M.eval_statusline()
     M.statusline.winnr = vim.api.nvim_win_get_number(0)
     M.statusline.flexible_components = {}
     local out = M.statusline:eval()
-    utils.expand_or_contract_flexible_components(M.statusline, false, out)
+    utils.expand_or_contract_flexible_components(M.statusline, vim.o.laststatus == 3, out)
     return out
 end
 
@@ -65,8 +70,24 @@ function M.eval_winbar()
     M.winbar.winnr = vim.api.nvim_win_get_number(0)
     M.winbar.flexible_components = {}
     local out = M.winbar:eval()
-    utils.expand_or_contract_flexible_components(M.winbar, true, out)
+    utils.expand_or_contract_flexible_components(M.winbar, false, out)
     return out
+end
+
+---@return string
+function M.eval_tabline()
+    M.tabline.winnr = 1
+    M.tabline._buflist = {}
+    M.tabline._eval_buflist = false
+    local out = M.tabline:eval()
+    if vim.tbl_isempty(M.tabline._buflist) then
+        return out
+    end
+    -- utils.expand_or_contract_flexible_components(M.tabline, true, out)
+    M.tabline._maxwidth = vim.o.columns - utils.count_chars(out) + string.len("#BUFLIST#")
+    M.tabline._eval_buflist = true
+    M.tabline._buflist[1]:eval()
+    return vim.fn.substitute(out, "#BUFLIST#", M.tabline._buflist[1].stl, "")
 end
 
 -- test [[
@@ -74,6 +95,7 @@ function M.timeit()
     local start = os.clock()
     M.eval_statusline()
     M.eval_winbar()
+    M.eval_tabline()
     return os.clock() - start
 end
 
