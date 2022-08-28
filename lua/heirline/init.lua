@@ -23,11 +23,11 @@ end
 
 local function setup_local_winbar_with_autocmd()
     local augrp_id = vim.api.nvim_create_augroup("Heirline_init_winbar", { clear = true })
-    vim.api.nvim_create_autocmd({"VimEnter", "BufWinEnter"}, {
+    vim.api.nvim_create_autocmd({ "VimEnter", "BufWinEnter" }, {
         callback = function()
             if vim.api.nvim_win_get_height(0) > 1 then
                 vim.opt_local.winbar = "%{%v:lua.require'heirline'.eval_winbar()%}"
-                vim.api.nvim_exec_autocmds('User', {pattern = 'HeirlineInitWinbar', modeline = false})
+                vim.api.nvim_exec_autocmds("User", { pattern = "HeirlineInitWinbar", modeline = false })
             end
         end,
         group = augrp_id,
