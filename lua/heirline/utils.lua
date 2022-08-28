@@ -273,41 +273,40 @@ local function get_bufs()
     end, vim.api.nvim_list_bufs())
 end
 
-function M.make_tablist(tab_component, min_tab)
+local function bufs_in_tab(tabnr)
+    tabnr = tabnr or 0
+    local buf_set = {}
+    local wins = vim.api.nvim_tabpage_list_wins(tabnr)
+    for _, winnr in ipairs(wins) do
+        local bufnr = vim.api.nvim_win_get_buf(winnr)
+        buf_set[bufnr] = true
+    end
+    return buf_set
+end
+
+function M.make_tablist(tab_component)
     local tablist = {
-        condition = function()
-            return #vim.api.nvim_list_tabpages() > (min_tab or 1)
+        init = function(self)
+            local tabpages = vim.api.nvim_list_tabpages()
+            for i, tabpage in ipairs(tabpages) do
+                local tabnr = vim.api.nvim_tabpage_get_number(tabpage)
+                if not (self[i] and tabnr == self[i].tabnr) then
+                    self[i] = self:new(tab_component, i)
+                    self[i].tabnr = tabnr
+                end
+                if tabpage == vim.api.nvim_get_current_tabpage() then
+                    self[i].is_active = true
+                    self.active_child = i
+                else
+                    self[i].is_active = false
+                end
+            end
+            if #self > #tabpages then
+                for i = #self, #tabpages + 1, -1 do
+                    self[i] = nil
+                end
+            end
         end,
-        {
-            provider = " ",
-        },
-        {
-            init = function(self)
-                local tabpages = vim.api.nvim_list_tabpages()
-                for i, tabpage in ipairs(tabpages) do
-                    local pagenr = vim.api.nvim_tabpage_get_number(tabpage)
-                    if not (self[i] and pagenr == self[i].pagenr) then
-                        self[i] = self:new(tab_component, i)
-                        self[i].pagenr = pagenr
-                    end
-                    if tabpage == vim.api.nvim_get_current_tabpage() then
-                        self[i].is_active = true
-                        self.active_child = i
-                    else
-                        self[i].is_active = false
-                    end
-                end
-                if #self > #tabpages then
-                    for i = #self, #tabpages + 1, -1 do
-                        self[i] = nil
-                    end
-                end
-            end,
-        },
-        {
-            provider = " %999X%X ",
-            hl = "TabLine",
-        },
     }
     return tablist
 end
@@ -359,7 +358,7 @@ function M.make_buflist(buffer_component, left_trunc, right_trunc)
             end
 
             if not self._once then
-                vim.api.nvim_create_autocmd({ "BufEnter"  }, {
+                vim.api.nvim_create_autocmd({ "BufEnter" }, {
                     callback = function()
                         self._force_page = false
                     end,
@@ -370,16 +369,24 @@ function M.make_buflist(buffer_component, left_trunc, right_trunc)
 
             self.active_child = false
             local bufs = get_bufs()
+            local visible_buffers = bufs_in_tab()
             for i, bufnr in ipairs(bufs) do
                 if not (self[i] and bufnr == self[i].bufnr) then
                     self[i] = self:new(buffer_component, i)
                     self[i].bufnr = bufnr
                 end
+
                 if bufnr == tonumber(vim.g.actual_curbuf) then
                     self[i].is_active = true
                     self.active_child = i
                 else
                     self[i].is_active = false
+                end
+
+                if visible_buffers[bufnr] then
+                    self[i].is_visible = true
+                else
+                    self[i].is_visible = false
                 end
             end
             if #self > #bufs then
@@ -451,7 +458,7 @@ function M.page_buflist(buflist)
         table.insert(tbl, child:traverse())
     end
 
-    table.insert(tbl, "%=")
+    -- table.insert(tbl, "%=")
 
     if page_index < #pages then
         table.insert(tbl, buflist.right_trunc:eval())
