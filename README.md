@@ -8,11 +8,11 @@
 
 ## About
 
-Heirline.nvim is a no-nonsense Neovim Statusline/Winbar plugin designed around
+Heirline.nvim is a no-nonsense Neovim Statusline/Winbar/Tabline plugin designed around
 recursive inheritance to be exceptionally **fast** and **versatile**.
 
-Heirline **does not** provide any default statusline, in fact, heirline can be
-thought of as a statusline API.
+Heirline **does not** provide any defaults, in fact, heirline can be
+thought of as an API to generate Vim status format strings.
 
 > **Why another statusline plugin?**
 
@@ -58,7 +58,8 @@ No defaults, no options, no-nonsense. You choose.
 ```lua
 local statusline = {...}
 local winbar = {...}
-require'heirline'.setup(statusline, winbar)
+local tabline = {...}
+require'heirline'.setup(statusline, winbar, tabline)
 ```
 
 Calling `setup` will load your statusline. To learn how to write a StatusLine, see the [docs](cookbook.md).

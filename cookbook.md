@@ -57,8 +57,10 @@ local StatusLine = {
 
 local WinBar = {{...}, {{...}, {...}}}
 
+local TabLine = {{...}, {...}, {...}}
+
 -- the winbar parameter is optional!
-require'heirline'.setup(statusline, winbar)
+require'heirline'.setup(StatusLine, WinBar, TabLine)
 ```
 
 Writing nested tables can be tiresome, so the best approach is to define simple
@@ -80,7 +82,7 @@ local statusline = {
 
 After calling `setup()`, your `StatusLine` object
 will be created, and you can find its handle at `require'heirline'.statusline`
-(and `require'heirline'.winbar`).
+(and `require'heirline'.winbar` and `require'heirline'.tabline`).
 Any modification to the object itself will reflect in real time on your statusline!
 
 Note that no reference is shared between the table objects used as blueprints (the
@@ -251,8 +253,8 @@ explaining the `StatusLine` object base methods and attributes:
   subclasses. Also note that all tables in `child` are deep-copied in the
   returned object.
 - `eval(self)`: Evaluates the `StatusLine` recursively to figure out, for every
-  component and {sub{,sub{,sub{,...}}}} components what's their printable value
-  and color. This function will execute `condition`, `init`, `hl` and
+  component and {sub{,sub{,sub{,...}}}} components what's their printable value.
+  This function will execute `condition`, `init`, `hl` and
   `provider` and merges the object's evaluated `hl` with the parent's
   (depending on the value of its `hl.force`).
 - `nonlocal(self, attr)`: Searches for the keyword `attr` in the parent's
@@ -268,14 +270,15 @@ explaining the `StatusLine` object base methods and attributes:
   root.
 - `{set,get}_win_attr(self, attr, default)`: Set or get a window-local
   component attribute. If the attribute is not defined, sets a `default` value.
-- `stl`: the **last** output value of the component's evaluation.
 - `winnr`: window number of the **last** window the component was evaluated into.
+- `traverse()`: Traverse the components tree and merges their output,
+  returning the value of the _lastly_ evaluated statusline.
 
 ## Builtin functions
 
 Setup functions:
 
-- `setup(statusline, winbar?)`: Instantiate the statusline and optionally the winbar.
+- `setup(statusline, winbar?, tabline?)`: Instantiate the statusline and optionally the winbar and tabline.
 - `load_colors(colors)`: Define color name aliases. `colors` is a `table` of the form
   `color_name = color_value`, where `color_value` can be:
   - `string`: hex code or default color name
@@ -328,6 +331,10 @@ These functions are accessible via `require'heirline.conditions'` and
   passed as `...` arguments until they fit in the available space for the
   statusline. The components passed as variable arguments should evaluate to
   decreasing lengths. See [Flexible Components](#flexible-components) for more!
+- `make_buflist(buffer_component, left_trunc, right_trunc)`: Returns a component
+  which renders a **bufferline**. `buffer_component` is the component used to display
+  each listed buffer, it recieves the field `bufnr`. `{left,right}_trunc` are
+  the components which are displayed if the buflist is too long (they are also clickable).
 - `pick_child_on_condition(component)`: This function should be passed as the `init`
   field while defining a new component. It will dynamically set the `pick_child`
   field to the index of the first child whose condition evaluates to `true`.
@@ -416,7 +423,7 @@ local ViMode = {
         -- component to be updated on operator pending mode
         if not self.once then
             vim.api.nvim_create_autocmd("ModeChanged", {
-                pattern = "[^c]*:[^c]*"
+                pattern = "*:*o"
                 command = 'redrawstatus'
             })
             self.once = true
@@ -498,11 +505,6 @@ local ViMode = {
     -- performance improvement.
     update = {
         "ModeChanged",
-        -- if you add this, you don't need to set the autocommand during init
-        pattern = "[^c]*:[^c]*",
-        callback = function()
-            vim.cmd("redrawstatus")
-        end,
     },
 }
 ```
