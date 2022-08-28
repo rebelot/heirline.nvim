@@ -154,13 +154,13 @@ local function is_child(child, parent)
     return true
 end
 
-local function group_flexible_components(statusline, mode)
+local function group_flexible_components(flexible_components, mode)
     local priority_groups = {}
     local priorities = {}
     local cur_priority
     local prev_component
 
-    for _, component in ipairs(statusline.flexible_components) do
+    for _, component in ipairs(flexible_components) do
         local priority
         if prev_component and is_child(component, prev_component) then
             priority = cur_priority + mode
@@ -185,8 +185,8 @@ local function group_flexible_components(statusline, mode)
     return priority_groups, priorities
 end
 
-function M.expand_or_contract_flexible_components(statusline, full_width, out)
-    if not statusline.flexible_components or not next(statusline.flexible_components) then
+function M.expand_or_contract_flexible_components(flexible_components, full_width, out)
+    if not flexible_components or not next(flexible_components) then
         return
     end
 
@@ -200,7 +200,7 @@ function M.expand_or_contract_flexible_components(statusline, full_width, out)
     local stl_len = M.count_chars(out)
 
     if stl_len > winw then
-        local priority_groups, priorities = group_flexible_components(statusline, -1)
+        local priority_groups, priorities = group_flexible_components(flexible_components, -1)
         table.sort(priorities, function(a, b)
             return a < b
         end)
@@ -211,20 +211,22 @@ function M.expand_or_contract_flexible_components(statusline, full_width, out)
             for _, component in ipairs(priority_groups[p]) do
                 -- try increasing the child index and return success
                 if next_child(component) then
-                    local prev_len = M.count_chars(component.stl)
+                    local prev_len = M.count_chars(component:traverse())
                     local cur_len = M.count_chars(component:eval())
+                    -- component:clear_tree()
+                    -- component._tree[1] = component[component:get_win_attr("_win_child_index")]:traverse()
                     saved_chars = saved_chars + (prev_len - cur_len)
                 end
             end
 
             if stl_len - saved_chars <= winw then
-                break
+                return
             end
         end
     elseif stl_len < winw then
         local gained_chars = 0
 
-        local priority_groups, priorities = group_flexible_components(statusline, 1)
+        local priority_groups, priorities = group_flexible_components(flexible_components, 1)
         table.sort(priorities, function(a, b)
             return a > b
         end)
@@ -232,8 +234,9 @@ function M.expand_or_contract_flexible_components(statusline, full_width, out)
         for _, p in ipairs(priorities) do
             for _, component in ipairs(priority_groups[p]) do
                 if prev_child(component) then
-                    local prev_len = M.count_chars(component.stl)
+                    local prev_len = M.count_chars(component:traverse())
                     local cur_len = M.count_chars(component:eval())
+                    -- component:clear_tree()
                     gained_chars = gained_chars + (cur_len - prev_len)
                 end
             end
@@ -241,8 +244,14 @@ function M.expand_or_contract_flexible_components(statusline, full_width, out)
             if stl_len + gained_chars > winw then
                 for _, component in ipairs(priority_groups[p]) do
                     next_child(component)
+                    -- here we need to manually reset the component tree, as we are increasing the
+                    -- child index but without calling eval (wich should handle that);
+                    -- since we went "one index too little", the next-index child tree has been already evaluated
+                    -- in the previous loop.
+                    component:clear_tree()
+                    component._tree[1] = component[component:get_win_attr("_win_child_index")]:traverse()
                 end
-                break
+                return
             end
         end
     end
@@ -253,7 +262,7 @@ function M.pick_child_on_condition(self)
     for i, child in ipairs(self) do
         if not child.condition or child:condition() then
             table.insert(self.pick_child, i)
-            break
+            return
         end
     end
 end
@@ -264,33 +273,106 @@ local function get_bufs()
     end, vim.api.nvim_list_bufs())
 end
 
-function M.make_buflist(buffer_component, right_trunc, left_trunc)
-    right_trunc = right_trunc
-        or require("heirline.statusline"):new({
-            provider = "%=>",
-            hl = { fg = "gray" },
-        })
+function M.make_tablist(tab_component, min_tab)
+    local tablist = {
+        condition = function()
+            return #vim.api.nvim_list_tabpages() > (min_tab or 1)
+        end,
+        {
+            provider = " ",
+        },
+        {
+            init = function(self)
+                local tabpages = vim.api.nvim_list_tabpages()
+                for i, tabpage in ipairs(tabpages) do
+                    local pagenr = vim.api.nvim_tabpage_get_number(tabpage)
+                    if not (self[i] and pagenr == self[i].pagenr) then
+                        self[i] = self:new(tab_component, i)
+                        self[i].pagenr = pagenr
+                    end
+                    if tabpage == vim.api.nvim_get_current_tabpage() then
+                        self[i].is_active = true
+                        self.active_child = i
+                    else
+                        self[i].is_active = false
+                    end
+                end
+                if #self > #tabpages then
+                    for i = #self, #tabpages + 1, -1 do
+                        self[i] = nil
+                    end
+                end
+            end,
+        },
+        {
+            provider = " %999X%X ",
+            hl = "TabLine",
+        },
+    }
+    return tablist
+end
 
-    left_trunc = left_trunc
-        or require("heirline.statusline"):new({
-            provider = "<",
-            hl = { fg = "gray" },
-        })
+function M.make_buflist(buffer_component, left_trunc, right_trunc)
+    left_trunc = left_trunc or {
+        provider = "<",
+    }
+
+    right_trunc = right_trunc or {
+        provider = ">",
+    }
+
+    left_trunc.on_click = {
+        callback = function(self)
+            self._buflist[1]._cur_page = self._cur_page - 1
+            self._buflist[1]._force_page = true
+            vim.cmd.redrawtabline()
+        end,
+        name = "Heirline_tabline_prev",
+    }
+
+    right_trunc.on_click = {
+        callback = function(self)
+            self._buflist[1]._cur_page = self._cur_page + 1
+            self._buflist[1]._force_page = true
+            vim.cmd.redrawtabline()
+        end,
+        name = "Heirline_tabline_next",
+    }
 
     local bufferline = {
         static = {
-            left_trunc = left_trunc,
-            right_trunc = right_trunc,
+            _left_trunc = left_trunc,
+            _right_trunc = right_trunc,
+            _cur_page = 1,
+            _force_page = false,
         },
         init = function(self)
+            -- register the buflist component reference as global statusline attr
             if vim.tbl_isempty(self._buflist) then
                 table.insert(self._buflist, self)
             end
+            if not self.left_trunc then
+                self.left_trunc = self:new(self._left_trunc)
+            end
+            if not self.right_trunc then
+                self.right_trunc = self:new(self._right_trunc)
+            end
 
+            if not self._once then
+                vim.api.nvim_create_autocmd({ "BufEnter"  }, {
+                    callback = function()
+                        self._force_page = false
+                    end,
+                    desc = "Heirline release lock for next/prev buttons",
+                })
+                self._once = true
+            end
+
+            self.active_child = false
             local bufs = get_bufs()
             for i, bufnr in ipairs(bufs) do
                 if not (self[i] and bufnr == self[i].bufnr) then
-                    self[i] = require("heirline.statusline"):new(buffer_component, i)
+                    self[i] = self:new(buffer_component, i)
                     self[i].bufnr = bufnr
                 end
                 if bufnr == tonumber(vim.g.actual_curbuf) then
@@ -306,91 +388,76 @@ function M.make_buflist(buffer_component, right_trunc, left_trunc)
                 end
             end
         end,
-        after = function(self)
-            if not self._eval_buflist then
-                self.stl = "#BUFLIST#"
-                return
-            end
-            self.stl = ""
-            -- local maxwidth = vim.o.columns
-            local maxwidth = self._maxwidth - 2
-
-            local page = {}
-            local active_page
-            local page_length = 0
-            local page_start = 1
-            local page_end = #self
-            for i, child in ipairs(self) do
-                local len = M.count_chars(child.stl)
-                page_length = page_length + len
-                if page_length <= maxwidth then
-                    table.insert(page, child)
-                else
-                    if not active_page then
-                        page_length = len
-                        page = { child }
-                        page_start = i
-                    else
-                        page_end = i
-                        break
-                    end
-                end
-                if child.is_active then
-                    active_page = page
-                end
-            end
-            if page_start > 1 then
-                self.stl = self.left_trunc:eval()
-            end
-            for _, child in ipairs(page) do
-                self.stl = self.stl .. child.stl
-            end
-            if page_end < #self then
-                self.stl = self.stl .. self.right_trunc:eval()
-            end
-        end,
     }
     return bufferline
 end
 
-function M.page_buflist(self)
-    self.stl = ""
-    -- local maxwidth = vim.o.columns
-    local maxwidth = self._maxwidth - 2
+function M.page_buflist(buflist)
+    if #buflist == 0 then
+        return
+    end
+
+    local tbl = {}
+    local maxwidth = buflist._maxwidth or vim.o.columns
+    maxwidth = maxwidth - 2 -- leave some space for {right,left}_trunc
+
+    local pages = {}
+    local active_page
+    local page_counter = 1
+    local page_length = 0
+    local active_page_index
 
     local page = {}
-    local active_page
-    local page_length = 0
-    local page_start = 1
-    local page_end = #self
-    for i, child in ipairs(self) do
-        local len = M.count_chars(child.stl)
+    for i, child in ipairs(buflist) do
+        local len = M.count_chars(child:traverse())
         page_length = page_length + len
         if page_length <= maxwidth then
             table.insert(page, child)
-        else
-            if not active_page then
-                page_length = len
-                page = { child }
-                page_start = i
-            else
-                page_end = i
-                break
+            if i == #buflist then
+                table.insert(pages, page)
             end
+        else
+            table.insert(pages, page)
+            page_length = len
+            page = { child }
+            page_counter = page_counter + 1
         end
         if child.is_active then
             active_page = page
+            active_page_index = page_counter
         end
     end
-    if page_start > 1 then
-        self.stl = self.left_trunc:eval()
+
+    local page_index
+    if active_page and not buflist._force_page then
+        page = active_page
+        page_index = active_page_index
+        buflist._cur_page = page_index
+    else
+        page = pages[buflist._cur_page]
+        page_index = buflist._cur_page
     end
+
+    if not page then
+        -- print("Invalid page nr.", page_index, 'for', #pages, 'pages')
+        return
+    end
+
+    if page_index > 1 then
+        table.insert(tbl, buflist.left_trunc:eval())
+    end
+
     for _, child in ipairs(page) do
-        self.stl = self.stl .. child.stl
+        table.insert(tbl, child:traverse())
     end
-    if page_end < #self then
-        self.stl = self.stl .. self.right_trunc:eval()
+
+    table.insert(tbl, "%=")
+
+    if page_index < #pages then
+        table.insert(tbl, buflist.right_trunc:eval())
     end
+    buflist:clear_tree()
+    buflist._tree[1] = table.concat(tbl, "")
 end
 
 return M

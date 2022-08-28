@@ -61,8 +61,8 @@ function M.eval_statusline()
     M.statusline.winnr = vim.api.nvim_win_get_number(0)
     M.statusline.flexible_components = {}
     local out = M.statusline:eval()
-    utils.expand_or_contract_flexible_components(M.statusline, vim.o.laststatus == 3, out)
-    return out
+    utils.expand_or_contract_flexible_components(M.statusline.flexible_components, vim.o.laststatus == 3, out)
+    return M.statusline:traverse()
 end
 
 ---@return string
@@ -70,24 +70,23 @@ function M.eval_winbar()
     M.winbar.winnr = vim.api.nvim_win_get_number(0)
     M.winbar.flexible_components = {}
     local out = M.winbar:eval()
-    utils.expand_or_contract_flexible_components(M.winbar, false, out)
-    return out
+    utils.expand_or_contract_flexible_components(M.winbar.flexible_components, false, out)
+    return M.winbar:traverse()
 end
 
 ---@return string
 function M.eval_tabline()
     M.tabline.winnr = 1
+    M.tabline.flexible_components = {}
     M.tabline._buflist = {}
-    M.tabline._eval_buflist = false
     local out = M.tabline:eval()
-    if vim.tbl_isempty(M.tabline._buflist) then
-        return out
+    local buflist = M.tabline._buflist[1]
+    if buflist then
+        buflist._maxwidth = vim.o.columns - (utils.count_chars(out) - utils.count_chars(buflist:traverse()))
+        utils.page_buflist(buflist)
     end
-    -- utils.expand_or_contract_flexible_components(M.tabline, true, out)
-    M.tabline._maxwidth = vim.o.columns - utils.count_chars(out) + string.len("#BUFLIST#")
-    M.tabline._eval_buflist = true
-    M.tabline._buflist[1]:eval()
-    return vim.fn.substitute(out, "#BUFLIST#", M.tabline._buflist[1].stl, "")
+    -- utils.expand_or_contract_flexible_components(M.tabline.flexible_components, true, out)
+    return M.tabline:traverse()
 end
 
 -- test [[

@@ -11,8 +11,7 @@ local default_restrict = {
     after = true,
     on_click = true,
     update = true,
-    stl = true,
-    _win_stl = true,
+    _win_cache = true,
     _au_id = true,
 }
 
@@ -25,11 +24,11 @@ local default_restrict = {
 ---@field after? function
 ---@field update? function | table
 ---@field on_click? function | table
----@field stl string
 ---@field id table<integer>
 ---@field winnr integer
----@field _win_stl? table
+---@field _win_cache? table
 ---@field _au_id? integer
+---@field _tree table
 ---@field pick_child? table<integer>
 local StatusLine = {
     hl = {},
@@ -146,11 +145,7 @@ end
 ---@param attr string
 ---@return any
 function StatusLine:local_(attr)
-    local orig_mt = getmetatable(self)
-    setmetatable(self, {})
-    local result = self[attr]
-    setmetatable(self, orig_mt)
-    return result
+    return rawget(self, attr)
 end
 
 --- Set window-nr attribute
@@ -211,7 +206,7 @@ local function register_update_autocmd(component)
     local id = vim.api.nvim_create_autocmd(events, {
         pattern = pattern,
         callback = function(args)
-            component._win_stl = nil
+            component._win_cache = nil
             if callback then
                 callback(component, args)
             end
@@ -223,17 +218,28 @@ local function register_update_autocmd(component)
 end
 
 ---Evaluate component and its children recursively
----@return string
-function StatusLine:eval()
+---@return nil
+function StatusLine:_eval()
     if self.condition and not self:condition() then
         -- self.stl = ''
-        return ""
+        -- return ""
+        return
+    end
+
+    -- if not self:nonlocal("_tree") then
+    if not self:local_("_tree") then
+        -- root component has no parent tree
+        -- may be "stray" component
+        self._tree = {}
+    else
+        -- clear the tree at each cycle
+        self:clear_tree()
     end
 
     if self.update then
         if type(self.update) == "function" then
             if self:update() then
-                self._win_stl = nil
+                self._win_cahe = nil
             end
         else
             if not self._au_id then
@@ -241,17 +247,16 @@ function StatusLine:eval()
             end
         end
 
-        local win_stl = self:get_win_attr("_win_stl")
-        if win_stl then
-            return win_stl
+        local win_cache = self:get_win_attr("_win_cache")
+        if win_cache then
+            table.insert(self._tree, win_cache)
+            return
         end
     end
 
     if self.init then
         self:init()
     end
-
-    local stl = {}
 
     local hl = type(self.hl) == "function" and (self:hl() or {}) or self.hl -- self raw hl
 
@@ -269,14 +274,16 @@ function StatusLine:eval()
 
     if self.on_click then
         local func_name = register_global_function(self)
-        local minwid = type(self.on_click.minwid) == "function" and self.on_click.minwid(self) or self.on_click.minwid or ""
-        table.insert(stl, "%" .. minwid .. "@" .. func_name .. "@")
+        local minwid = type(self.on_click.minwid) == "function" and self.on_click.minwid(self)
+            or self.on_click.minwid
+            or ""
+        table.insert(self._tree, "%" .. minwid .. "@" .. func_name .. "@")
     end
 
     if self.provider then
         local provider_str = type(self.provider) == "function" and (self:provider() or "") or (self.provider or "")
         local hl_str_start, hl_str_end = hi.eval_hl(self.merged_hl)
-        table.insert(stl, hl_str_start .. provider_str .. hl_str_end)
+        table.insert(self._tree, hl_str_start .. provider_str .. hl_str_end)
     end
 
     local children_i
@@ -291,25 +298,51 @@ function StatusLine:eval()
 
     for _, i in ipairs(children_i) do
         local child = self[i]
-        local out = child:eval()
-        table.insert(stl, out)
+        child._tree = {}
+        table.insert(self._tree, child._tree)
+        child:_eval()
     end
 
     if self.on_click then
-        table.insert(stl, "%X")
+        table.insert(self._tree, "%X")
     end
-
-    self.stl = table.concat(stl, "")
 
     if self.after then
         self:after()
     end
 
     if self.update then
-        self:set_win_attr("_win_stl", self.stl)
+        self:set_win_attr("_win_cache", self:traverse())
     end
+end
 
-    return self.stl
+function StatusLine:traverse(tree, stl)
+    stl = stl or {}
+    tree = tree or self._tree
+
+    for _, node in ipairs(tree) do
+        if type(node) ~= "table" then
+            table.insert(stl, node)
+        else
+            self:traverse(node, stl)
+        end
+    end
+    return table.concat(stl, "")
+end
+
+function StatusLine:clear_tree()
+    local tree = rawget(self, "_tree")
+    if not tree then
+        return
+    end
+    for i, _ in ipairs(tree) do
+        self._tree[i] = nil
+    end
+end
+
+function StatusLine:eval()
+    self:_eval()
+    return self:traverse()
 end
 
 return StatusLine
