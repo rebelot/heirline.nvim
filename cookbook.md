@@ -31,6 +31,11 @@
   - [Winbar](#winbar)
 - [A classic: Change multiple background colors based on Vi Mode](#a-classic-change-multiple-background-colors-based-on-vi-mode)
 - [Click it!](#click-it)
+- [TabLine](#tabline) :new:
+  - [Bufferline](#bufferline)
+  - [TabList](#tablist)
+  - [TablineOffset](#tablineoffset)
+  - [Hello Tabline!](#goodbye-bufferlinehello-tabline)
 - [Theming](#theming)
 
 ## Main concepts
@@ -333,8 +338,15 @@ These functions are accessible via `require'heirline.conditions'` and
   decreasing lengths. See [Flexible Components](#flexible-components) for more!
 - `make_buflist(buffer_component, left_trunc, right_trunc)`: Returns a component
   which renders a **bufferline**. `buffer_component` is the component used to display
-  each listed buffer, it recieves the field `bufnr`. `{left,right}_trunc` are
-  the components which are displayed if the buflist is too long (they are also clickable).
+  each listed buffer, it receives the fields:
+    - `self.bufnr <integer>`: the buffer number of the listed buffer
+    - `self.is_active <bool>`: whether the buffer is shown in the current _window_
+    - `self.is_visible <bool>`: whether the buffer is shown in the current _tab_
+  `{left,right}_trunc` are the components which are displayed if the buflist is too long (they are also clickable).
+- `make_tablist(tab_component)`: Returns a component which renders a list of open tabs.
+  `tab_component` is the component used to render a single tabpage, it receives the fields:
+    - `self.tabnr <integer>`: the tabpage number
+    - `self.is_active <bool>`: whether the tabpage is the current tabpage
 - `pick_child_on_condition(component)`: This function should be passed as the `init`
   field while defining a new component. It will dynamically set the `pick_child`
   field to the index of the first child whose condition evaluates to `true`.
@@ -1653,6 +1665,226 @@ local WinBarFileName = utils.surround({ "", "" }, "bright_bg", {
 
 ```lua
 --    coming soon!
+```
+
+## TabLine
+
+You probably guessed, if heirline is so powerful, why can't we use it to render a nice tabline as well?
+Turns out, we can.
+
+### Bufferline
+
+The following example shows how to create a **_bufferline_**, showing all
+listed buffers in the tabline. For this, we need to create an abstract component that
+will be used to render each listed buffer, and pass it to the utility function
+`make_buflist(buffer_component)` to create the bufferline.
+
+This abstract component will automatically inheirt the fields:
+
+- `self.bufnr <integer>`: the buffer number of the listed buffer
+- `self.is_active <bool>`: whether the buffer is shown in the current _window_
+- `self.is_visible <bool>`: whether the buffer is shown in the current _tab_
+
+**NOTE**: Because we are rendering _all_ buffers, and not just the one for the _current window_,
+we **must** adapt our components to explicitly use the `self.bufnr` field to retrieve buffer information.
+
+'nuf said, **_let's start_**!
+
+```lua
+local TablineBufnr = {
+    provider = function(self)
+        return tostring(self.bufnr) .. ". "
+    end,
+    hl = "Comment",
+}
+
+-- we redefine the filename component, as we probably only want the tail and not the relative path
+local TablineFileName = {
+    provider = function(self)
+        -- self.filename will be defined later, just keep looking at the example!
+        local filename = self.filename
+        filename = filename == "" and "[No Name]" or vim.fn.fnamemodify(filename, ":t")
+        return filename
+    end,
+    hl = function(self)
+        return { bold = self.is_active or self.is_visible, italic = true }
+    end,
+}
+
+-- this looks exactly like the FileFlags component that we saw in
+-- #crash-course-part-ii-filename-and-friends, but we are indexing the bufnr explicitly
+local TablineFileFlags = {
+    {
+        provider = function(self)
+            if vim.bo[self.bufnr].modified then
+                return "[+]"
+            end
+        end,
+        hl = { fg = "green" },
+    },
+    {
+        provider = function(self)
+            if not vim.bo[self.bufnr].modifiable or vim.bo[self.bufnr].readonly then
+                return ""
+            end
+        end,
+        hl = { fg = "orange" },
+    },
+}
+
+-- Here the filename block finally comes together
+local TablineFileNameBlock = {
+    init = function(self)
+        self.filename = vim.api.nvim_buf_get_name(self.bufnr)
+    end,
+    hl = function(self)
+        if self.is_active then
+            return "TabLineSel"
+        else
+            return "TabLine"
+        end
+    end,
+    on_click = {
+        callback = function(_, minwid)
+            vim.api.nvim_win_set_buf(0, minwid)
+        end,
+        minwid = function(self)
+            return self.bufnr
+        end,
+        name = "heirline_tabline_buffer_callback",
+    },
+    TablineBufnr,
+    FileIcon, -- turns out the version defined in #crash-course-part-ii-filename-and-friends can be reutilized as is here!
+    TablineFileName,
+    TablineFileFlags,
+}
+
+-- a nice "x" button to close the buffer
+local TablineCloseButton = {
+    condition = function(self)
+        return not vim.bo[self.bufnr].modified
+    end,
+    { provider = " " },
+    {
+        provider = "",
+        hl = { fg = "gray" },
+        on_click = {
+            callback = function(_, minwid)
+                vim.api.nvim_buf_delete(minwid, { force = false })
+            end,
+            minwid = function(self)
+                return self.bufnr
+            end,
+            name = "heirline_tabline_close_buffer_callback",
+        },
+    },
+}
+
+-- The final touch!
+local TablineBufferBlock = utils.surround({ "", "" }, function(self)
+    if self.is_active then
+        return utils.get_highlight("TabLineSel").bg
+    else
+        return utils.get_highlight("TabLine").bg
+    end
+end, { TablineFileNameBlock, TablineCloseButton })
+
+-- and here we go
+local BufferLine = utils.make_buflist(
+    TablineBufferBlock,
+    { provider = "", hl = { fg = "gray" } }, -- left truncation, optional (defaults to "<")
+    { provider = "", hl = { fg = "gray" } } -- right trunctation, also optional (defaults to ...... yep, ">")
+    -- by the way, open a lot of buffers and try clicking them ;)
+)
+```
+
+### TabList
+
+This example will add a (clickable) list of the opened tab pages, again, we use
+the utility function `make_tablist()` which has the same logic of `make_buflist()`:
+create an abstract component that will be used to render each tabpage.
+
+This component will automatically inherit the fields:
+
+- `self.tabnr <integer>`: the tabpage number
+- `self.is_active <bool>`: whether the tabpage is the current tabpage
+
+```lua
+local Tabpage = {
+    provider = function(self)
+        return "%" .. self.tabnr .. "T " .. self.tabnr .. " %T"
+    end,
+    hl = function(self)
+        if not self.is_active then
+            return "TabLine"
+        else
+            return "TabLineSel"
+        end
+    end,
+}
+
+local TabpageClose = {
+    provider = "%999X  %X",
+    hl = "TabLine",
+}
+
+local TabPages = {
+    -- only show this component if there's 2 or more tabpages
+    condition = function()
+        return #vim.api.nvim_list_tabpages() >= 2
+    end,
+    { provider = "%=" },
+    utils.make_tablist(Tabpage),
+    TabpageClose,
+}
+```
+
+### TablineOffset
+
+We can create offset components that will shift the bufferline to the right to a certain amount,
+this is useful if we use sidebar plugins that open on the left.
+
+```lua
+local TabLineOffset = {
+    condition = function(self)
+        local win = vim.api.nvim_tabpage_list_wins(0)[1]
+        local bufnr = vim.api.nvim_win_get_buf(win)
+        self.winid = win
+
+        if vim.bo[bufnr].filetype == "NvimTree" then
+            self.title = "NvimTree"
+            return true
+        -- elseif vim.bo[bufnr].filetype == "TagBar" then
+        --     ...
+        end
+    end,
+
+    provider = function(self)
+        local title = self.title
+        local width = vim.api.nvim_win_get_width(self.winid)
+        local pad = math.ceil((width - #title) / 2)
+        return string.rep(" ", pad) .. title .. string.rep(" ", pad)
+    end,
+
+    hl = function(self)
+        if vim.api.nvim_get_current_win() == self.winid then
+            return "TablineSel"
+        else
+            return "Tabline"
+        end
+    end,
+}
+```
+
+### ~~Goodbye Bufferline~~Hello Tabline!
+
+```lua
+local TabLine = { TabLineOffset, BufferLine, TabPages }
+
+require("heirline").setup(StatusLines, WinBar, TabLine)
+
+-- Yep, with heirline we're driving manual!
+vim.cmd([[au FileType * if index(['wipe', 'delete', 'unload'], &bufhidden) >= 0 | set nobuflisted | endif]])
 ```
 
 ## Theming
