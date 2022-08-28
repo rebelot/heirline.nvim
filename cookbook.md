@@ -372,6 +372,7 @@ is your friend. To create themes and have your colors updated on-demand, see
 ```lua
 local colors = {
     bright_bg = utils.get_highlight("Folded").bg,
+    bright_fg = utils.get_highlight("Folded").fg,
     red = utils.get_highlight("DiagnosticError").fg,
     dark_red = utils.get_highlight("DiffDelete").bg,
     green = utils.get_highlight("String").fg,
@@ -796,6 +797,7 @@ local Navic = {
             if #data > 1 and i < #data then
                 table.insert(child, {
                     provider = " > ",
+                    hl = { fg = 'bright_fg' },
                 })
             end
             table.insert(children, child)
@@ -1661,6 +1663,7 @@ will reset heirline highlights, re-evaluate and load the new colors.
 local function setup_colors()
     return {
         bright_bg = utils.get_highlight("Folded").bg,
+        bright_fg = utils.get_highlight("Folded").fg,
         red = utils.get_highlight("DiagnosticError").fg,
         dark_red = utils.get_highlight("DiffDelete").bg,
         green = utils.get_highlight("String").fg,
