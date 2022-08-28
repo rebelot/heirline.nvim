@@ -25,12 +25,12 @@
   - [Help FileName](#help-filename)
   - [Snippets Indicator](#snippets-indicator)
   - [Spell](#spell)
-- [Flexible Components](#flexible-components) :new:
+- [Flexible Components](#flexible-components)
 - [Putting it all together: Conditional Statuslines](#putting-it-all-together-conditional-statuslines)
   - [Lion's finesse](#lions-finesse)
-  - [Winbar](#winbar) :new:
+  - [Winbar](#winbar)
 - [A classic: Change multiple background colors based on Vi Mode](#a-classic-change-multiple-background-colors-based-on-vi-mode)
-- [Click it!](#click-it) :new:
+- [Click it!](#click-it)
 - [Theming](#theming)
 
 ## Main concepts
@@ -802,7 +802,7 @@ local Navic = {
             end
             table.insert(children, child)
         end
-        -- instantiate the new child
+        -- instantiate the new child, overwriting the previous one
         self[1] = self:new(children, 1)
     end,
     hl = { fg = "gray" },
@@ -1343,6 +1343,8 @@ local StatusLines = {
         end
     end,
 
+    -- the first statusline with no condition, or which condition returns true is used
+    -- think of it as a switch case without fallthrough.
     init = utils.pick_child_on_condition,
 
     SpecialStatusline, TerminalStatusline, InactiveStatusline, DefaultStatusline,
@@ -1484,7 +1486,7 @@ local StatusLines = {
     ...,
 
     static = {
-        mode_colors = {
+        mode_colors_map = {
             n = "red",
             i = "green",
             v = "cyan",
@@ -1501,7 +1503,7 @@ local StatusLines = {
         },
         mode_color = function(self)
             local mode = conditions.is_active() and vim.fn.mode() or "n"
-            return self.mode_colors[mode]
+            return self.mode_colors_map[mode]
         end,
     },
 }
