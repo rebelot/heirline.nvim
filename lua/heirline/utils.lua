@@ -333,13 +333,20 @@ function M.make_tablist(tab_component)
     return tablist
 end
 
+-- record how many times users called this function
+-- TODO: might be worth it to export the callback and delegate the user to create the next/prev components on_click fields, removing all defaults
+local NTABLINES = 0
+
 --- Make a list of buffers, rendering all listed buffers
 --- using `buffer_component` as a template.
 ---@param buffer_component table
 ---@param left_trunc? table left truncation marker, shown is buffer list is too long
 ---@param right_trunc? table right truncation marker, shown is buffer list is too long
+---@param buf_func? function return a list of <integer> bufnr handlers.
 ---@return table
-function M.make_buflist(buffer_component, left_trunc, right_trunc)
+function M.make_buflist(buffer_component, left_trunc, right_trunc, buf_func)
+    buf_func = buf_func or get_bufs
+
     left_trunc = left_trunc or {
         provider = "<",
     }
@@ -348,22 +355,23 @@ function M.make_buflist(buffer_component, left_trunc, right_trunc)
         provider = ">",
     }
 
+    NTABLINES = NTABLINES + 1
     left_trunc.on_click = {
         callback = function(self)
             self._buflist[1]._cur_page = self._cur_page - 1
             self._buflist[1]._force_page = true
-            vim.cmd.redrawtabline()
+            vim.cmd("redrawtabline")
         end,
-        name = "Heirline_tabline_prev",
+        name = "Heirline_tabline_prev_" .. NTABLINES,
     }
 
     right_trunc.on_click = {
         callback = function(self)
             self._buflist[1]._cur_page = self._cur_page + 1
             self._buflist[1]._force_page = true
-            vim.cmd.redrawtabline()
+            vim.cmd("redrawtabline")
         end,
-        name = "Heirline_tabline_next",
+        name = "Heirline_tabline_next_" .. NTABLINES,
     }
 
     local bufferline = {
@@ -396,7 +404,7 @@ function M.make_buflist(buffer_component, left_trunc, right_trunc)
             end
 
             self.active_child = false
-            local bufs = get_bufs()
+            local bufs = buf_func()
             local visible_buffers = bufs_in_tab()
             for i, bufnr in ipairs(bufs) do
                 if not (self[i] and bufnr == self[i].bufnr) then
