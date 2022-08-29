@@ -24,6 +24,10 @@ price: responsibility. I don't get to tell you what your statusline should do.
 You're in charge! With Heirline, you have a framework to easily implement
 whatever you can imagine, from simple to complex rules!
 
+<p align="center">
+  <img width="1578" alt="heirline_prev" src="https://user-images.githubusercontent.com/36300441/187208978-3054fea6-0e3a-432c-a1fc-b4a29da36a7c.png">
+</p>
+
 ## Features:
 
 - **Conditionals**: Build custom active/inactive and buftype/filetype/bufname statuslines or single components.
