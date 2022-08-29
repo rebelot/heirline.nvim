@@ -12,7 +12,7 @@
   - [Colors, colors, more colors!](#colors-colors-more-colors)
   - [Crash course: the ViMode](#crash-course-the-vimode)
   - [Crash course part II: FileName and friends](#crash-course-part-ii-filename-and-friends)
-  - [FileType, FileEncoding and FileFormat](#filetype-filesize-fileencoding-and-fileformat)
+  - [FileType, FileEncoding and FileFormat](#filetype-fileencoding-and-fileformat)
   - [FileSize and FileLastModified](#filesize-and-filelastmodified)
   - [Cursor position: Ruler and ScrollBar ](#cursor-position-ruler-and-scrollbar)
   - [LSP](#lsp)
