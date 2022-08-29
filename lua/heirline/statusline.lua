@@ -220,13 +220,7 @@ end
 ---Evaluate component and its children recursively
 ---@return nil
 function StatusLine:_eval()
-    if self.condition and not self:condition() then
-        -- self.stl = ''
-        -- return ""
-        return
-    end
 
-    -- if not self:nonlocal("_tree") then
     if not self:local_("_tree") then
         -- root component has no parent tree
         -- may be "stray" component
@@ -234,6 +228,10 @@ function StatusLine:_eval()
     else
         -- clear the tree at each cycle
         self:clear_tree()
+    end
+
+    if self.condition and not self:condition() then
+        return
     end
 
     if self.update then
@@ -319,6 +317,10 @@ end
 function StatusLine:traverse(tree, stl)
     stl = stl or {}
     tree = tree or self._tree
+
+    if not tree then
+        return ""
+    end
 
     for _, node in ipairs(tree) do
         if type(node) ~= "table" then
