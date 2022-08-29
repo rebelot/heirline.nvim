@@ -1300,6 +1300,8 @@ local Space = { provider = " " }
 
 Assembling your favorite components and doing last-minute adjustments is easy!
 
+<img width="1597" alt="heirline_default" src="https://user-images.githubusercontent.com/36300441/187194181-0115476e-a8c1-4be5-84fd-d72e7be317f2.png">
+
 ```lua
 
 ViMode = utils.surround({ "", "" }, "bright_bg", { ViMode, Snippets })
@@ -1314,12 +1316,16 @@ local DefaultStatusline = {
 **Pro-tip**: Always end a short statusline with `%=` (the Align component) to
 fill the whole statusline with the same color!
 
+<img width="784" alt="heirline_inactive" src="https://user-images.githubusercontent.com/36300441/187194219-188560dc-cea5-4b62-b7f3-3739dba373c3.png">
+
 ```lua
 local InactiveStatusline = {
     condition = conditions.is_not_active,
     FileType, Space, FileName, Align,
 }
 ```
+
+<img width="798" alt="heirline_help" src="https://user-images.githubusercontent.com/36300441/187194250-6cd9b5cb-9564-4dbc-a6a6-b7d99d79bdc5.png">
 
 ```lua
 local SpecialStatusline = {
@@ -1333,6 +1339,8 @@ local SpecialStatusline = {
     FileType, Space, HelpFileName, Align
 }
 ```
+
+<img width="1001" alt="heirline_terminal" src="https://user-images.githubusercontent.com/36300441/187194276-78d3bd02-1072-478e-9b3f-4803ce4528ec.png">
 
 ```lua
 local TerminalStatusline = {
