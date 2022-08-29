@@ -46,10 +46,12 @@ function M.setup(statusline, winbar, tabline)
 
     M.statusline = StatusLine:new(statusline)
     vim.o.statusline = "%{%v:lua.require'heirline'.eval_statusline()%}"
+
     if winbar then
         M.winbar = StatusLine:new(winbar)
         setup_local_winbar_with_autocmd()
     end
+
     if tabline then
         M.tabline = StatusLine:new(tabline)
         vim.o.showtabline = 2
@@ -57,38 +59,44 @@ function M.setup(statusline, winbar, tabline)
     end
 end
 
+local function _eval(statusline)
+    statusline.winnr = 1
+    statusline.flexible_components = {}
+    statusline._buflist = {}
+    local out = statusline:eval()
+    local buflist = statusline._buflist[1]
+
+    -- flexible components adapting to full-width buflist, shrinking them to the maximum if greater than vim.o.columns
+    utils.expand_or_contract_flexible_components(statusline.flexible_components, true, out)
+
+    if buflist then
+        out = statusline:traverse() -- this is now the tabline, after expansion/contraction
+        -- the space to render the buflist is "columns - (all_minus_fullwidthbuflist)"
+        buflist._maxwidth = vim.o.columns - (utils.count_chars(out) - utils.count_chars(buflist:traverse()))
+        utils.page_buflist(buflist)
+        out = statusline:traverse()
+
+        -- now the buflist is paged, and flexible components still have the same value, however, there might be more space now, depending on the page
+        utils.expand_or_contract_flexible_components(statusline.flexible_components, true, out) -- flexible components are re-adapting to paginated buflist
+    end
+    return statusline:traverse()
+end
+
 ---@return string
 function M.eval_statusline()
-    M.statusline.winnr = vim.api.nvim_win_get_number(0)
-    M.statusline.flexible_components = {}
-    local out = M.statusline:eval()
-    utils.expand_or_contract_flexible_components(M.statusline.flexible_components, vim.o.laststatus == 3, out)
-    return M.statusline:traverse()
+    return _eval(M.statusline)
 end
 
 ---@return string
 function M.eval_winbar()
-    M.winbar.winnr = vim.api.nvim_win_get_number(0)
-    M.winbar.flexible_components = {}
-    local out = M.winbar:eval()
-    utils.expand_or_contract_flexible_components(M.winbar.flexible_components, false, out)
-    return M.winbar:traverse()
+    return _eval(M.winbar)
 end
 
 ---@return string
 function M.eval_tabline()
-    M.tabline.winnr = 1
-    M.tabline.flexible_components = {}
-    M.tabline._buflist = {}
-    local out = M.tabline:eval()
-    local buflist = M.tabline._buflist[1]
-    if buflist then
-        buflist._maxwidth = vim.o.columns - (utils.count_chars(out) - utils.count_chars(buflist:traverse()))
-        utils.page_buflist(buflist)
-    end
-    -- utils.expand_or_contract_flexible_components(M.tabline.flexible_components, true, out)
-    return M.tabline:traverse()
+    return _eval(M.tabline)
 end
+
 
 -- test [[
 function M.timeit()

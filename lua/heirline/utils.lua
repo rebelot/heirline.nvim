@@ -181,6 +181,13 @@ local function group_flexible_components(flexible_components, mode)
         if not priorities[priority] then
             table.insert(priorities, priority)
         end
+
+        local comp = mode == -1 and function(a, b)
+            return a < b
+        end or function(a, b)
+            return a > b
+        end
+        table.sort(priorities, comp)
     end
     return priority_groups, priorities
 end
@@ -205,67 +212,79 @@ function M.expand_or_contract_flexible_components(flexible_components, full_widt
 
     if stl_len > winw then
         local priority_groups, priorities = group_flexible_components(flexible_components, -1)
-        table.sort(priorities, function(a, b)
-            return a < b
-        end)
 
         local saved_chars = 0
 
         for _, p in ipairs(priorities) do
-            for _, component in ipairs(priority_groups[p]) do
-                -- try increasing the child index and return success
-                if next_child(component) then
-                    local prev_len = M.count_chars(component:traverse())
-                    local cur_len = M.count_chars(component:eval())
-                    -- component:clear_tree()
-                    -- component._tree[1] = component[component:get_win_attr("_win_child_index")]:traverse()
-                    saved_chars = saved_chars + (prev_len - cur_len)
+            while true do
+                local out_of_components = true
+                for _, component in ipairs(priority_groups[p]) do
+                    -- try increasing the child index and return success
+                    if next_child(component) then
+                        out_of_components = false
+                        local prev_len = M.count_chars(component:traverse())
+                        local cur_len = M.count_chars(component:eval())
+                        -- component:clear_tree()
+                        -- component._tree[1] = component[component:get_win_attr("_win_child_index")]:traverse()
+                        saved_chars = saved_chars + (prev_len - cur_len)
+                    end
                 end
-            end
 
-            if stl_len - saved_chars <= winw then
-                return
+                if stl_len - saved_chars <= winw then
+                    return
+                end
+
+                if out_of_components then
+                    break
+                end
             end
         end
     elseif stl_len < winw then
         local gained_chars = 0
 
         local priority_groups, priorities = group_flexible_components(flexible_components, 1)
-        table.sort(priorities, function(a, b)
-            return a > b
-        end)
 
         for _, p in ipairs(priorities) do
-            for _, component in ipairs(priority_groups[p]) do
-                if prev_child(component) then
-                    local prev_len = M.count_chars(component:traverse())
-                    local cur_len = M.count_chars(component:eval())
-                    -- component:clear_tree()
-                    gained_chars = gained_chars + (cur_len - prev_len)
-                end
-            end
-
-            if stl_len + gained_chars > winw then
+            while true do
+                local out_of_components = true
                 for _, component in ipairs(priority_groups[p]) do
-                    next_child(component)
-                    -- here we need to manually reset the component tree, as we are increasing the
-                    -- child index but without calling eval (wich should handle that);
-                    -- since we went "one index too little", the next-index child tree has been already evaluated
-                    -- in the previous loop.
-                    component:clear_tree()
-                    component._tree[1] = component[component:get_win_attr("_win_child_index")]:traverse()
+                    if prev_child(component) then
+                        out_of_components = false
+                        local prev_len = M.count_chars(component:traverse())
+                        local cur_len = M.count_chars(component:eval())
+                        -- component:clear_tree()
+                        gained_chars = gained_chars + (cur_len - prev_len)
+                    end
                 end
-                return
+
+                if stl_len + gained_chars > winw then
+                    for _, component in ipairs(priority_groups[p]) do
+                        next_child(component)
+                        -- here we need to manually reset the component tree, as we are increasing the
+                        -- child index but without calling eval (wich should handle that);
+                        -- since we went "one index too little", the next-index child tree has been already evaluated
+                        -- in the previous loop.
+                        component:clear_tree()
+                        component._tree[1] = component[component:get_win_attr("_win_child_index")]:traverse()
+                    end
+                    return
+                end
+                if out_of_components then
+                    break
+                end
             end
         end
     end
 end
 
-function M.pick_child_on_condition(self)
-    self.pick_child = {}
-    for i, child in ipairs(self) do
+--- Utility function to set component.pick_child on the first child that has a true condition,
+--- this must be called within the component init.
+---@param component table
+function M.pick_child_on_condition(component)
+    component.pick_child = {}
+    for i, child in ipairs(component) do
         if not child.condition or child:condition() then
-            table.insert(self.pick_child, i)
+            table.insert(component.pick_child, i)
             return
         end
     end
@@ -416,7 +435,7 @@ end
 --- Private function
 ---@param buflist table
 function M.page_buflist(buflist)
-    if #buflist == 0 then
+    if not buflist or #buflist == 0 then
         return
     end
 
@@ -492,7 +511,6 @@ function M.on_colorscheme(colors)
     require("heirline").statusline:broadcast(function(self)
         self._win_cache = nil
     end)
-
 end
 
 return M
