@@ -157,15 +157,16 @@ Each component may contain _any_ of the following fields:
     - `update`: whether the function should be registered even if
       it already exists in the global namespace.
       This is useful for dynamically registering different callbacks.
-    - `minwid`: integer data that can be passed to callback.
-      Useful to pass window/buffer handlers. Type: `number` or `function -> number`
       Type: `boolean` (optional).
+    - `minwid`: integer data that can be passed to callback.
+      Useful to pass window/buffer handlers.
+      Type: `number` or `function -> number`
   - Description: Specify a function to be called when clicking on the component (including its progeny);
     Lua functions are automatically registered in the global scope with the name provided
     by the `name` field. Arguments passed to the function are the same described
     for the `@` statusline field, with the addition of the component reference
-    (`self`) as the first parameter and the current `window-ID` as the second parameter.
-    The self parameter and `winid` are _not_ passed if `callback` is a `string`.
+    (`self`) as the first parameter.
+    The self parameter _is not_ passed if `callback` is a `string`.
     By default, the callback is registered only once:
     the first time it's encountered during components evaluation.
     If `update` is `true`, the callback will be (re-)registered
@@ -173,8 +174,8 @@ Each component may contain _any_ of the following fields:
     you may often prefer wrapping a 'third-party' functions rather than passing their
     reference as is. Note 2: the callback is **_not_** executed in the context
     of the window/buffer the component belongs to, but in the context of the
-    _actual_ current window and buffer. Use `winid` parameter to retrieve
-    information about the current buffer from a callback.
+    _actual_ current window and buffer. Set the `minwid` parameter to retrieve
+    information about the current window/buffer from a callback (see [Click it!](#click-it)).
     Be careful when accessing `self` attributes that were set depending
     on the local buffer/window the component is displayed into from
     within the callback, as they are shared between all representation
@@ -212,11 +213,11 @@ Each component may contain _any_ of the following fields:
     example, you can compute some values that will be accessed from other
     functions within the component genealogy (even "global" statusline
     variables).
-- `after`:
-  - Type: `function(self) -> any`
-  - Description: This function is called after the component has evaluated all of its
-    children and can be used to alter the state of the component before it returns
-    the output string `self.stl`.
+<!-- - `after`: -->
+<!--   - Type: `function(self) -> any` -->
+<!--   - Description: This function is called after the component has evaluated all of its -->
+<!--     children and can be used to alter the state of the component before it returns -->
+<!--     the output string `self.stl`. -->
 - `static`:
   - Type: `table`
   - Description: This is a container for static variables, that is, variables
@@ -1619,7 +1620,9 @@ on_click = {
     callback = function(_, minwid)
         -- winid is the window id of the window the component was clicked from
         local winid = minwid
-        -- do something with the window id
+        -- do something with the window id, e.g.:
+        local buf = vim.api.nvim_win_get_buf(winid)
+        -- ...
     end,
 }
 ```
