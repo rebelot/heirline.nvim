@@ -534,6 +534,9 @@ vim lua API functions. Because we are all crazy about icons, we'll require
 [nvim-web-devicons](https://github.com/kyazdani42/nvim-web-devicons), but you
 are absolutely free to omit that if you're not an icon person.
 
+<img width="412" alt="heirline_filename_merge" src="https://user-images.githubusercontent.com/36300441/187188361-cb458e59-9219-4485-8cbb-160d77a14b31.png">
+
+
 ```lua
 
 local FileNameBlock = {
@@ -675,6 +678,8 @@ local FileLastModified = {
 
 Here's some classics!
 
+https://user-images.githubusercontent.com/36300441/187189451-519e5d2b-115b-4f36-bfb3-7d4ec50bec05.mov
+
 ```lua
 -- We're getting minimalists here!
 local Ruler = {
@@ -708,6 +713,8 @@ local ScrollBar ={
 
 Nice work! You made it ~~jumped right~~ to the main courses! The finest rice is
 here.
+
+<img width="398" alt="heirline_lsp" src="https://user-images.githubusercontent.com/36300441/187190679-b2860e44-cde6-484a-967e-3d48c479e471.png">
 
 ```lua
 
@@ -748,6 +755,8 @@ local LSPMessages = {
 Show current location using LSP document symbols.
 This example shows that it is possible to dynamically instantiate
 new children.
+
+<img width="337" alt="heirline_navic" src="https://user-images.githubusercontent.com/36300441/187191107-e9f666fc-53d1-4b68-a3bf-cf0f3ab32b60.png">
 
 ```lua
 -- Awesome plugin
@@ -827,6 +836,8 @@ local Navic = {
 ### Diagnostics
 
 See how much you've messed up...
+
+<img width="189" alt="heirline_diags" src="https://user-images.githubusercontent.com/36300441/187191417-f7cdd47b-e10b-4695-b3ea-81ff89e48de6.png">
 
 ```lua
 local Diagnostics = {
@@ -915,6 +926,8 @@ Diagnostics = utils.surround({"![", "]"}, nil, Diagnostics)
 
 For the ones who're not (too) afraid of changes! Uses
 [gitsigns](https://github.com/lewis6991/gitsigns.nvim).
+
+<img width="250" alt="heirline_git" src="https://user-images.githubusercontent.com/36300441/187191458-cdca5171-2589-4b46-9ea7-d147597a11f1.png">
 
 ```lua
 local Git = {
@@ -1198,6 +1211,10 @@ require("heirline").setup(nest_madness)
 ```
 
 And now some more useful examples!
+
+
+https://user-images.githubusercontent.com/36300441/187192243-b23e3458-1bc1-4701-b6d6-03fc09d1c844.mov
+
 
 **Flexible WorkDir** compare to [Working Directory](#working-directory)
 
@@ -1694,6 +1711,8 @@ This abstract component will automatically inheirt the fields:
 we **must** adapt our components to explicitly use the `self.bufnr` field to retrieve buffer information.
 
 'nuf said, **_let's start_**!
+
+![heirline_tabline](https://user-images.githubusercontent.com/36300441/187192460-18c0e9f0-3a82-4850-8eb5-0e47274187e8.gif)
 
 ```lua
 local TablineBufnr = {
