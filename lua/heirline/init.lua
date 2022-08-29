@@ -72,8 +72,9 @@ local function _eval(statusline, full_width)
     if buflist then
         out = statusline:traverse() -- this is now the tabline, after expansion/contraction
         -- the space to render the buflist is "columns - (all_minus_fullwidthbuflist)"
-        buflist._maxwidth = vim.o.columns - (utils.count_chars(out) - utils.count_chars(buflist:traverse()))
-        utils.page_buflist(buflist)
+        local maxwidth = (full_width and vim.o.columns) or vim.api.nvim_win_get_width(0)
+        maxwidth = maxwidth - (utils.count_chars(out) - utils.count_chars(buflist:traverse()))
+        utils.page_buflist(buflist, maxwidth)
         out = statusline:traverse()
 
         -- now the buflist is paged, and flexible components still have the same value, however, there might be more space now, depending on the page

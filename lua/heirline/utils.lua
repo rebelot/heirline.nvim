@@ -201,12 +201,7 @@ function M.expand_or_contract_flexible_components(flexible_components, full_widt
         return
     end
 
-    local winw
-    if full_width then
-        winw = vim.o.columns
-    else
-        winw = vim.api.nvim_win_get_width(0)
-    end
+    local winw = (full_width and vim.o.columns) or vim.api.nvim_win_get_width(0)
 
     local stl_len = M.count_chars(out)
 
@@ -434,13 +429,12 @@ end
 
 --- Private function
 ---@param buflist table
-function M.page_buflist(buflist)
+function M.page_buflist(buflist, maxwidth)
     if not buflist or #buflist == 0 then
         return
     end
 
     local tbl = {}
-    local maxwidth = buflist._maxwidth or vim.o.columns
     maxwidth = maxwidth - 2 -- leave some space for {right,left}_trunc
 
     local pages = {}
