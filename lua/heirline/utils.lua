@@ -22,7 +22,7 @@ function M.get_highlight(name)
     return hl
 end
 
----Copy the given component
+---Copy the given component, merging its fields with `with`
 ---@param block table
 ---@param with? table
 ---@return table
@@ -31,7 +31,7 @@ function M.clone(block, with)
 end
 
 ---Surround component with separators and adjust coloring
----@param delimiters table<string>
+---@param delimiters table<string> { "left", "right" } delimiters
 ---@param color string | function
 ---@param component table
 ---@return table
@@ -101,7 +101,7 @@ end
 
 ---Create a flexible component
 ---@param priority integer
----@vararg table
+---@vararg table list of components that should evaluate to shorter strings in descending order.
 ---@return table
 function M.make_flexible_component(priority, ...)
     local new = M.insert({}, ...)
@@ -185,6 +185,10 @@ local function group_flexible_components(flexible_components, mode)
     return priority_groups, priorities
 end
 
+--- Private function.
+---@param flexible_components table
+---@param full_width boolean
+---@param out string
 function M.expand_or_contract_flexible_components(flexible_components, full_width, out)
     if not flexible_components or not next(flexible_components) then
         return
@@ -284,6 +288,10 @@ local function bufs_in_tab(tabnr)
     return buf_set
 end
 
+--- Make a tablist, rendering all open tabs
+--- using `tab_component` as a template.
+---@param tab_component table
+---@return table
 function M.make_tablist(tab_component)
     local tablist = {
         init = function(self)
@@ -311,6 +319,12 @@ function M.make_tablist(tab_component)
     return tablist
 end
 
+--- Make a list of buffers, rendering all listed buffers
+--- using `buffer_component` as a template.
+---@param buffer_component table
+---@param left_trunc? table left truncation marker, shown is buffer list is too long
+---@param right_trunc? table right truncation marker, shown is buffer list is too long
+---@return table
 function M.make_buflist(buffer_component, left_trunc, right_trunc)
     left_trunc = left_trunc or {
         provider = "<",
@@ -399,6 +413,8 @@ function M.make_buflist(buffer_component, left_trunc, right_trunc)
     return bufferline
 end
 
+--- Private function
+---@param buflist table
 function M.page_buflist(buflist)
     if #buflist == 0 then
         return
@@ -467,6 +483,8 @@ function M.page_buflist(buflist)
     buflist._tree[1] = table.concat(tbl, "")
 end
 
+---ColorScheme callback useful to reset highlights
+---@param colors table<string, string|integer>
 function M.on_colorscheme(colors)
     colors = colors or {}
     require("heirline").reset_highlights()
