@@ -318,6 +318,7 @@ These functions are accessible via `require'heirline.conditions'` and
   highlight name. The returned table contains the same fields as returned by
   `nvim_get_hl_by_name`. The returned table can be indexed using the following abbreviations:
   `fg` → `foreground`, `bg` → `background`, `sp` → `special`.
+- `on_colorscheme(colors?)`: wrapper to be called on `ColorScheme` events to reset highlights (see [Theming](#theming)).
 - `clone(component[, with])`: returns a new component which is a copy of the
   supplied one, updated with the fields in the optional `with` table.
 - `surround(delimiters, color, component)`: returns a new component, which
@@ -1924,6 +1925,7 @@ vim.cmd([[au FileType * if index(['wipe', 'delete', 'unload'], &bufhidden) >= 0 
 You can change the colors of the statusline automatically whenever you change
 your colorscheme. To do so, you need to set up a `ColorScheme` event autocommand that
 will reset heirline highlights, re-evaluate and load the new colors.
+All of this is nicely wrapped in the utility function `on_colorscheme(colors?)`
 
 ```lua
 local function setup_colors()
@@ -1952,8 +1954,8 @@ require('heirline').load_colors(setup_colors())
 vim.api.nvim_create_augroup("Heirline", { clear = true })
 vim.api.nvim_create_autocmd("ColorScheme", {
     callback = function()
-        require('heirline').reset_highlights()
-        require('heirline').load_colors(setup_colors())
+        local colors = setup_colors()
+        utils.on_colorscheme(colors)
     end,
     group = "Heirline",
 })

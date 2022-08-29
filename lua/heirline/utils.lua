@@ -467,4 +467,14 @@ function M.page_buflist(buflist)
     buflist._tree[1] = table.concat(tbl, "")
 end
 
+function M.on_colorscheme(colors)
+    colors = colors or {}
+    require("heirline").reset_highlights()
+    require("heirline").load_colors(colors)
+    require("heirline").statusline:broadcast(function(self)
+        self._win_cache = nil
+    end)
+
+end
+
 return M
