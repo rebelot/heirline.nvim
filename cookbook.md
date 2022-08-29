@@ -425,6 +425,8 @@ No statusline is worth its weight in _fanciness_ :star2: without an appropriate
 mode indicator. So let's cook ours! Also, this snippet will introduce you to a
 lot of heirline advanced capabilities.
 
+https://user-images.githubusercontent.com/36300441/187186336-4e150321-12e1-4b9a-b796-390ac9318e60.mov
+
 ```lua
 local ViMode = {
     -- get vim current mode, this information will be required by the provider
