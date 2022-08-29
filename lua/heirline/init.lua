@@ -38,6 +38,7 @@ end
 ---Setup statusline and winbar
 ---@param statusline table
 ---@param winbar? table
+---@param tabline? table
 function M.setup(statusline, winbar, tabline)
     vim.g.qf_disable_statusline = true
     vim.api.nvim_create_augroup("Heirline_update_autocmds", { clear = true })
