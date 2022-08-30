@@ -62,6 +62,7 @@ end
 local function _eval(statusline, winnr, full_width)
     statusline.winnr = winnr
     statusline._flexible_components = {}
+    statusline._updatable_components = {}
     statusline._buflist = {}
     local out = statusline:eval()
     local buflist = statusline._buflist[1]
@@ -80,6 +81,8 @@ local function _eval(statusline, winnr, full_width)
         -- now the buflist is paged, and flexible components still have the same value, however, there might be more space now, depending on the page
         utils.expand_or_contract_flexible_components(statusline._flexible_components, full_width, out) -- flexible components are re-adapting to paginated buflist
     end
+
+    statusline:_freeze_cache()
     return statusline:traverse()
 end
 

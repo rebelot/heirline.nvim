@@ -28,6 +28,7 @@ local default_restrict = {
 ---@field _win_cache? table
 ---@field _au_id? integer
 ---@field _tree table
+---@field _updatable_components table
 ---@field _flexible_components table
 ---@field pick_child? table<integer>
 local StatusLine = {
@@ -245,7 +246,7 @@ function StatusLine:_eval()
 
         local win_cache = self:get_win_attr("_win_cache")
         if win_cache then
-            table.insert(self._tree, win_cache)
+            self._tree[1] = win_cache
             return
         end
     end
@@ -308,7 +309,8 @@ function StatusLine:_eval()
     end
 
     if self.update then
-        self:set_win_attr("_win_cache", self:traverse())
+        self:set_win_attr("_win_cache", self._tree)
+        table.insert(self._updatable_components, self)
     end
 end
 
@@ -337,6 +339,17 @@ function StatusLine:clear_tree()
     end
     for i, _ in ipairs(tree) do
         self._tree[i] = nil
+    end
+end
+
+-- this MUST be called at the end of the main loop
+function StatusLine:_freeze_cache()
+    for _, component in ipairs(self._updatable_components) do
+        local win_cache = component:get_win_attr("_win_cache") -- check nil?
+        local fixed_cache = component:traverse(win_cache)
+        component:set_win_attr("_win_cache", fixed_cache)
+        component:clear_tree()
+        component._tree[1] = fixed_cache
     end
 end
 
