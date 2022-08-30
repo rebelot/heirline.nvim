@@ -59,8 +59,8 @@ function M.setup(statusline, winbar, tabline)
     end
 end
 
-local function _eval(statusline, full_width)
-    statusline.winnr = 1
+local function _eval(statusline, winnr, full_width)
+    statusline.winnr = winnr
     statusline.flexible_components = {}
     statusline._buflist = {}
     local out = statusline:eval()
@@ -85,19 +85,21 @@ end
 
 ---@return string
 function M.eval_statusline()
-    return _eval(M.statusline, vim.o.laststatus == 3)
+    local winnr = vim.api.nvim_win_get_number(0)
+    return _eval(M.statusline, winnr, vim.o.laststatus == 3)
 end
 
 ---@return string
 function M.eval_winbar()
-    return _eval(M.winbar, false)
+    local winnr = vim.api.nvim_win_get_number(0)
+    return _eval(M.winbar, winnr, false)
 end
 
 ---@return string
 function M.eval_tabline()
-    return _eval(M.tabline, true)
+    local winnr = 1
+    return _eval(M.tabline, winnr, true)
 end
-
 
 -- test [[
 function M.timeit()
