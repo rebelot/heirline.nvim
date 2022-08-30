@@ -110,8 +110,8 @@ function M.make_flexible_component(priority, ...)
         _priority = priority,
     }
     new.init = function(self)
-        if not vim.tbl_contains(self.flexible_components, self) then
-            table.insert(self.flexible_components, self)
+        if not vim.tbl_contains(self._flexible_components, self) then
+            table.insert(self._flexible_components, self)
         end
         self:set_win_attr("_win_child_index", nil, 1)
         self.pick_child = { self:get_win_attr("_win_child_index") }
@@ -295,8 +295,8 @@ local function bufs_in_tab(tabnr)
     tabnr = tabnr or 0
     local buf_set = {}
     local wins = vim.api.nvim_tabpage_list_wins(tabnr)
-    for _, winnr in ipairs(wins) do
-        local bufnr = vim.api.nvim_win_get_buf(winnr)
+    for _, winid in ipairs(wins) do
+        local bufnr = vim.api.nvim_win_get_buf(winid)
         buf_set[bufnr] = true
     end
     return buf_set

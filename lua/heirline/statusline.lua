@@ -2,7 +2,6 @@ local utils = require("heirline.utils")
 local hi = require("heirline.highlights")
 
 local default_restrict = {
-    stop_when = true,
     init = true,
     provider = true,
     condition = true,
@@ -29,6 +28,7 @@ local default_restrict = {
 ---@field _win_cache? table
 ---@field _au_id? integer
 ---@field _tree table
+---@field _flexible_components table
 ---@field pick_child? table<integer>
 local StatusLine = {
     hl = {},
@@ -67,7 +67,6 @@ function StatusLine:new(child, index)
     new.pick_child = child.pick_child and vim.tbl_exend("keep", child.pick_child, {})
     new.init = child.init
     new.provider = child.provider
-    new.stop_when = child.stop_when
     new.after = child.after
     new.on_click = child.on_click and vim.tbl_extend("keep", child.on_click, {})
     new.restrict = child.restrict and vim.tbl_extend("keep", child.restrict, {})
@@ -220,7 +219,6 @@ end
 ---Evaluate component and its children recursively
 ---@return nil
 function StatusLine:_eval()
-
     if not self:local_("_tree") then
         -- root component has no parent tree
         -- may be "stray" component

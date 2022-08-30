@@ -61,13 +61,13 @@ end
 
 local function _eval(statusline, winnr, full_width)
     statusline.winnr = winnr
-    statusline.flexible_components = {}
+    statusline._flexible_components = {}
     statusline._buflist = {}
     local out = statusline:eval()
     local buflist = statusline._buflist[1]
 
     -- flexible components adapting to full-width buflist, shrinking them to the maximum if greater than vim.o.columns
-    utils.expand_or_contract_flexible_components(statusline.flexible_components, full_width, out)
+    utils.expand_or_contract_flexible_components(statusline._flexible_components, full_width, out)
 
     if buflist then
         out = statusline:traverse() -- this is now the tabline, after expansion/contraction
@@ -78,7 +78,7 @@ local function _eval(statusline, winnr, full_width)
         out = statusline:traverse()
 
         -- now the buflist is paged, and flexible components still have the same value, however, there might be more space now, depending on the page
-        utils.expand_or_contract_flexible_components(statusline.flexible_components, full_width, out) -- flexible components are re-adapting to paginated buflist
+        utils.expand_or_contract_flexible_components(statusline._flexible_components, full_width, out) -- flexible components are re-adapting to paginated buflist
     end
     return statusline:traverse()
 end
