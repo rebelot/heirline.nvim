@@ -276,6 +276,7 @@ end
 --- this must be called within the component init.
 ---@param component table
 function M.pick_child_on_condition(component)
+    vim.notify_once([[Heirline: utils.pick_child_on_condition() is deprecated, please use the fallthrough field instead. To retain the same functionality, replace `init = utils.pick_child_on_condition()` with `fallthrough = false`]], vim.log.levels.ERROR)
     component.pick_child = {}
     for i, child in ipairs(component) do
         if not child.condition or child:condition() then

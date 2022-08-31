@@ -10,6 +10,7 @@ local default_restrict = {
     after = true,
     on_click = true,
     update = true,
+    fallthrough = true,
     _win_cache = true,
     _au_id = true,
 }
@@ -25,6 +26,7 @@ local default_restrict = {
 ---@field on_click? function | table
 ---@field id table<integer>
 ---@field winnr integer
+---@field fallthrough boolean
 ---@field _win_cache? table
 ---@field _au_id? integer
 ---@field _tree table
@@ -66,6 +68,11 @@ function StatusLine:new(child, index)
 
     new.condition = child.condition
     new.pick_child = child.pick_child and vim.tbl_extend("keep", child.pick_child, {})
+    if child.fallthrough ~= nil then
+        new.fallthrough = child.fallthrough
+    else
+        new.fallthrough = true
+    end
     new.init = child.init
     new.provider = child.provider
     new.after = child.after
@@ -109,7 +116,7 @@ end
 
 --- Get the component where func(component) evaluates to true
 ---@param func function predicate
----@return StatusLine
+---@return StatusLine | nil
 function StatusLine:find(func)
     if func(self) then
         return self
@@ -237,7 +244,7 @@ local function register_update_autocmd(component)
 end
 
 ---Evaluate component and its children recursively
----@return nil
+---@return boolean
 function StatusLine:_eval()
     if not self:local_("_tree") then
         -- root component has no parent tree
@@ -249,7 +256,7 @@ function StatusLine:_eval()
     end
 
     if self.condition and not self:condition() then
-        return
+        return false
     end
 
     if self.update then
@@ -266,7 +273,7 @@ function StatusLine:_eval()
         local win_cache = self:get_win_attr("_win_cache")
         if win_cache then
             self._tree[1] = win_cache
-            return
+            return true
         end
     end
 
@@ -316,7 +323,10 @@ function StatusLine:_eval()
         local child = self[i]
         child._tree = {}
         table.insert(self._tree, child._tree)
-        child:_eval()
+        local ret = child:_eval()
+        if ret and not self.fallthrough then
+            break
+        end
     end
 
     if self.on_click then
@@ -331,6 +341,7 @@ function StatusLine:_eval()
         self:set_win_attr("_win_cache", self._tree)
         table.insert(self._updatable_components, self)
     end
+    return true
 end
 
 function StatusLine:traverse(tree, stl)
