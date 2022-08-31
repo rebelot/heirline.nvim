@@ -104,15 +104,25 @@ function M.eval_tabline()
     return _eval(M.tabline, winnr, true)
 end
 
--- test [[
-function M.timeit()
+local function timeit(func, args)
     local start = os.clock()
-    M.eval_statusline()
-    M.eval_winbar()
-    M.eval_tabline()
+    func(unpack(args))
     return os.clock() - start
 end
 
---]]
-
+function M.timeit(lines)
+    lines = lines or {"statusline", "winbar", "tabline"}
+    local func_map = {
+        statusline = M.eval_statusline,
+        winbar = M.eval_winbar,
+        tabline = M.eval_tabline,
+    }
+    local tot_time = 0
+    for _, name in ipairs(lines) do
+        local time = timeit(func_map[name], {}) * 1000
+        tot_time = tot_time + time
+        print(string.format("%s: %.3f ms", name, time))
+    end
+    print(string.format("total: %.3f ms", tot_time))
+end
 return M
