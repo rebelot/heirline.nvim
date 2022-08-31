@@ -205,6 +205,12 @@ Each component may contain _any_ of the following fields:
     evaluated by indicating their indexes (eg: `{1, 3, 2}`). It makes most
     sense to modify this attribute from within `init` function using the `self`
     parameter to dynamically pick the children to evaluate.
+- `fallthrough`:
+  - Type: `boolean`
+  - Description: If `true` (default), the component will try to evaluate all of its children,
+    when `false`, the evaluation will stop at the first child that has no `condition`,
+    or which condition evaluates to `true`. This is useful to create branches for [conditional statuslines](#putting-it-all-together-conditional-statuslines).
+  - Default: `true`
 - `init`:
   - Type: `function(self) -> any`
   - Description: This function is called whenever a component is evaluated
@@ -213,11 +219,11 @@ Each component may contain _any_ of the following fields:
     example, you can compute some values that will be accessed from other
     functions within the component genealogy (even "global" statusline
     variables).
-<!-- - `after`: -->
-<!--   - Type: `function(self) -> any` -->
-<!--   - Description: This function is called after the component has evaluated all of its -->
-<!--     children and can be used to alter the state of the component before it returns -->
-<!--     the output string `self.stl`. -->
+    <!-- - `after`: -->
+    <!--   - Type: `function(self) -> any` -->
+    <!--   - Description: This function is called after the component has evaluated all of its -->
+    <!--     children and can be used to alter the state of the component before it returns -->
+    <!--     the output string `self.stl`. -->
 - `static`:
   - Type: `table`
   - Description: This is a container for static variables, that is, variables
@@ -338,22 +344,18 @@ These functions are accessible via `require'heirline.conditions'` and
   passed as `...` arguments until they fit in the available space for the
   statusline. The components passed as variable arguments should evaluate to
   decreasing lengths. See [Flexible Components](#flexible-components) for more!
-- `make_buflist(buffer_component, left_trunc, right_trunc)`: Returns a component
+- `make_buflist(buffer_component, left_trunc?, right_trunc?, buf_func?)`: Returns a component
   which renders a **bufferline**. `buffer_component` is the component used to display
   each listed buffer, it receives the fields:
-    - `self.bufnr <integer>`: the buffer number of the listed buffer
-    - `self.is_active <bool>`: whether the buffer is shown in the current _window_
-    - `self.is_visible <bool>`: whether the buffer is shown in the current _tab_
-  `{left,right}_trunc` are the components which are displayed if the buflist is too long (they are also clickable).
+  - `self.bufnr <integer>`: the buffer number of the listed buffer
+  - `self.is_active <bool>`: whether the buffer is shown in the current _window_
+  - `self.is_visible <bool>`: whether the buffer is shown in the current _tab_
+    `{left,right}_trunc` (optional) are the components which are displayed if the buflist is too long (they are also clickable).
+    `buf_func <function -> table>` (optional) is a custom function that can be used to return a list of `bufnr` handlers.
 - `make_tablist(tab_component)`: Returns a component which renders a list of open tabs.
   `tab_component` is the component used to render a single tabpage, it receives the fields:
-    - `self.tabnr <integer>`: the tabpage number
-    - `self.is_active <bool>`: whether the tabpage is the current tabpage
-- `pick_child_on_condition(component)`: This function should be passed as the `init`
-  field while defining a new component. It will dynamically set the `pick_child`
-  field to the index of the first child whose condition evaluates to `true`.
-  This is useful for branching conditional statuslines
-  (see [Putting it all together: Conditional Statuslines](#putting-it-all-together-conditional-statuslines)).
+  - `self.tabnr <integer>`: the tabpage number
+  - `self.is_active <bool>`: whether the tabpage is the current tabpage
 - `count_chars(str)`: Returns the character length of `str`. Handles multibyte
   characters (icons) and statusline syntax like `%f`, `%3.10%(...%)`, etc.
 
@@ -536,7 +538,6 @@ vim lua API functions. Because we are all crazy about icons, we'll require
 are absolutely free to omit that if you're not an icon person.
 
 <img width="412" alt="heirline_filename_merge" src="https://user-images.githubusercontent.com/36300441/187188361-cb458e59-9219-4485-8cbb-160d77a14b31.png">
-
 
 ```lua
 
@@ -1213,9 +1214,7 @@ require("heirline").setup(nest_madness)
 
 And now some more useful examples!
 
-
 https://user-images.githubusercontent.com/36300441/187192243-b23e3458-1bc1-4701-b6d6-03fc09d1c844.mov
-
 
 **Flexible WorkDir** compare to [Working Directory](#working-directory)
 
@@ -1359,9 +1358,8 @@ local TerminalStatusline = {
 ```
 
 That's it! We now sparkle a bit of conditional default colors to affect all the
-statuslines at once and set the flag `pick_child` via
-`utils.pick_child_on_condition` to stop the evaluation at the first component
-whose condition evaluates to `true`!
+statuslines at once and set the flag `fallthrough = false` to stop the evaluation
+at the first component whose condition evaluates to `true` (no `condition` is always `true`)!
 
 Note that no condition equals to `true`, so make sure that all your statuslines
 but the last one have a condition set at their top-level.
@@ -1369,9 +1367,7 @@ but the last one have a condition set at their top-level.
 **IMPORTANT**: Statuslines conditions are evaluated sequentially, so make sure
 that their order makes sense! Ideally, you should order them from stricter to
 looser conditions. You can always write the `init` function yourself and
-leverage the `pick_child` table to have full control. See the implementation
-of [`utils.pick_child_on_condition`](lua/heirline/utils.lua#L236) to have a
-sense of what's going on.
+leverage the `pick_child` table to have full control.
 
 ```lua
 local StatusLines = {
@@ -1384,9 +1380,9 @@ local StatusLines = {
         end
     end,
 
-    -- the first statusline with no condition, or which condition returns true is used
-    -- think of it as a switch case without fallthrough.
-    init = utils.pick_child_on_condition,
+    -- the first statusline with no condition, or which condition returns true is used.
+    -- think of it as a switch case with breaks to stop fallthrough.
+    fallthrough = false,
 
     SpecialStatusline, TerminalStatusline, InactiveStatusline, DefaultStatusline,
 }
@@ -1418,7 +1414,7 @@ buffers, you can use the following style to define your statusline:
 local FelineStyle = {
 
     -- stop at child where buftype/filetype/bufname matches
-    init = utils.pick_child_on_condition,
+    fallthrough = false,
 
     {   -- Identify the buftype/filetype/bufname first
         condtion = function()
@@ -1426,7 +1422,7 @@ local FelineStyle = {
         end,
 
         -- Evaluate only the "active" or "inactive" child
-        init = utils.pick_child_on_condition,
+        fallthrough = false,
 
         {   -- If it's the current window, display some components
             condition = conditions.is_active
@@ -1478,7 +1474,7 @@ vim.api.nvim_create_autocmd("User", {
 
 ```lua
 local WinBars = {
-    init = utils.pick_child_on_condition,
+    fallthrough = false,
     {   -- Hide the winbar for special buffers
         condition = function()
             return conditions.buffer_matches({
