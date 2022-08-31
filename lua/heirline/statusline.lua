@@ -148,11 +148,24 @@ function StatusLine:local_(attr)
     return rawget(self, attr)
 end
 
+local function cleanup_win_attr(win_attr)
+    if not win_attr then
+        return
+    end
+    local nwin = #vim.api.nvim_tabpage_list_wins(0)
+    if #win_attr > nwin then
+        for i = nwin + 1, #win_attr do
+            win_attr[i] = nil
+        end
+    end
+end
+
 --- Set window-nr attribute
 ---@param attr string
 ---@param val any
 ---@param default any
 function StatusLine:set_win_attr(attr, val, default)
+    cleanup_win_attr(self[attr])
     local winnr = self.winnr
     self[attr] = self[attr] or {}
     self[attr][winnr] = val or (self[attr][winnr] or default)
@@ -164,7 +177,13 @@ end
 ---@return any
 function StatusLine:get_win_attr(attr, default)
     local winnr = self.winnr
-    self[attr] = self[attr] or {}
+    if not self[attr] then
+        if default then
+            self[attr] = {}
+        else
+            return
+        end
+    end
     self[attr][winnr] = self[attr][winnr] or default
     return self[attr][winnr]
 end
