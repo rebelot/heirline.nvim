@@ -445,27 +445,27 @@ function M.page_buflist(buflist, maxwidth)
     local tbl = {}
     maxwidth = maxwidth - 2 -- leave some space for {right,left}_trunc
 
-    local pages = {}
+    local pages = {{}}
     local active_page
     local page_counter = 1
     local page_length = 0
     local active_page_index
 
-    local page = {}
-    for i, child in ipairs(buflist) do
+    local page = pages[1]
+    for _, child in ipairs(buflist) do
+
         local len = M.count_chars(child:traverse())
-        page_length = page_length + len
-        if page_length <= maxwidth then
-            table.insert(page, child)
-            if i == #buflist then
-                table.insert(pages, page)
-            end
-        else
+
+        if page_length + len > maxwidth then
+            page_length = 0
+            page = {}
             table.insert(pages, page)
-            page_length = len
-            page = { child }
             page_counter = page_counter + 1
         end
+
+        table.insert(page, child)
+        page_length = page_length + len
+
         if child.is_active then
             active_page = page
             active_page_index = page_counter
