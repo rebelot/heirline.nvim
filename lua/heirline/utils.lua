@@ -313,15 +313,17 @@ function M.make_tablist(tab_component)
             local tabpages = vim.api.nvim_list_tabpages()
             for i, tabpage in ipairs(tabpages) do
                 local tabnr = vim.api.nvim_tabpage_get_number(tabpage)
-                if not (self[i] and tabnr == self[i].tabnr) then
+                local child = self[i]
+                if not (child and child.tabnr == tabnr) then
                     self[i] = self:new(tab_component, i)
-                    self[i].tabnr = tabnr
+                    child = self[i]
+                    child.tabnr = tabnr
                 end
                 if tabpage == vim.api.nvim_get_current_tabpage() then
-                    self[i].is_active = true
+                    child.is_active = true
                     self.active_child = i
                 else
-                    self[i].is_active = false
+                    child.is_active = false
                 end
             end
             if #self > #tabpages then
@@ -408,22 +410,24 @@ function M.make_buflist(buffer_component, left_trunc, right_trunc, buf_func)
             local bufs = buf_func()
             local visible_buffers = bufs_in_tab()
             for i, bufnr in ipairs(bufs) do
-                if not (self[i] and bufnr == self[i].bufnr) then
+                local child = self[i]
+                if not (child and child.bufnr == bufnr) then
                     self[i] = self:new(buffer_component, i)
-                    self[i].bufnr = bufnr
+                    child = self[i]
+                    child.bufnr = bufnr
                 end
 
                 if bufnr == tonumber(vim.g.actual_curbuf) then
-                    self[i].is_active = true
+                    child.is_active = true
                     self.active_child = i
                 else
-                    self[i].is_active = false
+                    child.is_active = false
                 end
 
                 if visible_buffers[bufnr] then
-                    self[i].is_visible = true
+                    child.is_visible = true
                 else
-                    self[i].is_visible = false
+                    child.is_visible = false
                 end
             end
             if #self > #bufs then
@@ -443,7 +447,7 @@ function M.page_buflist(buflist, maxwidth)
         return
     end
 
-    local tbl = {}
+    local bfl = {}
     maxwidth = maxwidth - 2 -- leave some space for {right,left}_trunc
 
     local pages = {{}}
@@ -489,20 +493,20 @@ function M.page_buflist(buflist, maxwidth)
     end
 
     if page_index > 1 then
-        table.insert(tbl, buflist.left_trunc:eval())
+        table.insert(bfl, buflist.left_trunc:eval())
     end
 
     for _, child in ipairs(page) do
-        table.insert(tbl, child:traverse())
+        table.insert(bfl, child:traverse())
     end
 
     -- table.insert(tbl, "%=")
 
     if page_index < #pages then
-        table.insert(tbl, buflist.right_trunc:eval())
+        table.insert(bfl, buflist.right_trunc:eval())
     end
     buflist:clear_tree()
-    buflist._tree[1] = table.concat(tbl, "")
+    buflist._tree[1] = table.concat(bfl, "")
 end
 
 ---ColorScheme callback useful to reset highlights

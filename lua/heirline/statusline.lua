@@ -1,5 +1,9 @@
 local utils = require("heirline.utils")
 local hi = require("heirline.highlights")
+local eval_hl = hi.eval_hl
+local tbl_insert = table.insert
+local tbl_concat = table.concat
+local str_format = string.format
 
 local default_restrict = {
     init = true,
@@ -223,7 +227,7 @@ local function register_update_autocmd(component)
     else
         events = {}
         for i, e in ipairs(component.update) do
-            table.insert(events, e)
+            tbl_insert(events, e)
         end
         callback = component.update.callback
         pattern = component.update.pattern
@@ -255,13 +259,16 @@ function StatusLine:_eval()
         self:clear_tree()
     end
 
+    local tree = self._tree
+
     if self.condition and not self:condition() then
         return false
     end
 
-    if self.update then
-        if type(self.update) == "function" then
-            if self:update() then
+    local update = self.update
+    if update then
+        if type(update) == "function" then
+            if update(self) then
                 self._win_cahe = nil
             end
         else
@@ -272,7 +279,7 @@ function StatusLine:_eval()
 
         local win_cache = self:get_win_attr("_win_cache")
         if win_cache then
-            self._tree[1] = win_cache
+            tree[1] = win_cache
             return true
         end
     end
@@ -281,7 +288,8 @@ function StatusLine:_eval()
         self:init()
     end
 
-    local hl = type(self.hl) == "function" and (self:hl() or {}) or self.hl -- self raw hl
+    local hl = self.hl
+    hl = type(hl) == "function" and (hl(self) or {}) or hl -- self raw hl
 
     if type(hl) == "string" then
         hl = utils.get_highlight(hl)
@@ -295,51 +303,53 @@ function StatusLine:_eval()
         self.merged_hl = vim.tbl_extend("force", parent_hl, hl)
     end
 
-    if self.on_click then
+    local on_click = self.on_click
+    if on_click then
         local func_name = register_global_function(self)
-        local minwid = type(self.on_click.minwid) == "function" and self.on_click.minwid(self)
-            or self.on_click.minwid
-            or ""
-        table.insert(self._tree, "%" .. minwid .. "@" .. func_name .. "@")
+        local minwid = on_click.minwid or ""
+        minwid = type(minwid) == "function" and minwid(self) or minwid
+        tbl_insert(tree, str_format("%%%s@%s@", minwid, func_name))
     end
 
-    if self.provider then
-        local provider_str = type(self.provider) == "function" and (self:provider() or "") or (self.provider or "")
-        local hl_str_start, hl_str_end = hi.eval_hl(self.merged_hl)
-        table.insert(self._tree, hl_str_start .. provider_str .. hl_str_end)
+    local provider = self.provider
+    if provider then
+        local provider_str = type(provider) == "function" and (provider(self) or "") or (provider or "")
+        local hl_str_start, hl_str_end = eval_hl(self.merged_hl)
+        tbl_insert(tree, hl_str_start .. provider_str .. hl_str_end)
     end
 
-    local children_i
-    if self.pick_child then
-        children_i = self.pick_child
-    else
-        children_i = {}
-        for i, _ in ipairs(self) do
-            table.insert(children_i, i)
+    local pick_child = self.pick_child
+    local picked_children
+    if pick_child then
+        picked_children = {}
+        for _, i in ipairs(pick_child) do
+            tbl_insert(picked_children, self[i])
         end
     end
 
-    for _, i in ipairs(children_i) do
-        local child = self[i]
+    for _, child in ipairs(picked_children or self) do
         child._tree = {}
-        table.insert(self._tree, child._tree)
+        tbl_insert(tree, child._tree)
         local ret = child:_eval()
+        if not ret then
+            table.remove(tree)
+        end
         if ret and not self.fallthrough then
             break
         end
     end
 
-    if self.on_click then
-        table.insert(self._tree, "%X")
+    if on_click then
+        tbl_insert(tree, "%X")
     end
 
     if self.after then
         self:after()
     end
 
-    if self.update then
-        self:set_win_attr("_win_cache", self._tree)
-        table.insert(self._updatable_components, self)
+    if update then
+        self:set_win_attr("_win_cache", tree)
+        tbl_insert(self._updatable_components, self)
     end
     return true
 end
@@ -347,6 +357,7 @@ end
 function StatusLine:traverse(tree, stl)
     stl = stl or {}
     tree = tree or self._tree
+    local traverse = self.traverse
 
     if not tree then
         return ""
@@ -354,12 +365,12 @@ function StatusLine:traverse(tree, stl)
 
     for _, node in ipairs(tree) do
         if type(node) ~= "table" then
-            table.insert(stl, node)
+            tbl_insert(stl, node)
         else
-            self:traverse(node, stl)
+            traverse(self, node, stl)
         end
     end
-    return table.concat(stl, "")
+    return tbl_concat(stl, "")
 end
 
 function StatusLine:clear_tree()
@@ -368,7 +379,7 @@ function StatusLine:clear_tree()
         return
     end
     for i, _ in ipairs(tree) do
-        self._tree[i] = nil
+        tree[i] = nil
     end
 end
 
@@ -386,6 +397,10 @@ end
 function StatusLine:eval()
     self:_eval()
     return self:traverse()
+end
+
+function StatusLine:is_empty()
+    return self:traverse() == ""
 end
 
 return StatusLine

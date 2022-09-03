@@ -1,4 +1,7 @@
 local M = {}
+local str_format = string.format
+local tbl_insert = table.insert
+local tbl_concat = table.concat
 
 local defined_highlights = {}
 
@@ -32,34 +35,39 @@ end
 
 local function get_hl_style(hl)
     local style = {}
-    local valid_styles = { "bold", "standout", "underline", "undercurl", "underdouble", "underdotted", "underdashed", "strikethrough", "italic", "reverse" }
+    local valid_styles = {
+        "bold",
+        "standout",
+        "underline",
+        "undercurl",
+        "underdouble",
+        "underdotted",
+        "underdashed",
+        "strikethrough",
+        "italic",
+        "reverse",
+    }
     for _, v in ipairs(valid_styles) do
         if hl[v] then
-            table.insert(style, v)
+            tbl_insert(style, v)
         end
     end
-    return table.concat(style, "")
-
+    return tbl_concat(style, "")
 end
 
 local function name_rgb_hl(hl)
-    return "Stl"
-        .. (hl.fg and hl.fg:gsub("#", "") or "")
-        .. "_"
-        .. (hl.bg and hl.bg:gsub("#", "") or "")
-        .. "_"
-        .. get_hl_style(hl)
-        .. "_"
-        .. (hl.sp and hl.sp:gsub("#", "") or "")
+    local hl_name, _ =
+    str_format("Stl%s_%s_%s_%s", hl.fg or "", hl.bg or "", get_hl_style(hl), hl.sp or ""):gsub("#", "")
+    return hl_name
 end
 
 local function name_cterm_hl(hl)
-    return "Stl" .. (hl.ctermfg or "") .. "_" .. (hl.ctermbg or "") .. "_" .. get_hl_style(hl.cterm or hl)
+    return str_format("Stl%s_%s_%s", (hl.ctermfg or ""), (hl.ctermbg or ""), get_hl_style(hl.cterm or hl))
 end
 
 local function hex(val)
     if type(val) == "number" then
-        return string.format("#%06x", val)
+        return str_format("#%06x", val)
     else
         return val
     end
