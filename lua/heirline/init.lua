@@ -118,7 +118,7 @@ function M.timeit(ntimes)
         tabline = M.tabline and M.eval_tabline,
     }
     local tot_time = 0
-    for name, func in ipairs(func_map) do
+    for name, func in pairs(func_map) do
         local time = 0
         for _ = 1, ntimes do
             time = time + timeit(func, {})
