@@ -110,19 +110,24 @@ local function timeit(func, args)
     return os.clock() - start
 end
 
-function M.timeit(lines)
-    lines = lines or {"statusline", "winbar", "tabline"}
+function M.timeit(ntimes)
+    ntimes = ntimes or 1000
     local func_map = {
-        statusline = M.eval_statusline,
-        winbar = M.eval_winbar,
-        tabline = M.eval_tabline,
+        statusline = M.statusline and M.eval_statusline,
+        winbar = M.winbar and M.eval_winbar,
+        tabline = M.tabline and M.eval_tabline,
     }
     local tot_time = 0
-    for _, name in ipairs(lines) do
-        local time = timeit(func_map[name], {}) * 1000
-        tot_time = tot_time + time
-        print(string.format("%s: %.3f ms", name, time))
+    for name, func in ipairs(func_map) do
+        local time = 0
+        for _ = 1, ntimes do
+            time = time + timeit(func, {})
+        end
+        local avg_time = time / ntimes
+        tot_time = tot_time + avg_time
+        print(string.format("%s: %.3f ms", name, avg_time * 1000))
     end
-    print(string.format("total: %.3f ms", tot_time))
+    print(string.format("total: %.3f ms", tot_time * 1000))
 end
+
 return M
