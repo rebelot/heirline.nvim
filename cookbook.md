@@ -1774,8 +1774,12 @@ local TablineFileNameBlock = {
         end
     end,
     on_click = {
-        callback = function(_, minwid)
-            vim.api.nvim_win_set_buf(0, minwid)
+        callback = function(_, minwid, _, button)
+            if (button == "m") then -- close on mouse middle click
+                vim.api.nvim_buf_delete(minwid, {force = false})
+            else
+                vim.api.nvim_win_set_buf(0, minwid)
+            end
         end,
         minwid = function(self)
             return self.bufnr
