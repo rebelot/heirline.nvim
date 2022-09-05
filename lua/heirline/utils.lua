@@ -276,12 +276,45 @@ end
 --- this must be called within the component init.
 ---@param component table
 function M.pick_child_on_condition(component)
-    vim.notify_once([[Heirline: utils.pick_child_on_condition() is deprecated, please use the fallthrough field instead. To retain the same functionality, replace `init = utils.pick_child_on_condition()` with `fallthrough = false`]], vim.log.levels.ERROR)
+    vim.notify_once(
+        [[Heirline: utils.pick_child_on_condition() is deprecated, please use the fallthrough field instead. To retain the same functionality, replace `init = utils.pick_child_on_condition()` with `fallthrough = false`]],
+        vim.log.levels.ERROR
+    )
     component.pick_child = {}
     for i, child in ipairs(component) do
         if not child.condition or child:condition() then
             table.insert(component.pick_child, i)
             return
+        end
+    end
+end
+
+local buflist_cache = {}
+local with_cache_release_au
+
+local function with_cache(func, cache)
+    if not with_cache_release_au then
+        with_cache_release_au = vim.api.nvim_create_autocmd({ "BufNew", "BufDelete" }, {
+            callback = function()
+                for i, _ in ipairs(cache) do
+                    cache[i] = nil
+                end
+            end,
+            desc = "Heirline: cache for buflist get_bufs()",
+        })
+    end
+    return function()
+        if cache and next(cache) ~= nil then
+            return cache
+        else
+            local res = func()
+            for i, v in ipairs(res) do
+                cache[i] = v
+            end
+            for i = #res + 1, #cache do
+                cache[i] = nil
+            end
+            return res
         end
     end
 end
@@ -349,6 +382,7 @@ local NTABLINES = 0
 ---@return table
 function M.make_buflist(buffer_component, left_trunc, right_trunc, buf_func)
     buf_func = buf_func or get_bufs
+    buf_func = with_cache(buf_func, buflist_cache)
 
     left_trunc = left_trunc or {
         provider = "<",
@@ -450,7 +484,7 @@ function M.page_buflist(buflist, maxwidth)
     local bfl = {}
     maxwidth = maxwidth - 2 -- leave some space for {right,left}_trunc
 
-    local pages = {{}}
+    local pages = { {} }
     local active_page
     local page_counter = 1
     local page_length = 0
@@ -458,7 +492,6 @@ function M.page_buflist(buflist, maxwidth)
 
     local page = pages[1]
     for _, child in ipairs(buflist) do
-
         local len = M.count_chars(child:traverse())
 
         if page_length + len > maxwidth then
@@ -514,7 +547,7 @@ end
 function M.on_colorscheme(colors)
     colors = colors or {}
     require("heirline").reset_highlights()
-    require('heirline').clear_colors()
+    require("heirline").clear_colors()
     require("heirline").load_colors(colors)
     require("heirline").statusline:broadcast(function(self)
         self._win_cache = nil
