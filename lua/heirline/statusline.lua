@@ -92,9 +92,7 @@ function StatusLine:new(child, index)
     local restrict = vim.tbl_extend("force", default_restrict, self.restrict or {})
     setmetatable(new, self)
     self.__index = function(t, v)
-        if restrict[v] then
-            return nil
-        else
+        if not restrict[v] then
             return self[v]
         end
     end
