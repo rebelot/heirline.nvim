@@ -122,7 +122,7 @@ Each component may contain _any_ of the following fields:
     If `hl` is a string, it will be interpreted as the name of an already defined highlight group.
     If `hl` is a table, it may contain any of:
     - `fg`: The foreground color. Type: `string` to hex color code, color alias
-      defined by `load_colors()` (see [[#colors-colors-more-colors]])
+      defined by `load_colors()` (see [Colors, colors, more colors!](#colors-colors-more-colors))
       or fallback to vim standard color name (e.g.: `"#FFFFFF"`, `"red"`);
       `integer` to 24-bit color.
     - `bg`: The background color. Type: as above.
