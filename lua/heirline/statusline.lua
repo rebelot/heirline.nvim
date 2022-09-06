@@ -376,7 +376,7 @@ function StatusLine:clear_tree()
     if not tree then
         return
     end
-    for i, _ in ipairs(tree) do
+    for i = 1, #tree do
         tree[i] = nil
     end
 end
