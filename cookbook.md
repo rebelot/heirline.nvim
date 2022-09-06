@@ -344,7 +344,7 @@ These functions are accessible via `require'heirline.conditions'` and
   passed as `...` arguments until they fit in the available space for the
   statusline. The components passed as variable arguments should evaluate to
   decreasing lengths. See [Flexible Components](#flexible-components) for more!
-- `make_buflist(buffer_component, left_trunc?, right_trunc?, buf_func?)`: Returns a component
+- `make_buflist(buffer_component, left_trunc?, right_trunc?, buf_func?, buf_cache?)`: Returns a component
   which renders a **bufferline**. `buffer_component` is the component used to display
   each listed buffer, it receives the fields:
   - `self.bufnr <integer>`: the buffer number of the listed buffer
@@ -352,6 +352,8 @@ These functions are accessible via `require'heirline.conditions'` and
   - `self.is_visible <bool>`: whether the buffer is shown in the current _tab_
     `{left,right}_trunc` (optional) are the components which are displayed if the buflist is too long (they are also clickable).
     `buf_func <function -> table>` (optional) is a custom function that can be used to return a list of `bufnr` handlers.
+    `buf_cache <table>` (optional) is the reference to the cache table where the list of buffer will be stored.
+    The cache is released on `BufAdd` and `BufDelete`.
 - `make_tablist(tab_component)`: Returns a component which renders a list of open tabs.
   `tab_component` is the component used to render a single tabpage, it receives the fields:
   - `self.tabnr <integer>`: the tabpage number
