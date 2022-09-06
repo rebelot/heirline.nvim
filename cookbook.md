@@ -122,7 +122,7 @@ Each component may contain _any_ of the following fields:
     If `hl` is a string, it will be interpreted as the name of an already defined highlight group.
     If `hl` is a table, it may contain any of:
     - `fg`: The foreground color. Type: `string` to hex color code, color alias
-      defined by `load_colors()` (see [[#colors-colors-more-colors]])
+      defined by `load_colors()` (see [Colors, colors, more colors!](#colors-colors-more-colors))
       or fallback to vim standard color name (e.g.: `"#FFFFFF"`, `"red"`);
       `integer` to 24-bit color.
     - `bg`: The background color. Type: as above.
@@ -1776,8 +1776,12 @@ local TablineFileNameBlock = {
         end
     end,
     on_click = {
-        callback = function(_, minwid)
-            vim.api.nvim_win_set_buf(0, minwid)
+        callback = function(_, minwid, _, button)
+            if (button == "m") then -- close on mouse middle click
+                vim.api.nvim_buf_delete(minwid, {force = false})
+            else
+                vim.api.nvim_win_set_buf(0, minwid)
+            end
         end,
         minwid = function(self)
             return self.bufnr
