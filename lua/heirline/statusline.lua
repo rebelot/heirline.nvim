@@ -110,8 +110,8 @@ end
 --- Broadcast a function that will be executed by every component
 ---@param func function
 function StatusLine:broadcast(func)
+    func(self)
     for i, c in ipairs(self) do
-        func(c)
         c:broadcast(func)
     end
 end
