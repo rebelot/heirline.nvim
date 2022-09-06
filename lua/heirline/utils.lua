@@ -289,22 +289,20 @@ function M.pick_child_on_condition(component)
     end
 end
 
-local buflist_cache = {}
-local with_cache_release_au
-
 local function with_cache(func, cache)
-    if not with_cache_release_au then
-        with_cache_release_au = vim.api.nvim_create_autocmd({ "BufNew", "BufDelete" }, {
+    cache = cache or {}
+    if not cache.au_id then
+        cache.au_id = vim.api.nvim_create_autocmd({ "BufAdd", "BufDelete" }, {
             callback = function()
-                for i, _ in ipairs(cache) do
+                for i = 1, #cache do
                     cache[i] = nil
                 end
             end,
-            desc = "Heirline: cache for buflist get_bufs()",
+            desc = "Heirline: release cache for buflist get_bufs()",
         })
     end
     return function()
-        if cache and next(cache) ~= nil then
+        if cache and cache[1] ~= nil then
             return cache
         else
             local res = func()
@@ -380,9 +378,9 @@ local NTABLINES = 0
 ---@param right_trunc? table right truncation marker, shown is buffer list is too long
 ---@param buf_func? function return a list of <integer> bufnr handlers.
 ---@return table
-function M.make_buflist(buffer_component, left_trunc, right_trunc, buf_func)
+function M.make_buflist(buffer_component, left_trunc, right_trunc, buf_func, buf_cache)
     buf_func = buf_func or get_bufs
-    buf_func = with_cache(buf_func, buflist_cache)
+    buf_func = with_cache(buf_func, buf_cache)
 
     left_trunc = left_trunc or {
         provider = "<",
@@ -442,7 +440,11 @@ function M.make_buflist(buffer_component, left_trunc, right_trunc, buf_func)
 
             self.active_child = false
             local bufs = buf_func()
+            bufs = vim.tbl_filter(function(bufnr)
+                return vim.api.nvim_buf_is_valid(bufnr)
+            end, bufs)
             local visible_buffers = bufs_in_tab()
+
             for i, bufnr in ipairs(bufs) do
                 local child = self[i]
                 if not (child and child.bufnr == bufnr) then
@@ -465,7 +467,7 @@ function M.make_buflist(buffer_component, left_trunc, right_trunc, buf_func)
                 end
             end
             if #self > #bufs then
-                for i = #self, #bufs + 1, -1 do
+                for i = #bufs + 1, #self do
                     self[i] = nil
                 end
             end
