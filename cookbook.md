@@ -584,13 +584,19 @@ local FileName = {
 
 local FileFlags = {
     {
-        provider = function() if vim.bo.modified then return "[+]" end end,
-        hl = { fg = "green" }
-
-    }, {
-        provider = function() if (not vim.bo.modifiable) or vim.bo.readonly then return "" end end,
-        hl = { fg = "orange" }
-    }
+        condition = function()
+            return vim.bo.modified
+        end,
+        provider = "[+]",
+        hl = { fg = "green" },
+    },
+    {
+        condition = function()
+            return not vim.bo.modifiable or vim.bo.readonly
+        end,
+        provider = "",
+        hl = { fg = "orange" },
+    },
 }
 
 -- Now, let's say that we want the filename color to change if the buffer is
@@ -1744,18 +1750,24 @@ local TablineFileName = {
 
 -- this looks exactly like the FileFlags component that we saw in
 -- #crash-course-part-ii-filename-and-friends, but we are indexing the bufnr explicitly
+-- also, we are adding a nice icon for terminal buffers.
 local TablineFileFlags = {
     {
-        provider = function(self)
-            if vim.bo[self.bufnr].modified then
-                return "[+]"
-            end
+        condition = function(self)
+            vim.api.nvim_buf_get_option(self.bufnr, "modified")
         end,
+        provider = "[+]",
         hl = { fg = "green" },
     },
     {
+        condition = function(self)
+            return not vim.api.nvim_buf_get_option(self.bufnr, "modifiable")
+                or vim.api.nvim_buf_get_option(self.bufnr, "readonly")
+        end,
         provider = function(self)
-            if not vim.bo[self.bufnr].modifiable or vim.bo[self.bufnr].readonly then
+            if vim.api.nvim_buf_get_option(self.bufnr, "buftype") == "terminal" then
+                return "  "
+            else
                 return ""
             end
         end,
@@ -1771,6 +1783,9 @@ local TablineFileNameBlock = {
     hl = function(self)
         if self.is_active then
             return "TabLineSel"
+        -- why not?
+        -- elseif not vim.api.nvim_buf_is_loaded(self.bufnr) then
+        --     return { fg = "gray" }
         else
             return "TabLine"
         end
@@ -1797,7 +1812,7 @@ local TablineFileNameBlock = {
 -- a nice "x" button to close the buffer
 local TablineCloseButton = {
     condition = function(self)
-        return not vim.bo[self.bufnr].modified
+        return not vim.api.nvim_buf_get_option(self.bufnr, "modified")
     end,
     { provider = " " },
     {
@@ -1919,7 +1934,7 @@ local TabLine = { TabLineOffset, BufferLine, TabPages }
 require("heirline").setup(StatusLines, WinBar, TabLine)
 
 -- Yep, with heirline we're driving manual!
-vim.cmd([[au FileType * if index(['wipe', 'delete', 'unload'], &bufhidden) >= 0 | set nobuflisted | endif]])
+vim.cmd([[au FileType * if index(['wipe', 'delete'], &bufhidden) >= 0 | set nobuflisted | endif]])
 ```
 
 ## Theming
