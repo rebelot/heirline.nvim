@@ -321,7 +321,7 @@ end
 
 local function get_bufs()
     return vim.tbl_filter(function(bufnr)
-        return vim.api.nvim_buf_is_loaded(bufnr) and vim.bo[bufnr].buflisted
+        return vim.api.nvim_buf_get_option(bufnr, "buflisted")
     end, vim.api.nvim_list_bufs())
 end
 
