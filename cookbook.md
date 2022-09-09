@@ -1754,7 +1754,7 @@ local TablineFileName = {
 local TablineFileFlags = {
     {
         condition = function(self)
-            vim.api.nvim_buf_get_option(self.bufnr, "modified")
+            return vim.api.nvim_buf_get_option(self.bufnr, "modified")
         end,
         provider = "[+]",
         hl = { fg = "green" },
