@@ -267,7 +267,7 @@ function StatusLine:_eval()
     if update then
         if type(update) == "function" then
             if update(self) then
-                self._win_cahe = nil
+                self._win_cache = nil
             end
         else
             if not self._au_id then
