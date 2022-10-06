@@ -779,9 +779,8 @@ local Navic = {
     end
 }
 
--- Full nerd (with icon colors)!
--- Be careful, this implementation will work only if this component
--- is displayied in a single window, and it is the current window.
+-- Full nerd (with icon colors and clickable elements)!
+-- wokrs in multi window, but does not support flexible components (yet ...)
 local Navic = {
     condition = require("nvim-navic").is_available,
     static = {
@@ -815,11 +814,16 @@ local Navic = {
             TypeParameter = "Type",
         },
         -- bit operation dark magic, see below...
-        enc = function(a, b)
-            return bit.bor(bit.lshift(a, 16), b)
+        enc = function(line, col, winnr)
+            return bit.bor(bit.lshift(line, 16), bit.lshift(col, 6), winnr)
         end,
+        -- line: 16 bit (65535); col: 10 bit (1023); winnr: 6 bit (63)
         dec = function(c)
-            return { bit.rshift(c, 16), bit.band(c, 65535) }
+            local mask = bit.bnot(0)
+            local line = bit.rshift(c, 16)
+            local col = bit.band(bit.rshift(c, 6), bit.bnot(bit.lshift(mask, 10)))
+            local winnr = bit.band(c, bit.bnot(bit.lshift(mask, 6)))
+            return line, col, winnr
         end
     },
     init = function(self)
@@ -828,7 +832,7 @@ local Navic = {
         -- create a child for each level
         for i, d in ipairs(data) do
             -- encode line and column numbers into a single integer
-            local pos = self.enc(d.scope.start.line, d.scope.start.character)
+            local pos = self.enc(d.scope.start.line, d.scope.start.character, self.winnr)
             local child = {
                 {
                     provider = d.icon,
@@ -843,9 +847,10 @@ local Navic = {
                     on_click = {
                         -- pass the encoded position through minwid
                         minwid = pos,
-                        callback = function(self, minwid)
+                        callback = function(_, minwid)
                             -- decode
-                            vim.api.nvim_win_set_cursor(0, self.dec(minwid))
+                            local line, col, winnr = self.dec(minwid)
+                            vim.api.nvim_win_set_cursor(vim.fn.win_getid(winnr), {line, col})
                         end,
                         name = "heirline_navic",
                     },
@@ -861,7 +866,11 @@ local Navic = {
             table.insert(children, child)
         end
         -- instantiate the new child, overwriting the previous one
-        self[1] = self:new(children, 1)
+        self.child = self:new(children, 1)
+    end,
+    -- evaluate the children containing navic components
+    provider = function(self)
+        return self.child:eval()
     end,
     hl = { fg = "gray" },
 }
