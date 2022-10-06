@@ -819,10 +819,9 @@ local Navic = {
         end,
         -- line: 16 bit (65535); col: 10 bit (1023); winnr: 6 bit (63)
         dec = function(c)
-            local mask = bit.bnot(0)
             local line = bit.rshift(c, 16)
-            local col = bit.band(bit.rshift(c, 6), bit.bnot(bit.lshift(mask, 10)))
-            local winnr = bit.band(c, bit.bnot(bit.lshift(mask, 6)))
+            local col = bit.band(bit.rshift(c, 6), 1023)
+            local winnr = bit.band(c,  63)
             return line, col, winnr
         end
     },
