@@ -777,6 +777,7 @@ local Navic = {
     provider = function()
         require("nvim-navic").get_location({highlight=true}),
     end
+    update = 'CursorMoved'
 }
 
 -- Full nerd (with icon colors and clickable elements)!
@@ -872,6 +873,7 @@ local Navic = {
         return self.child:eval()
     end,
     hl = { fg = "gray" },
+    update = 'CursorMoved'
 }
 ```
 
