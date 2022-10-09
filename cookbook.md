@@ -1032,22 +1032,15 @@ Display informations from [nvim-dap](https://github.com/mfussenegger/nvim-dap)!
 
 ```lua
 local DAPMessages = {
-    -- display the dap messages only on the debugged file
     condition = function()
         local session = require("dap").session()
-        if session then
-            local filename = vim.api.nvim_buf_get_name(0)
-            if session.config then
-                local progname = session.config.program
-                return filename == progname
-            end
-        end
-        return false
+        return session ~= nil
     end,
     provider = function()
         return " " .. require("dap").status()
     end,
-    hl = { fg = utils.get_highlight('Debug').fg },
+    hl = "Debug"
+    -- see Click-it! section for clickable actions
 }
 ```
 
@@ -1731,7 +1724,69 @@ local WinBarFileName = utils.surround({ "", "" }, "bright_bg", {
 **Debugger on_click**: step-over, step-into, next, previous, stop buttons
 
 ```lua
---    coming soon!
+-- Note that we add spaces separately, so that only the icon characters will be clickable
+local DAPMessages = {
+    condition = function()
+        local session = require("dap").session()
+        return session ~= nil
+    end,
+    provider = function()
+        return " " .. require("dap").status() .. " "
+    end,
+    hl = "Debug",
+    {
+        provider = "",
+        on_click = {
+            callback = function()
+                require("dap").step_into()
+            end,
+            name = "heirline_dap_step_into",
+        },
+    },
+    { provider = " " },
+    {
+        provider = "",
+        on_click = {
+            callback = function()
+                require("dap").step_out()
+            end,
+            name = "heirline_dap_step_out",
+        },
+    },
+    { provider = " " },
+    {
+        provider = " ",
+        on_click = {
+            callback = function()
+                require("dap").step_over()
+            end,
+            name = "heirline_dap_step_over",
+        },
+    },
+    { provider = " " },
+    {
+        provider = "ﰇ",
+        on_click = {
+            callback = function()
+                require("dap").run_last()
+            end,
+            name = "heirline_dap_run_last",
+        },
+    },
+    { provider = " " },
+    {
+        provider = "",
+        on_click = {
+            callback = function()
+                require("dap").terminate()
+                require("dapui").close({})
+            end,
+            name = "heirline_dap_close",
+        },
+    },
+    { provider = " " },
+    -- icons:       ﰇ  
+}
 ```
 
 ## TabLine
