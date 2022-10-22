@@ -59,6 +59,11 @@ function M.setup(statusline, winbar, tabline)
     end
 end
 
+---comment
+---@param statusline StatusLine
+---@param winnr integer
+---@param full_width boolean
+---@return string
 local function _eval(statusline, winnr, full_width)
     statusline.winnr = winnr
     statusline._flexible_components = {}

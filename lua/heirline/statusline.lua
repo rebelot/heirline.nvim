@@ -3,11 +3,15 @@ local hi = require("heirline.highlights")
 local eval_hl = hi.eval_hl
 local tbl_insert = table.insert
 local tbl_concat = table.concat
+local tbl_extend = vim.tbl_extend
+local tbl_deep_extend = vim.tbl_deep_extend
+local tbl_contains = vim.tbl_contains
 local str_format = string.format
 
 local default_restrict = {
     init = true,
     provider = true,
+    hl = true,
     condition = true,
     restrict = true,
     pick_child = true,
@@ -23,7 +27,7 @@ local default_restrict = {
 ---@field condition? function
 ---@field init? function
 ---@field provider? function | string
----@field hl? function | table | string
+---@field hl? table | function | string
 ---@field restrict? table
 ---@field after? function
 ---@field update? function | table
@@ -37,10 +41,7 @@ local default_restrict = {
 ---@field _updatable_components table
 ---@field _flexible_components table
 ---@field pick_child? table<integer>
-local StatusLine = {
-    hl = {},
-    merged_hl = {},
-}
+local StatusLine = {}
 
 ---Initialize a new statusline object
 ---@param child table
@@ -52,26 +53,24 @@ function StatusLine:new(child, index)
 
     if child.hl then
         local hl_type = type(child.hl)
-        if hl_type == "function" then
+        if hl_type == "function" or hl_type == "string" then
             new.hl = child.hl
         elseif hl_type == "table" then
-            new.hl = vim.tbl_extend("keep", child.hl, {})
-        elseif hl_type == "string" then
-            new.hl = utils.get_highlight(child.hl)
+            new.hl = tbl_extend("keep", child.hl, {})
         end
     end
 
     if child.update then
         local update_type = type(child.update)
-        if vim.tbl_contains({ "function", "string" }, update_type) then
+        if tbl_contains({ "function", "string" }, update_type) then
             new.update = child.update
         elseif update_type == "table" then
-            new.update = vim.tbl_extend("keep", child.update, {})
+            new.update = tbl_extend("keep", child.update, {})
         end
     end
 
     new.condition = child.condition
-    new.pick_child = child.pick_child and vim.tbl_extend("keep", child.pick_child, {})
+    new.pick_child = child.pick_child and tbl_extend("keep", child.pick_child, {})
     if child.fallthrough ~= nil then
         new.fallthrough = child.fallthrough
     else
@@ -80,16 +79,16 @@ function StatusLine:new(child, index)
     new.init = child.init
     new.provider = child.provider
     new.after = child.after
-    new.on_click = child.on_click and vim.tbl_extend("keep", child.on_click, {})
-    new.restrict = child.restrict and vim.tbl_extend("keep", child.restrict, {})
+    new.on_click = child.on_click and tbl_extend("keep", child.on_click, {})
+    new.restrict = child.restrict and tbl_extend("keep", child.restrict, {})
 
     if child.static then
-        for k, v in pairs(vim.tbl_deep_extend("keep", child.static, {})) do
+        for k, v in pairs(tbl_deep_extend("keep", child.static, {})) do
             new[k] = v
         end
     end
 
-    local restrict = vim.tbl_extend("force", default_restrict, self.restrict or {})
+    local restrict = tbl_extend("force", default_restrict, self.restrict or {})
     setmetatable(new, self)
     self.__index = function(t, v)
         if not restrict[v] then
@@ -98,7 +97,7 @@ function StatusLine:new(child, index)
     end
 
     local parent_id = self.id or {}
-    new.id = vim.tbl_extend("force", parent_id, { [#parent_id + 1] = index })
+    new.id = tbl_extend("force", parent_id, { [#parent_id + 1] = index })
 
     for i, sub in ipairs(child) do
         new[i] = new:new(sub, i)
@@ -286,8 +285,8 @@ function StatusLine:_eval()
         self:init()
     end
 
-    local hl = self.hl
-    hl = type(hl) == "function" and (hl(self) or {}) or hl -- self raw hl
+    local hl = self.hl or {}
+    hl = type(hl) == "function" and (hl(self) or {}) or hl -- self raw hl, <string,table,nil>
 
     if type(hl) == "string" then
         hl = utils.get_highlight(hl)
@@ -295,10 +294,12 @@ function StatusLine:_eval()
 
     local parent_hl = self:nonlocal("merged_hl")
 
-    if parent_hl.force then
-        self.merged_hl = vim.tbl_extend("keep", parent_hl, hl)
+    if not parent_hl then
+        self.merged_hl = hl
+    elseif parent_hl.force then
+        self.merged_hl = tbl_extend("keep", parent_hl, hl)
     else
-        self.merged_hl = vim.tbl_extend("force", parent_hl, hl)
+        self.merged_hl = tbl_extend("force", parent_hl, hl)
     end
 
     local on_click = self.on_click

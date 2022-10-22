@@ -238,7 +238,8 @@ Each component may contain _any_ of the following fields:
   - Description: Set-like table to control which component fields can be
     inherited by the component's progeny. The supplied table gets merged with
     the defaults. By default, the following fields are private to the
-    component: `pick_child`, `init`, `provider`, `condition` and `restrict`.
+    component: `pick_child`, `init`, `provider`, `hl`, `condition`, `after`,
+    `on_click`, `update`, `fallthrough` and `restrict`.
     Attention: modifying the defaults could dramatically affect the behavior of
     the component! (eg: `restrict = { my_private_var = true, provider = false }`)
 
