@@ -178,7 +178,7 @@ local function group_flexible_components(flexible_components, mode)
 
         priority_groups[priority] = priority_groups[priority] or {}
         table.insert(priority_groups[priority], component)
-        if not priorities[priority] then
+        if not vim.tbl_contains(priorities, priority) then
             table.insert(priorities, priority)
         end
 
