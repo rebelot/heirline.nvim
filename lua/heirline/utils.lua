@@ -182,13 +182,13 @@ local function group_flexible_components(flexible_components, mode)
             table.insert(priorities, priority)
         end
 
-        local comp = mode == -1 and function(a, b)
-            return a < b
-        end or function(a, b)
-            return a > b
-        end
-        table.sort(priorities, comp)
     end
+    local comp = mode == -1 and function(a, b)
+        return a < b
+    end or function(a, b)
+        return a > b
+    end
+    table.sort(priorities, comp)
     return priority_groups, priorities
 end
 
