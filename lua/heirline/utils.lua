@@ -181,6 +181,7 @@ local function group_flexible_components(flexible_components, mode)
 
         priority_groups[priority] = priority_groups[priority] or {}
         table.insert(priority_groups[priority], component)
+
     end
     local priorities = vim.tbl_keys(priority_groups)
     local comp = mode == -1 and function(a, b)
