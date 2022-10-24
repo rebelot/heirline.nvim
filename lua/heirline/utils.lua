@@ -156,19 +156,22 @@ end
 
 local function group_flexible_components(flexible_components, mode)
     local priority_groups = {}
-    local priorities = {}
     local cur_priority
     local prev_component
+    local prev_parent
 
     for _, component in ipairs(flexible_components) do
         local priority
         if prev_component and is_child(component, prev_component) then
+            prev_parent = prev_component
             priority = cur_priority + mode
             -- if mode == -1 then
             --     priority = ec.priority < cur_priority + mode and ec.priority or cur_priority + mode
             -- elseif mode == 1 then
             --     priority = ec.priority > cur_priority + mode and ec.priority or cur_priority + mode
             -- end
+        elseif prev_parent and is_child(component, prev_parent) then
+            priority = cur_priority
         else
             priority = component._priority
         end
@@ -178,11 +181,9 @@ local function group_flexible_components(flexible_components, mode)
 
         priority_groups[priority] = priority_groups[priority] or {}
         table.insert(priority_groups[priority], component)
-        if not vim.tbl_contains(priorities, priority) then
-            table.insert(priorities, priority)
-        end
 
     end
+    local priorities = vim.tbl_keys(priority_groups)
     local comp = mode == -1 and function(a, b)
         return a < b
     end or function(a, b)
@@ -277,7 +278,8 @@ end
 ---@param component table
 function M.pick_child_on_condition(component)
     vim.notify_once(
-        [[Heirline: utils.pick_child_on_condition() is deprecated, please use the fallthrough field instead. To retain the same functionality, replace `init = utils.pick_child_on_condition()` with `fallthrough = false`]],
+        [[Heirline: utils.pick_child_on_condition() is deprecated, please use the fallthrough field instead. To retain the same functionality, replace `init = utils.pick_child_on_condition()` with `fallthrough = false`]]
+        ,
         vim.log.levels.ERROR
     )
     component.pick_child = {}
