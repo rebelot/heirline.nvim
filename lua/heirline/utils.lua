@@ -1,10 +1,17 @@
 local M = {}
+local nvim_get_hl_by_name = vim.api.nvim_get_hl_by_name
+local nvim_eval_statusline = vim.api.nvim_eval_statusline
+local nvim_buf_get_option = vim.api.nvim_buf_get_option
+local nvim_list_bufs = vim.api.nvim_list_bufs
+local tbl_contains = vim.tbl_contains
+local tbl_keys = vim.tbl_keys
+local tbl_filter = vim.tbl_filter
 
 ---Get highlight properties for a given highlight name
 ---@param name string
 ---@return table
 function M.get_highlight(name)
-    local hl = vim.api.nvim_get_hl_by_name(name, vim.o.termguicolors)
+    local hl = nvim_get_hl_by_name(name, vim.o.termguicolors)
     if vim.o.termguicolors then
         hl.fg = hl.foreground
         hl.bg = hl.background
@@ -96,7 +103,7 @@ end
 ---@param str string
 ---@return integer
 function M.count_chars(str)
-    return vim.api.nvim_eval_statusline(str, { winid = 0, maxwidth = 0 }).width
+    return nvim_eval_statusline(str, { winid = 0, maxwidth = 0 }).width
 end
 
 ---Create a flexible component
@@ -110,7 +117,7 @@ function M.make_flexible_component(priority, ...)
         _priority = priority,
     }
     new.init = function(self)
-        if not vim.tbl_contains(self._flexible_components, self) then
+        if not tbl_contains(self._flexible_components, self) then
             table.insert(self._flexible_components, self)
         end
         self:set_win_attr("_win_child_index", nil, 1)
@@ -181,9 +188,9 @@ local function group_flexible_components(flexible_components, mode)
 
         priority_groups[priority] = priority_groups[priority] or {}
         table.insert(priority_groups[priority], component)
-
     end
-    local priorities = vim.tbl_keys(priority_groups)
+
+    local priorities = tbl_keys(priority_groups)
     local comp = mode == -1 and function(a, b)
         return a < b
     end or function(a, b)
@@ -278,8 +285,7 @@ end
 ---@param component table
 function M.pick_child_on_condition(component)
     vim.notify_once(
-        [[Heirline: utils.pick_child_on_condition() is deprecated, please use the fallthrough field instead. To retain the same functionality, replace `init = utils.pick_child_on_condition()` with `fallthrough = false`]]
-        ,
+        [[Heirline: utils.pick_child_on_condition() is deprecated, please use the fallthrough field instead. To retain the same functionality, replace `init = utils.pick_child_on_condition()` with `fallthrough = false`]],
         vim.log.levels.ERROR
     )
     component.pick_child = {}
@@ -320,9 +326,9 @@ local function with_cache(func, cache)
 end
 
 local function get_bufs()
-    return vim.tbl_filter(function(bufnr)
-        return vim.api.nvim_buf_get_option(bufnr, "buflisted")
-    end, vim.api.nvim_list_bufs())
+    return tbl_filter(function(bufnr)
+        return nvim_buf_get_option(bufnr, "buflisted")
+    end, nvim_list_bufs())
 end
 
 local function bufs_in_tab(tabnr)
