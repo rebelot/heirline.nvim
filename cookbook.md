@@ -2024,6 +2024,7 @@ local TabLine = { TabLineOffset, BufferLine, TabPages }
 require("heirline").setup(StatusLines, WinBar, TabLine)
 
 -- Yep, with heirline we're driving manual!
+vim.o.showtabline = 2
 vim.cmd([[au FileType * if index(['wipe', 'delete'], &bufhidden) >= 0 | set nobuflisted | endif]])
 ```
 

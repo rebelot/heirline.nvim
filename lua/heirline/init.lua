@@ -54,7 +54,6 @@ function M.setup(statusline, winbar, tabline)
 
     if tabline then
         M.tabline = StatusLine:new(tabline)
-        vim.o.showtabline = 2
         vim.o.tabline = "%{%v:lua.require'heirline'.eval_tabline()%}"
     end
 end
