@@ -1256,7 +1256,7 @@ https://user-images.githubusercontent.com/36300441/187192243-b23e3458-1bc1-4701-
 
 ```lua
 local WorkDir = {
-    provider = function(self)
+    init = function(self)
         self.icon = (vim.fn.haslocaldir(0) == 1 and "l" or "g") .. " " .. " "
         local cwd = vim.fn.getcwd(0)
         self.cwd = vim.fn.fnamemodify(cwd, ":~")
