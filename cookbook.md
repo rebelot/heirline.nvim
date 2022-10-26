@@ -445,7 +445,7 @@ local ViMode = {
         -- component to be updated on operator pending mode
         if not self.once then
             vim.api.nvim_create_autocmd("ModeChanged", {
-                pattern = "*:*o"
+                pattern = "*:*o",
                 command = 'redrawstatus'
             })
             self.once = true
