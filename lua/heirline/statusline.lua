@@ -355,7 +355,7 @@ end
 
 function StatusLine:traverse(tree, stl)
     stl = stl or {}
-    tree = tree or self._tree
+    tree = tree or self:local_("_tree")
     local traverse = self.traverse
 
     if not tree then
