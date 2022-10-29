@@ -353,25 +353,37 @@ function StatusLine:_eval()
     return true
 end
 
-function StatusLine:traverse(tree, stl)
-    stl = stl or {}
-    tree = tree or self:local_("_tree")
-    local traverse = self.traverse
+---private
+---Traverse a nested tree and return the flattened tree
+---@param tree table 
+---@param flat_tree? table
+---@return table
+local function traverse(tree, flat_tree)
+    flat_tree = flat_tree or {}
 
     if not tree then
-        return ""
+        return {}
     end
 
     for _, node in ipairs(tree) do
         if type(node) ~= "table" then
-            tbl_insert(stl, node)
+            tbl_insert(flat_tree, node)
         else
-            traverse(self, node, stl)
+            traverse(node, flat_tree)
         end
     end
-    return tbl_concat(stl, "")
+    return flat_tree
 end
 
+--- Traverse the component nested tree and return the statusline string
+---@return string statusline the statusline string
+function StatusLine:traverse()
+    local tree = rawget(self, "_tree")
+    local flat_tree = traverse(tree)
+    return table.concat(flat_tree, "")
+end
+
+--- Empty the component tree leaving its reference intact
 function StatusLine:clear_tree()
     local tree = rawget(self, "_tree")
     if not tree then
