@@ -347,7 +347,6 @@ function StatusLine:_eval()
     end
 
     if update then
-        self:set_win_attr("_win_cache", tree)
         tbl_insert(self._updatable_components, self)
     end
     return true
@@ -355,7 +354,7 @@ end
 
 ---private
 ---Traverse a nested tree and return the flattened tree
----@param tree table 
+---@param tree table
 ---@param flat_tree? table
 ---@return table
 local function traverse(tree, flat_tree)
@@ -380,7 +379,7 @@ end
 function StatusLine:traverse()
     local tree = rawget(self, "_tree")
     local flat_tree = traverse(tree)
-    return table.concat(flat_tree, "")
+    return tbl_concat(flat_tree, "")
 end
 
 --- Empty the component tree leaving its reference intact
@@ -397,8 +396,7 @@ end
 -- this MUST be called at the end of the main loop
 function StatusLine:_freeze_cache()
     for _, component in ipairs(self._updatable_components) do
-        local win_cache = component:get_win_attr("_win_cache") -- check nil?
-        local fixed_cache = component:traverse(win_cache)
+        local fixed_cache = component:traverse()
         component:set_win_attr("_win_cache", fixed_cache)
         component:clear_tree()
         component._tree[1] = fixed_cache
