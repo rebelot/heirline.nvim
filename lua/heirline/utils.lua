@@ -280,23 +280,6 @@ function M.expand_or_contract_flexible_components(flexible_components, full_widt
     end
 end
 
---- Utility function to set component.pick_child on the first child that has a true condition,
---- this must be called within the component init.
----@param component table
-function M.pick_child_on_condition(component)
-    vim.notify_once(
-        [[Heirline: utils.pick_child_on_condition() is deprecated, please use the fallthrough field instead. To retain the same functionality, replace `init = utils.pick_child_on_condition()` with `fallthrough = false`]],
-        vim.log.levels.ERROR
-    )
-    component.pick_child = {}
-    for i, child in ipairs(component) do
-        if not child.condition or child:condition() then
-            table.insert(component.pick_child, i)
-            return
-        end
-    end
-end
-
 local function with_cache(func, cache)
     cache = cache or {}
     if not cache.au_id then
