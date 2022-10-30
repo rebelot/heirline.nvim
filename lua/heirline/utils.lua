@@ -447,10 +447,13 @@ function M.make_buflist(buffer_component, left_trunc, right_trunc, buf_func, buf
             end
 
             self.active_child = false
-            local bufs = buf_func()
-            bufs = vim.tbl_filter(function(bufnr)
-                return vim.api.nvim_buf_is_valid(bufnr)
-            end, bufs)
+            local tbufs = buf_func()
+            local bufs = {}
+            for _, bufnr in ipairs(tbufs) do
+                if vim.api.nvim_buf_is_valid(bufnr) then
+                    table.insert(bufs, bufnr)
+                end
+            end
             local visible_buffers = bufs_in_tab()
 
             for i, bufnr in ipairs(bufs) do
