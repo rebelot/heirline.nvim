@@ -9,7 +9,7 @@ local eval = function(winid)
 end
 local win_getid = function(nr)
     local id = vim.fn.win_getid(nr)
-    return id > 0 and id or error('window number not found')
+    return id > 0 and id or error("window number not found")
 end
 
 local a = { provider = string.rep("A", 40) }
@@ -83,6 +83,7 @@ describe("Updatable components", function()
         })
         eq("one", eval())
         provider = "two"
+        eq("one", eval())
         vim.cmd("doautocmd User TestUpdate")
         eq("two", eval())
         vim.cmd("au! User TestUpdate")
@@ -99,7 +100,7 @@ describe("Update and flexible", function()
 
         eq(40, #eval())
 
-        vim.cmd('wincmd 39v')
+        vim.cmd("wincmd 39v")
         eq(40, #eval(win_getid(1)))
         eq(40, #eval(win_getid(2)))
 
@@ -107,7 +108,7 @@ describe("Update and flexible", function()
         eq(30, #eval(win_getid(1)))
         eq(40, #eval(win_getid(2)))
 
-        vim.cmd('wincmd 45|')
+        vim.cmd("wincmd 45|")
         eq(30, #eval(win_getid(1)))
         eq(40, #eval(win_getid(2)))
 
@@ -121,12 +122,12 @@ describe("Update and flexible", function()
     it("updates on different windows (wrapped)", function()
         vim.cmd("wincmd o")
 
-        local flex = { u.make_flexible_component(1, a, b), update = { "User", pattern = "TestUpdate" }}
+        local flex = { u.make_flexible_component(1, a, b), update = { "User", pattern = "TestUpdate" } }
         h.setup(flex)
 
         eq(40, #eval())
 
-        vim.cmd('wincmd 39v')
+        vim.cmd("wincmd 39v")
         eq(40, #eval(win_getid(1)))
         eq(40, #eval(win_getid(2)))
 
@@ -134,7 +135,7 @@ describe("Update and flexible", function()
         eq(30, #eval(win_getid(1)))
         eq(40, #eval(win_getid(2)))
 
-        vim.cmd('wincmd 45|')
+        vim.cmd("wincmd 45|")
         eq(30, #eval(win_getid(1)))
         eq(40, #eval(win_getid(2)))
 
@@ -142,6 +143,37 @@ describe("Update and flexible", function()
         eq(40, #eval(win_getid(1)))
         eq(30, #eval(win_getid(2)))
 
+        vim.cmd("au! User TestUpdate")
+    end)
+
+    it("updatable as flex child", function()
+        vim.cmd("wincmd o")
+        local provider = "AAA"
+        h.setup({
+            u.make_flexible_component(1, {
+                provider = function()
+                    return "AAA" .. provider
+                end,
+                update = { "User", pattern = "TestUpdate" },
+            }, {
+                provider = function()
+                    return provider
+                end,
+                update = { "User", pattern = "TestUpdate" },
+            }),
+        })
+        eq(6, #eval())
+        vim.cmd("wincmd 5v")
+        eq(3, #eval(win_getid(1)))
+        eq(6, #eval(win_getid(2)))
+
+        provider = "BBB"
+        eq("AAA", eval(win_getid(1)))
+        eq("AAAAAA", eval(win_getid(2)))
+
+        vim.cmd("doautocmd User TestUpdate")
+        eq("BBB", eval(win_getid(1)))
+        eq("AAABBB", eval(win_getid(2)))
         vim.cmd("au! User TestUpdate")
     end)
 end)
