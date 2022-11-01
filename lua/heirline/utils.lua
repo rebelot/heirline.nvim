@@ -3,6 +3,7 @@ local nvim_get_hl_by_name = vim.api.nvim_get_hl_by_name
 local nvim_eval_statusline = vim.api.nvim_eval_statusline
 local nvim_buf_get_option = vim.api.nvim_buf_get_option
 local nvim_list_bufs = vim.api.nvim_list_bufs
+local nvim_buf_is_valid = vim.api.nvim_buf_is_valid
 local tbl_contains = vim.tbl_contains
 local tbl_keys = vim.tbl_keys
 local tbl_filter = vim.tbl_filter
@@ -280,10 +281,10 @@ function M.expand_or_contract_flexible_components(flexible_components, full_widt
     end
 end
 
-local function with_cache(func, cache)
+local function with_cache(func, cache, au_id)
     cache = cache or {}
-    if not cache.au_id then
-        cache.au_id = vim.api.nvim_create_autocmd({ "BufAdd", "BufDelete" }, {
+    if not au_id then
+        au_id = vim.api.nvim_create_autocmd({ "BufAdd", "BufDelete" }, {
             callback = function()
                 for i = 1, #cache do
                     cache[i] = nil
@@ -291,6 +292,7 @@ local function with_cache(func, cache)
             end,
             desc = "Heirline: release cache for buflist get_bufs()",
         })
+        return with_cache(func, cache, au_id)
     end
     return function()
         if cache and cache[1] ~= nil then
@@ -310,7 +312,7 @@ end
 
 local function get_bufs()
     return tbl_filter(function(bufnr)
-        return nvim_buf_get_option(bufnr, "buflisted")
+        return nvim_buf_get_option(bufnr, "buflisted") and nvim_buf_is_valid(bufnr)
     end, nvim_list_bufs())
 end
 
@@ -368,10 +370,10 @@ local NTABLINES = 0
 ---@param left_trunc? table left truncation marker, shown is buffer list is too long
 ---@param right_trunc? table right truncation marker, shown is buffer list is too long
 ---@param buf_func? function return a list of <integer> bufnr handlers.
+---@param buf_cache? table reference to the buflist cache
 ---@return table
 function M.make_buflist(buffer_component, left_trunc, right_trunc, buf_func, buf_cache)
-    buf_func = buf_func or get_bufs
-    buf_func = with_cache(buf_func, buf_cache)
+    buf_func = with_cache(buf_func or get_bufs, buf_cache)
 
     left_trunc = left_trunc or {
         provider = "<",
@@ -430,13 +432,7 @@ function M.make_buflist(buffer_component, left_trunc, right_trunc, buf_func, buf
             end
 
             self.active_child = false
-            local tbufs = buf_func()
-            local bufs = {}
-            for _, bufnr in ipairs(tbufs) do
-                if vim.api.nvim_buf_is_valid(bufnr) then
-                    table.insert(bufs, bufnr)
-                end
-            end
+            local bufs = get_bufs()
             local visible_buffers = bufs_in_tab()
 
             for i, bufnr in ipairs(bufs) do
