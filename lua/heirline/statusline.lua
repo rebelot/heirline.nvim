@@ -200,6 +200,9 @@ end
 ---@return string
 local function register_global_function(component)
     local on_click = component.on_click
+    if not on_click then
+        error()
+    end
 
     if type(on_click.callback) == "string" then
         return on_click.callback
