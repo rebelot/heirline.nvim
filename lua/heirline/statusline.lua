@@ -1,8 +1,10 @@
 local utils = require("heirline.utils")
+local count_chars = utils.count_chars
 local hi = require("heirline.highlights")
 local eval_hl = hi.eval_hl
 local tbl_insert = table.insert
 local tbl_concat = table.concat
+local tbl_keys = vim.tbl_keys
 local tbl_extend = vim.tbl_extend
 local tbl_deep_extend = vim.tbl_deep_extend
 local tbl_contains = vim.tbl_contains
@@ -21,6 +23,7 @@ local default_restrict = {
     fallthrough = true,
     _win_cache = true,
     _au_id = true,
+    _win_child_index = true,
 }
 
 ---@class StatusLine
@@ -35,6 +38,7 @@ local default_restrict = {
 ---@field id table<integer>
 ---@field winnr integer
 ---@field fallthrough boolean
+---@field flexible integer
 ---@field _win_cache? table
 ---@field _au_id? integer
 ---@field _tree table
@@ -79,6 +83,7 @@ function StatusLine:new(child, index)
     new.init = child.init
     new.provider = child.provider
     new.after = child.after
+    new.flexible = child.flexible
     new.on_click = child.on_click and tbl_extend("keep", child.on_click, {})
     new.restrict = child.restrict and tbl_extend("keep", child.restrict, {})
 
@@ -140,6 +145,21 @@ function StatusLine:get(id)
         curr = curr[i]
     end
     return curr
+end
+
+function StatusLine:is_child(other)
+    if not other then
+        return false
+    end
+    if #self.id <= #other.id then
+        return false
+    end
+    for i, v in ipairs(other.id) do
+        if self.id[i] ~= v then
+            return false
+        end
+    end
+    return true
 end
 
 --- Get attribute `attr` value from parent component
@@ -288,6 +308,16 @@ function StatusLine:_eval()
         self:init()
     end
 
+    if rawget(self, "flexible") then
+        if not tbl_contains(self._flexible_components, self) then
+            table.insert(self._flexible_components, self)
+        end
+        self:set_win_attr("_win_child_index", nil, 1)
+        self.pick_child = { self:get_win_attr("_win_child_index") }
+        -- alwaus prefer parent priority
+        self._priority = self._priority or self.flexible
+    end
+
     local hl = self.hl or {}
     hl = type(hl) == "function" and (hl(self) or {}) or hl -- self raw hl, <string,table,nil>
 
@@ -415,4 +445,139 @@ function StatusLine:is_empty()
     return self:traverse() == ""
 end
 
+local function next_child(self)
+    local pi = self:get_win_attr("_win_child_index") + 1
+    if pi > #self then
+        return false
+    end
+    self:set_win_attr("_win_child_index", pi)
+    return true
+end
+
+local function prev_child(self)
+    local pi = self:get_win_attr("_win_child_index") - 1
+    if pi < 1 then
+        return false
+    end
+    self:set_win_attr("_win_child_index", pi)
+    return true
+end
+
+local function group_flexible_components(flexible_components, mode)
+    local priority_groups = {}
+    local cur_priority
+    local prev_component
+    local prev_parent
+
+    for _, component in ipairs(flexible_components) do
+        local priority
+        if prev_component and component:is_child(prev_component) then
+            prev_parent = prev_component
+            priority = cur_priority + mode
+            -- if mode == -1 then
+            --     priority = ec.priority < cur_priority + mode and ec.priority or cur_priority + mode
+            -- elseif mode == 1 then
+            --     priority = ec.priority > cur_priority + mode and ec.priority or cur_priority + mode
+            -- end
+        elseif prev_parent and component:is_child(prev_parent) then
+            priority = cur_priority
+        else
+            priority = component._priority
+        end
+
+        prev_component = component
+        cur_priority = priority
+
+        priority_groups[priority] = priority_groups[priority] or {}
+        table.insert(priority_groups[priority], component)
+    end
+
+    local priorities = tbl_keys(priority_groups)
+    local comp = mode == -1 and function(a, b)
+        return a < b
+    end or function(a, b)
+        return a > b
+    end
+    table.sort(priorities, comp)
+    return priority_groups, priorities
+end
+
+---@param full_width boolean
+---@param out string
+function StatusLine:expand_or_contract_flexible_components(full_width, out)
+    local flexible_components = self._flexible_components
+    if not flexible_components or not next(flexible_components) then
+        return
+    end
+
+    local winw = (full_width and vim.o.columns) or vim.api.nvim_win_get_width(0)
+
+    local stl_len = count_chars(out)
+
+    if stl_len > winw then
+        local priority_groups, priorities = group_flexible_components(flexible_components, -1)
+
+        local saved_chars = 0
+
+        for _, p in ipairs(priorities) do
+            while true do
+                local out_of_components = true
+                for _, component in ipairs(priority_groups[p]) do
+                    -- try increasing the child index and return success
+                    if next_child(component) then
+                        out_of_components = false
+                        local prev_len = count_chars(component:traverse())
+                        local cur_len = count_chars(component:eval())
+                        -- component:clear_tree()
+                        -- component._tree[1] = component[component:get_win_attr("_win_child_index")]:traverse()
+                        saved_chars = saved_chars + (prev_len - cur_len)
+                    end
+                end
+
+                if stl_len - saved_chars <= winw then
+                    return
+                end
+
+                if out_of_components then
+                    break
+                end
+            end
+        end
+    elseif stl_len < winw then
+        local gained_chars = 0
+
+        local priority_groups, priorities = group_flexible_components(flexible_components, 1)
+
+        for _, p in ipairs(priorities) do
+            while true do
+                local out_of_components = true
+                for _, component in ipairs(priority_groups[p]) do
+                    if prev_child(component) then
+                        out_of_components = false
+                        local prev_len = count_chars(component:traverse())
+                        local cur_len = count_chars(component:eval())
+                        -- component:clear_tree()
+                        gained_chars = gained_chars + (cur_len - prev_len)
+                    end
+                end
+
+                if stl_len + gained_chars > winw then
+                    for _, component in ipairs(priority_groups[p]) do
+                        next_child(component)
+                        -- here we need to manually reset the component tree, as we are increasing the
+                        -- child index but without calling eval (wich should handle that);
+                        -- since we went "one index too little", the next-index child tree has been already evaluated
+                        -- in the previous loop.
+                        component:clear_tree()
+                        component._tree[1] = component[component:get_win_attr("_win_child_index")]:traverse()
+                    end
+                    return
+                end
+                if out_of_components then
+                    break
+                end
+            end
+        end
+    end
+end
 return StatusLine

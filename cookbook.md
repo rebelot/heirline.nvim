@@ -192,7 +192,14 @@ Each component may contain _any_ of the following fields:
     Additionally, when `update` is a `table`, the fields `pattern` and `callback` can be set (`:h nvim_create_autocmd`);
     The callback will have the signature `callback(component, args)`,
     where `args` are the arguments described in `:h nvim_create_autocmd`.
-- `{...}`:
+- `flexible`:
+  - Type: `integer`
+  - Description: Flags the component as a flexible component (see [Flexible Components](#flexible-components)) with
+    the supplied priority. Children of this component **must** be ordered with decreasing length.
+    Only the longest children that fits within the available space will be rendered.
+    Priority value may be set to `true` for nested flexible components,
+    as only the truthiness of the field is required and any `integer` value would be ignored anyway.
+- `{...} `:
   - Type: `list`
   - Description: The component progeny. Each item of the list is a component
     itself and may contain any of the basic and advanced fields.
@@ -239,7 +246,7 @@ Each component may contain _any_ of the following fields:
     inherited by the component's progeny. The supplied table gets merged with
     the defaults. By default, the following fields are private to the
     component: `pick_child`, `init`, `provider`, `hl`, `condition`, `after`,
-    `on_click`, `update`, `fallthrough` and `restrict`.
+    `on_click`, `update`, `fallthrough`, `flexible` and `restrict`.
     Attention: modifying the defaults could dramatically affect the behavior of
     the component! (eg: `restrict = { my_private_var = true, provider = false }`)
 
@@ -340,11 +347,6 @@ These functions are accessible via `require'heirline.conditions'` and
   - `component`: the component to be surrounded.
 - `insert(parent, ...)`: return a copy of `parent` component where each `child`
   in `...` (variable arguments) is appended to its children (if any).
-- `make_flexible_component(priority, ...)`: Returns a _flexible component_ with
-  the given priority (`int`). This component will cycle between all the `components`
-  passed as `...` arguments until they fit in the available space for the
-  statusline. The components passed as variable arguments should evaluate to
-  decreasing lengths. See [Flexible Components](#flexible-components) for more!
 - `make_buflist(buffer_component, left_trunc?, right_trunc?, buf_func?, buf_cache?)`: Returns a component
   which renders a **bufferline**. `buffer_component` is the component used to display
   each listed buffer, it receives the fields:
@@ -1191,8 +1193,9 @@ can be nested and are context-aware!
 Flexible components are components that will adjust their output depending on
 the visible space for that window statusline.
 
-Setting them up is as easy as calling `utils.make_flexible_component(priority, ...)`
-replacing the variable `...` with a series of components that will evaluate to
+Setting them up is as easy as creating a component withe the
+`flexible` field set to the desired `priority`: `{ flexible = <integer>, ...}`,
+replacing `...` with a series of children that will evaluate to
 decreasing lengths.
 
 The `priority` will determine the order at which multiple flexible components will be
@@ -1205,14 +1208,14 @@ expanded or contracted:
 Flexible components can be nested at will, however, when doing so, the
 `priority` of the nested components will be ignored and only the
 **_outermost_** priority will be used to determine the order of
-expansion/contraction. If you'd like nested components to have different
-priorities, make sure there is enough difference between the priorities of the
-outermost ("_root_") flexible components (at least `1 + (1 for each level of nesting)`),
-unless you are after some very complicated behavior.
+expansion/contraction.
 
-You don't need to do the math though, you can just use large numbers! If
-nesting seems complex, it is because it is! Remember that you can suit most of
-your needs without nesting flexible components.
+**NOTE on nesting flexible components**:
+When creating separated groups of nested flexible components (siblings),
+if you want them to have different priorities, make sure that there is enough
+difference between their priorities, that should be _at least_ `1 + #(nested levels)`.
+You don't need to do the math though, you can just use large numbers
+to separate the priorities of separate groups of nested flexible components!
 
 Here's a **_wild_** example:
 
@@ -1225,25 +1228,25 @@ local e = { provider = string.rep("E", 8) }
 local f = { provider = string.rep("F", 4) }
 
 local nest_madness = {
-    utils.make_flexible_component(1,
+    { flexible = 1, -- first root, with two levels of nesting, for a total of #3 levels
         a,
-        utils.make_flexible_component(nil, -- nested components priority is ignored!
+        { flexible = true, -- nested components priority is ignored!
             b,
-            utils.make_flexible_component(nil, c, d),
+            { flexible = true, c, d },
             e
-        ),
+        },
         f
-    ),
+    },
     { provider = "%=" },
-    utils.make_flexible_component(4, -- 1 + 1 * 2 levels of nesting
+    { flexible = 4, -- second root, if we want it to have a higher priority, priority should be at least 1 + 3 = 4
         a,
-        utils.make_flexible_component(nil,
+        { flexible = true,
             b,
-            utils.make_flexible_component(nil, c, d),
+            { flexible = true, c, d },
             e
-        ),
+        },
         f
-    ),
+    },
 }
 require("heirline").setup(nest_madness)
 ```
@@ -1263,23 +1266,27 @@ local WorkDir = {
     end,
     hl = { fg = "blue", bold = true },
 
-    utils.make_flexible_component(1, {
+    flexible = 1,
+
+    {
         -- evaluates to the full-lenth path
         provider = function(self)
             local trail = self.cwd:sub(-1) == "/" and "" or "/"
             return self.icon .. self.cwd .. trail .." "
         end,
-    }, {
+    },
+    {
         -- evaluates to the shortened path
         provider = function(self)
             local cwd = vim.fn.pathshorten(self.cwd)
             local trail = self.cwd:sub(-1) == "/" and "" or "/"
             return self.icon .. cwd .. trail .. " "
         end,
-    }, {
+    },
+    {
         -- evaluates to "", hiding the component
         provider = "",
-    }),
+    }
 }
 ```
 
@@ -1294,22 +1301,25 @@ local FileName = {
     end,
     hl = { fg = utils.get_highlight("Directory").fg },
 
-    utils.make_flexible_component(2, {
+    flexible = 2,
+
+    {
         provider = function(self)
             return self.lfilename
         end,
-    }, {
+    },
+    {
         provider = function(self)
             return vim.fn.pathshorten(self.lfilename)
         end,
-    }),
+    },
 }
 ```
 
 **Flexible Navic** _a.k.a._ make it disappear
 
 ```lua
-local Navic = utils.make_flexible_component(3, Navic, { provider = "" })
+local Navic = { flexible = 3, Navic, { provider = "" } }
 ```
 
 ## Putting it all together: Conditional Statuslines

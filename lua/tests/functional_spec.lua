@@ -25,7 +25,7 @@ local fill = { provider = "%=" }
 describe("Flexible components", function()
     it("works on single component", function()
         vim.cmd("wincmd o")
-        h.setup(u.make_flexible_component(1, a, b)) -- 40; 30
+        h.setup({ flexible = 1, a, b }) -- 40; 30
         vim.o.laststatus = 2
         eq(40, #eval())
         vim.cmd("wincmd 39v")
@@ -36,10 +36,50 @@ describe("Flexible components", function()
 
     it("works on nested components", function()
         vim.cmd("wincmd o")
-        h.setup(u.make_flexible_component(1, a, u.make_flexible_component(nil, b, c), {
-            u.make_flexible_component(nil, e, f),
-            u.make_flexible_component(nil, e, f),
-        }, f)) -- 40; 30
+        h.setup({
+            flexible = 1,
+            a,
+            { flexible = true, b, c },
+            {
+                { flexible = true, e, f },
+                { flexible = true, e, f },
+            },
+            f,
+        }) -- 40; 30
+
+        vim.o.laststatus = 2
+        eq(40, #eval())
+        vim.cmd("wincmd 39v")
+        eq(30, #eval())
+        vim.cmd("wincmd 29|")
+        eq(20, #eval())
+        vim.cmd("wincmd 19|")
+        eq(10, #eval())
+        vim.cmd("wincmd 9|")
+        eq(4, #eval())
+        vim.cmd("wincmd 3|")
+        eq(2, #eval())
+
+        vim.cmd("wincmd 9|")
+        eq(4, #eval())
+        vim.cmd("wincmd 19|")
+        eq(10, #eval())
+        vim.cmd("wincmd 29|")
+        eq(20, #eval())
+        vim.cmd("wincmd 39v")
+        eq(30, #eval())
+        vim.cmd("wincmd 40v")
+        eq(40, #eval())
+    end)
+
+    it("works on nested components (using deprecated util)", function()
+        vim.cmd("wincmd o")
+        h.setup({
+            u.make_flexible_component(1, a, u.make_flexible_component(nil, b, c), {
+                u.make_flexible_component(nil, e, f),
+                u.make_flexible_component(nil, e, f),
+            }, f),
+        }) -- 40; 30
 
         vim.o.laststatus = 2
         eq(40, #eval())
@@ -94,7 +134,7 @@ describe("Update and flexible", function()
     it("updates on different windows (direct)", function()
         vim.cmd("wincmd o")
 
-        local flex = u.make_flexible_component(1, a, b)
+        local flex = { flexible = 1, a, b }
         flex.update = { "User", pattern = "TestUpdate" }
         h.setup(flex)
 
@@ -122,7 +162,7 @@ describe("Update and flexible", function()
     it("updates on different windows (wrapped)", function()
         vim.cmd("wincmd o")
 
-        local flex = { u.make_flexible_component(1, a, b), update = { "User", pattern = "TestUpdate" } }
+        local flex = { { flexible = 1, a, b }, update = { "User", pattern = "TestUpdate" } }
         h.setup(flex)
 
         eq(40, #eval())
@@ -150,17 +190,19 @@ describe("Update and flexible", function()
         vim.cmd("wincmd o")
         local provider = "AAA"
         h.setup({
-            u.make_flexible_component(1, {
+            flexible = 1,
+            {
                 provider = function()
                     return "AAA" .. provider
                 end,
                 update = { "User", pattern = "TestUpdate" },
-            }, {
+            },
+            {
                 provider = function()
                     return provider
                 end,
                 update = { "User", pattern = "TestUpdate" },
-            }),
+            },
         })
         eq(6, #eval())
         vim.cmd("wincmd 5v")
