@@ -2,41 +2,46 @@
 
 ## Index
 
-- [Main concepts](#main-concepts)
-- [Component fields](#component-fields)
-  - [The StatusLine life cycle](#the-statusline-life-cycle)
-  - [StatusLine Base Methods and Attributes](#statusline-base-methods-and-attributes)
-- [Builtin functions](#builtin-functions)
-- [Recipes](#recipes)
-  - [Getting started](#getting-started)
-  - [Colors, colors, more colors!](#colors-colors-more-colors)
-  - [Crash course: the ViMode](#crash-course-the-vimode)
-  - [Crash course part II: FileName and friends](#crash-course-part-ii-filename-and-friends)
+<!--toc:start-->
+- [Cookbook.md](#cookbookmd)
+  - [Index](#index)
+  - [Main concepts](#main-concepts)
+  - [Component fields](#component-fields)
+    - [The StatusLine life cycle](#the-statusline-life-cycle)
+    - [StatusLine Base Methods and Attributes](#statusline-base-methods-and-attributes)
+  - [Builtin functions](#builtin-functions)
+  - [Recipes](#recipes)
+    - [Getting started](#getting-started)
+    - [Colors, colors, more colors](#colors-colors-more-colors)
+    - [Crash course: the ViMode](#crash-course-the-vimode)
+    - [Crash course part II: FileName and friends](#crash-course-part-ii-filename-and-friends)
   - [FileType, FileEncoding and FileFormat](#filetype-fileencoding-and-fileformat)
-  - [FileSize and FileLastModified](#filesize-and-filelastmodified)
-  - [Cursor position: Ruler and ScrollBar ](#cursor-position-ruler-and-scrollbar)
-  - [LSP](#lsp)
-  - [Diagnostics](#diagnostics)
-  - [Git](#git)
-  - [Debugger](#debugger)
-  - [Tests](#tests)
-  - [Working Directory](#working-directory)
-  - [Terminal Name](#terminal-name)
-  - [Help FileName](#help-filename)
-  - [Snippets Indicator](#snippets-indicator)
-  - [Spell](#spell)
-- [Flexible Components](#flexible-components)
-- [Putting it all together: Conditional Statuslines](#putting-it-all-together-conditional-statuslines)
-  - [Lion's finesse](#lions-finesse)
-  - [Winbar](#winbar)
-- [A classic: Change multiple background colors based on Vi Mode](#a-classic-change-multiple-background-colors-based-on-vi-mode)
-- [Click it!](#click-it)
-- [TabLine](#tabline) :new:
-  - [Bufferline](#bufferline)
-  - [TabList](#tablist)
-  - [TablineOffset](#tablineoffset)
-  - [Hello Tabline!](#goodbye-bufferlinehello-tabline)
-- [Theming](#theming)
+    - [FileSize and FileLastModified](#filesize-and-filelastmodified)
+    - [Cursor position: Ruler and ScrollBar](#cursor-position-ruler-and-scrollbar)
+    - [LSP](#lsp)
+    - [Diagnostics](#diagnostics)
+    - [Git](#git)
+    - [Debugger](#debugger)
+    - [Tests](#tests)
+    - [Working Directory](#working-directory)
+    - [Terminal Name](#terminal-name)
+    - [Help FileName](#help-filename)
+    - [Snippets Indicator](#snippets-indicator)
+    - [Spell](#spell)
+  - [Flexible Components](#flexible-components)
+  - [Putting it all together: Conditional Statuslines](#putting-it-all-together-conditional-statuslines)
+    - [Lion's finesse](#lions-finesse)
+    - [Winbar](#winbar)
+  - [A classic: Change multiple background colors based on Vi Mode.](#a-classic-change-multiple-background-colors-based-on-vi-mode)
+  - [Click it!](#click-it)
+  - [TabLine](#tabline)
+    - [Bufferline](#bufferline)
+    - [TablinePicker](#tablinepicker) :new:
+    - [TabList](#tablist)
+    - [TablineOffset](#tablineoffset)
+    - [~~Goodbye Bufferline~~Hello Tabline!](#goodbye-bufferlinehello-tabline)
+  - [Theming](#theming)
+  <!--toc:end-->
 
 ## Main concepts
 
@@ -1946,6 +1951,55 @@ local BufferLine = utils.make_buflist(
     { provider = "", hl = { fg = "gray" } } -- right trunctation, also optional (defaults to ...... yep, ">")
     -- by the way, open a lot of buffers and try clicking them ;)
 )
+```
+
+### TablinePicker
+
+This is a very simple implementation of a buffer picker triggered by a keymap.
+The label mechanism tries to assign the first letter of the buffer name which has not been already assigned.
+The keymap will display the labels, and presing the label key will navigate to the corresponding buffer.
+
+Insert this component anywhere within the `buffer_component` passed to `utils.make_buflist()`.
+```lua
+local TablinePicker = {
+    condition = function(self)
+        return self._show_picker
+    end,
+    init = function(self)
+        local bufname = vim.api.nvim_buf_get_name(self.bufnr)
+        bufname = vim.fn.fnamemodify(bufname, ":t")
+        local label = bufname:sub(1, 1)
+        local i = 2
+        while self._picker_labels[label] do
+            if i > #bufname then
+                break
+            end
+            label = bufname:sub(i, i)
+            i = i + 1
+        end
+        self._picker_labels[label] = self.bufnr
+        self.label = label
+    end,
+    provider = function(self)
+        return self.label
+    end,
+    hl = { fg = "red", bold = true },
+}
+
+vim.keymap.set("n", "gbp", function()
+    local tabline = require("heirline").tabline
+    local buflist = tabline._buflist[1]
+    buflist._picker_labels = {}
+    buflist._show_picker = true
+    vim.cmd.redrawtabline()
+    local char = vim.fn.getcharstr()
+    local bufnr = buflist._picker_labels[char]
+    if bufnr then
+        vim.api.nvim_win_set_buf(0, bufnr)
+    end
+    buflist._show_picker = false
+    vim.cmd.redrawtabline()
+end)
 ```
 
 ### TabList
