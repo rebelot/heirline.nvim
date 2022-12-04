@@ -1498,13 +1498,10 @@ to the new Neovim `winbar`!
 **NOTE**: `winbar` is set _locally_ using a `BufWinEnter` autocommand,
 this way, it is possible to disable showing the `winbar` on a per-window basis.
 This can be accomplished directly by Heirline during component evaluation (see example below)
-and/or by defining your own autocommands somewhere else, e.g.:
+and/or by hooking into `HeirlineInitWinbar` event using an autocommand.
 
-```vim
-autocmd FileType foo setlocal winbar=
-```
-
-or
+***For optimal behavior, it is recommended to set up both methods, as they
+are complementary to each other.***
 
 ```lua
 vim.api.nvim_create_autocmd("User", {
