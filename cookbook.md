@@ -625,7 +625,7 @@ local FileNameModifer = {
 FileNameBlock = utils.insert(FileNameBlock,
     FileIcon,
     utils.insert(FileNameModifer, FileName), -- a new table where FileName is a child of FileNameModifier
-    unpack(FileFlags), -- A small optimisation, since their parent does nothing
+    FileFlags,
     { provider = '%<'} -- this means that the statusline is cut here when there's not enough space
 )
 
