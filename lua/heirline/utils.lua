@@ -219,10 +219,13 @@ local NTABLINES = 0
 ---@param left_trunc? table left truncation marker, shown is buffer list is too long
 ---@param right_trunc? table right truncation marker, shown is buffer list is too long
 ---@param buf_func? function return a list of <integer> bufnr handlers.
----@param buf_cache? table reference to the buflist cache
+---@param buf_cache? table reference to the buflist cache or false to disable caching
 ---@return table
 function M.make_buflist(buffer_component, left_trunc, right_trunc, buf_func, buf_cache)
-    buf_func = with_cache(buf_func or get_bufs, buf_cache)
+    buf_func = buf_func or get_bufs
+    if buf_cache ~= false then
+        buf_func = with_cache(buf_func, buf_cache)
+    end
 
     left_trunc = left_trunc or {
         provider = "<",
@@ -281,7 +284,7 @@ function M.make_buflist(buffer_component, left_trunc, right_trunc, buf_func, buf
             end
 
             self.active_child = false
-            local bufs = get_bufs()
+            local bufs = buf_func()
             local visible_buffers = bufs_in_tab()
 
             for i, bufnr in ipairs(bufs) do
