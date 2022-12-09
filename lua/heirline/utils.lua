@@ -281,7 +281,7 @@ function M.make_buflist(buffer_component, left_trunc, right_trunc, buf_func, buf
             end
 
             self.active_child = false
-            local bufs = get_bufs()
+            local bufs = buf_func()
             local visible_buffers = bufs_in_tab()
 
             for i, bufnr in ipairs(bufs) do
