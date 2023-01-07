@@ -789,7 +789,7 @@ local Navic = {
 }
 
 -- Full nerd (with icon colors and clickable elements)!
--- wokrs in multi window, but does not support flexible components (yet ...)
+-- works in multi window, but does not support flexible components (yet ...)
 local Navic = {
     condition = require("nvim-navic").is_available,
     static = {
