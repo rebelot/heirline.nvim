@@ -70,7 +70,12 @@ local WinBar = {{...}, {{...}, {...}}}
 local TabLine = {{...}, {...}, {...}}
 
 -- the winbar parameter is optional!
-require'heirline'.setup(StatusLine, WinBar, TabLine)
+require("heirline").setup({
+    statusline = StatusLine,
+    winbar = WinBar,
+    tabline = TabLine,
+    statuscolumn = StatusColumn
+})
 ```
 
 Writing nested tables can be tiresome, so the best approach is to define simple
@@ -1446,7 +1451,7 @@ can reutilize components, group them and tweak them easily. **_You are ready to
 build your own dream StatusLine(s)!_**
 
 ```lua
-require("heirline").setup(StatusLines)
+require("heirline").setup({ statusline = StatusLines })
 -- we're done.
 ```
 
@@ -1554,7 +1559,7 @@ local WinBars = {
     utils.surround({ "", "" }, "bright_bg", FileNameBlock),
 }
 
-require("heirline").setup(StatusLines, WinBars)
+require("heirline").setup({ statusline = StatusLines, winbar = WinBars })
 ```
 
 ## A classic: Change multiple background colors based on Vi Mode.
@@ -2082,7 +2087,11 @@ local TabLineOffset = {
 ```lua
 local TabLine = { TabLineOffset, BufferLine, TabPages }
 
-require("heirline").setup(StatusLines, WinBar, TabLine)
+require("heirline").setup({
+    statusline = StatusLines,
+    winbar = WinBars,
+    tabline = TabLine
+})
 
 -- Yep, with heirline we're driving manual!
 vim.o.showtabline = 2

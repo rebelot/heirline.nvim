@@ -8,8 +8,8 @@
 
 ## About
 
-Heirline.nvim is a no-nonsense Neovim Statusline/Winbar/Tabline plugin designed around
-recursive inheritance to be exceptionally **fast** and **versatile**.
+Heirline.nvim is a no-nonsense Neovim plugin made for redenring statusline/winbar/tabline/statuscolumn format strings.
+It is designed around recursive inheritance to be exceptionally **fast** and **versatile**.
 
 Heirline **does not** provide any defaults, in fact, heirline can be
 thought of as an API to generate Vim status format strings.
@@ -51,22 +51,32 @@ copypaste away!
 
 Use your favorite plugin manager
 
+### Packer
+
 ```lua
-use "rebelot/heirline.nvim"
+use({
+    "rebelot/heirline.nvim",
+    -- You can optionally lazy-load heirline on UiEnter
+    -- to make sure all required plugins and colorschemes are loaded before setup
+    -- event = "UiEnter",
+    config = function()
+        require("heirline").setup({...})
+    end
+})
 ```
 
 ## Setup
 
-No defaults, no options, no-nonsense. You choose.
-
 ```lua
-local statusline = {...}
-local winbar = {...}
-local tabline = {...}
-require'heirline'.setup(statusline, winbar, tabline)
+require("heirline").setup({
+    statusline = {...},
+    winbar = {...},
+    tabline = {...},
+    statuscolumn = {...},
+})
 ```
 
-Calling `setup` will load your statusline. To learn how to write a StatusLine, see the [docs](cookbook.md).
+Calling `setup` will load your statusline(s). To learn how to write a StatusLine, see the [docs](cookbook.md).
 
 ### Donate
 

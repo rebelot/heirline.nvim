@@ -35,26 +35,44 @@ local function setup_local_winbar_with_autocmd()
     })
 end
 
----Setup statusline and winbar
----@param statusline table
----@param winbar? table
----@param tabline? table
-function M.setup(statusline, winbar, tabline)
+---Setup
+---@param config {statusline: StatusLine, winbar: StatusLine, tabline: StatusLine, statuscolumn: StatusLine, opts: table}
+function M.setup(config, ...)
+    if ... then
+        vim.notify([[
+Heirline: setup() takes only one argument: config
+example:
+    require('heirline').setup({
+        statusline = ...,
+        winbar = ..,
+        tabline = ...,
+        statuscolumn = ...})
+]], vim.log.levels.ERROR)
+        return
+    end
+
     vim.g.qf_disable_statusline = true
     vim.api.nvim_create_augroup("Heirline_update_autocmds", { clear = true })
     M.reset_highlights()
 
-    M.statusline = StatusLine:new(statusline)
-    vim.o.statusline = "%{%v:lua.require'heirline'.eval_statusline()%}"
+    if config.statusline then
+        M.statusline = StatusLine:new(config.statusline)
+        vim.o.statusline = "%{%v:lua.require'heirline'.eval_statusline()%}"
+    end
 
-    if winbar then
-        M.winbar = StatusLine:new(winbar)
+    if config.winbar then
+        M.winbar = StatusLine:new(config.winbar)
         setup_local_winbar_with_autocmd()
     end
 
-    if tabline then
-        M.tabline = StatusLine:new(tabline)
+    if config.tabline then
+        M.tabline = StatusLine:new(config.tabline)
         vim.o.tabline = "%{%v:lua.require'heirline'.eval_tabline()%}"
+    end
+
+    if config.statuscolumn then
+        M.statuscolumn = StatusLine:new(config.statuscolumn)
+        vim.o.statuscolumn = "%{%v:lua.require'heirline'.eval_statuscolumn()%}"
     end
 end
 
@@ -108,6 +126,12 @@ function M.eval_tabline()
     return _eval(M.tabline, winnr, true)
 end
 
+--
+---@return string
+function M.eval_statuscolumn()
+    return M.statuscolumn:eval()
+end
+
 local function timeit(func, args)
     local start = os.clock()
     func(unpack(args))
@@ -120,8 +144,10 @@ function M.timeit(ntimes)
         statusline = M.statusline and M.eval_statusline,
         winbar = M.winbar and M.eval_winbar,
         tabline = M.tabline and M.eval_tabline,
+        statuscolumn = M.statuscolumn and M.eval_statuscolumn,
     }
     local tot_time = 0
+    print("Average times over", ntimes, "runs:")
     for name, func in pairs(func_map) do
         local time = 0
         for _ = 1, ntimes do
