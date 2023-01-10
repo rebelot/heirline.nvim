@@ -161,7 +161,7 @@ end
 
 local function get_bufs()
     return tbl_filter(function(bufnr)
-        return nvim_buf_get_option(bufnr, "buflisted") and nvim_buf_is_valid(bufnr)
+        return nvim_buf_get_option(bufnr, "buflisted")
     end, nvim_list_bufs())
 end
 
@@ -284,7 +284,9 @@ function M.make_buflist(buffer_component, left_trunc, right_trunc, buf_func, buf
             end
 
             self.active_child = false
-            local bufs = buf_func()
+            local bufs = tbl_filter(function(bufnr)
+                return nvim_buf_is_valid(bufnr)
+            end, buf_func())
             local visible_buffers = bufs_in_tab()
 
             for i, bufnr in ipairs(bufs) do
