@@ -157,7 +157,7 @@ Each component may contain _any_ of the following fields:
 - `on_click`:
   - Type: `table` with the following fields:
     - `callback`: (vim/)lua function to be called on mouse click(s). The function
-      has the signature `function(self, minwid, nclicks, button)`
+      has the signature `function(self, minwid, nclicks, button, mods)`
       (see `:h 'statusline'` description for `@`). If a `string` is provided,
       it is interpreted as the _raw_ function name (`v:lua.` is not prepended)
       of an already defined function accessible from vim global scope.

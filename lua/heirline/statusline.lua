@@ -233,8 +233,8 @@ local function register_global_function(component)
         return "v:lua." .. func_name
     end
 
-    _G[func_name] = function(minwid, nclicks, button)
-        on_click.callback(component, minwid, nclicks, button)
+    _G[func_name] = function(...)
+        on_click.callback(component, ...)
     end
     return "v:lua." .. func_name
 end
