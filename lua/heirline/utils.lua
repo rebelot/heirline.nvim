@@ -187,7 +187,7 @@ function M.make_tablist(tab_component)
             for i, tabpage in ipairs(tabpages) do
                 local tabnr = vim.api.nvim_tabpage_get_number(tabpage)
                 local child = self[i]
-                if not (child and child.tabnr == tabnr) then
+                if not (child and child.tabpage == tabpage) then
                     self[i] = self:new(tab_component, i)
                     child = self[i]
                     child.tabnr = tabnr
