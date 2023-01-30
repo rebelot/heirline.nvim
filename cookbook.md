@@ -369,6 +369,7 @@ These functions are accessible via `require'heirline.conditions'` and
     The cache is released on `BufAdd` and `BufDelete`.
 - `make_tablist(tab_component)`: Returns a component which renders a list of open tabs.
   `tab_component` is the component used to render a single tabpage, it receives the fields:
+  - `self.tabpage <integer>`: the tabpage handle
   - `self.tabnr <integer>`: the tabpage number
   - `self.is_active <bool>`: whether the tabpage is the current tabpage
 - `count_chars(str)`: Returns the character length of `str`. Handles multibyte
@@ -2012,13 +2013,14 @@ create an abstract component that will be used to render each tabpage.
 
 This component will automatically inherit the fields:
 
+- `self.tabpage <integer>`: the tabpage handle
 - `self.tabnr <integer>`: the tabpage number
 - `self.is_active <bool>`: whether the tabpage is the current tabpage
 
 ```lua
 local Tabpage = {
     provider = function(self)
-        return "%" .. self.tabnr .. "T " .. self.tabnr .. " %T"
+        return "%" .. self.tabnr .. "T " .. self.tabpage .. " %T"
     end,
     hl = function(self)
         if not self.is_active then

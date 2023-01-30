@@ -165,10 +165,10 @@ local function get_bufs()
     end, nvim_list_bufs())
 end
 
-local function bufs_in_tab(tabnr)
-    tabnr = tabnr or 0
+local function bufs_in_tab(tabpage)
+    tabpage = tabpage or 0
     local buf_set = {}
-    local wins = vim.api.nvim_tabpage_list_wins(tabnr)
+    local wins = vim.api.nvim_tabpage_list_wins(tabpage)
     for _, winid in ipairs(wins) do
         local bufnr = vim.api.nvim_win_get_buf(winid)
         buf_set[bufnr] = true
@@ -187,10 +187,11 @@ function M.make_tablist(tab_component)
             for i, tabpage in ipairs(tabpages) do
                 local tabnr = vim.api.nvim_tabpage_get_number(tabpage)
                 local child = self[i]
-                if not (child and child.tabnr == tabnr) then
+                if not (child and child.tabpage == tabpage) then
                     self[i] = self:new(tab_component, i)
                     child = self[i]
                     child.tabnr = tabnr
+                    child.tabpage = tabpage
                 end
                 if tabpage == vim.api.nvim_get_current_tabpage() then
                     child.is_active = true
