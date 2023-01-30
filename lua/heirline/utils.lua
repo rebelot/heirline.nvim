@@ -39,8 +39,8 @@ function M.clone(block, with)
 end
 
 ---Surround component with separators and adjust coloring
----@param delimiters table<string> { "left", "right" } delimiters
----@param color string | function
+---@param delimiters string[]
+---@param color string|function|nil
 ---@param component table
 ---@return table
 function M.surround(delimiters, color, component)
