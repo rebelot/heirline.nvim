@@ -93,7 +93,7 @@ local function normalize_hl(hl)
 end
 
 function M.eval_hl(hl)
-    if vim.tbl_isempty(hl) then
+    if vim.tbl_isempty(hl) or hl[true] then
         return "", ""
     end
     hl = normalize_hl(hl)
