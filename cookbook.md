@@ -3,6 +3,7 @@
 ## Index
 
 <!--toc:start-->
+
 - [Cookbook.md](#cookbookmd)
   - [Index](#index)
   - [Main concepts](#main-concepts)
@@ -787,7 +788,7 @@ new children.
 
 -- The easy way.
 local Navic = {
-    condition = require("nvim-navic").is_available,
+    condition = function() return require("nvim-navic").is_available() end,
     provider = function()
         require("nvim-navic").get_location({highlight=true}),
     end
@@ -1506,8 +1507,8 @@ this way, it is possible to disable showing the `winbar` on a per-window basis.
 This can be accomplished directly by Heirline during component evaluation (see example below)
 and/or by hooking into `HeirlineInitWinbar` event using an autocommand.
 
-***For optimal behavior, it is recommended to set up both methods, as they
-are complementary to each other.***
+**_For optimal behavior, it is recommended to set up both methods, as they
+are complementary to each other._**
 
 ```lua
 vim.api.nvim_create_autocmd("User", {
@@ -1963,6 +1964,7 @@ The label mechanism tries to assign the first letter of the buffer name which ha
 The keymap will display the labels, and presing the label key will navigate to the corresponding buffer.
 
 Insert this component anywhere within the `buffer_component` passed to `utils.make_buflist()`.
+
 ```lua
 local TablinePicker = {
     condition = function(self)
