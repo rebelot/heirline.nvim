@@ -1365,6 +1365,7 @@ Assembling your favorite components and doing last-minute adjustments is easy!
 ViMode = utils.surround({ "", "" }, "bright_bg", { ViMode, Snippets })
 
 local DefaultStatusline = {
+    condition = conditions.is_active,
     ViMode, Space, FileName, Space, Git, Space, Diagnostics, Align,
     Navic, DAPMessages, Align,
     LSPActive, Space, LSPMessages, Space, UltTest, Space, FileType, Space, Ruler, Space, ScrollBar
