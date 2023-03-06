@@ -36,7 +36,6 @@
   - [Click it!](#click-it)
   - [TabLine](#tabline)
     - [Bufferline](#bufferline)
-      - [Show BufList only when there are multiple buffers](#show-buflist-only-when-there-are-multiple-buffers)
     - [TablinePicker](#tablinepicker)
     - [TabList](#tablist)
     - [TablineOffset](#tablineoffset)
@@ -1957,29 +1956,44 @@ local BufferLine = utils.make_buflist(
 )
 ```
 
-#### Show BufList only when there are multiple buffers
-
-```lua
-local buflist = {} -- initilaize the handle for the buflist cache
-local BufferLine = utils.make_buflist(
-    TablineBufferBlock,
-    { provider = "", hl = { fg = "gray" } },
-    { provider = "", hl = { fg = "gray" } },
-    nil,
-    buflist
-)
-
--- check how many buffers are to be listed in the tabline
-vim.api.nvim_create_autocmd({"BufAdd", "BufDelete"}, {
-    callback = function()
-        if #buflist > 1 then
-            vim.o.showtabline = 2
-        else
-            vim.o.showtabline = 1
-        end
-    end
-})
-```
+<!-- #### Show BufList only when there are multiple buffers -->
+<!---->
+<!-- ```lua -->
+<!-- -- this is the default function to retrieve buffers -->
+<!-- local get_bufs = function() -->
+<!--     return vim.tbl_filter(function(bufnr) -->
+<!--         return vim.api.nvim_buf_get_option(bufnr, "buflisted") -->
+<!--     end, vim.api.nvim_list_bufs()) -->
+<!-- end -->
+<!---->
+<!-- local buflist = {} -- initilaize the handle for the buflist cache -->
+<!-- local BufferLine = utils.make_buflist( -->
+<!--     TablineBufferBlock, -->
+<!--     { provider = "", hl = { fg = "gray" } }, -->
+<!--     { provider = "", hl = { fg = "gray" } }, -->
+<!--     get_bufs, -->
+<!--     buflist -->
+<!-- ) -->
+<!---->
+<!-- vim.o.showtabline == 2 -->
+<!-- -- check how many buffers are to be listed in the tabline -->
+<!-- vim.api.nvim_create_autocmd({"BufAdd", "BufDelete"}, { -->
+<!--     callback = function() -->
+<!--         if vim.o.showtabline == 2 or #vim.api.nvim_list_tabpages() > 1 then -->
+<!--             -- if the tabline is shown, only check the cache -->
+<!--             if #buflist < 2 then -->
+<!--                 vim.o.showtabline = 1 -->
+<!--             end -->
+<!--         else -->
+<!--             -- the tablist is not active, hence buflist is not refreshed, -->
+<!--             -- and wee need to check how many (listed) buffers we have -->
+<!--             if #get_bufs() > 1 then -->
+<!--                 vim.o.showtabline = 2 -->
+<!--             end -->
+<!--         end -->
+<!--     end, -->
+<!-- }) -->
+<!-- ``` -->
 
 ### TablinePicker
 
