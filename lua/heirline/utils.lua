@@ -144,7 +144,7 @@ local function with_cache(func, cache, au_id)
         return with_cache(func, cache, au_id)
     end
     return function()
-        if cache and cache[1] ~= nil then
+        if next(cache) then
             return cache
         else
             local res = func()
