@@ -790,8 +790,8 @@ new children.
 local Navic = {
     condition = function() return require("nvim-navic").is_available() end,
     provider = function()
-        require("nvim-navic").get_location({highlight=true}),
-    end
+        require("nvim-navic").get_location({highlight=true})
+    end,
     update = 'CursorMoved'
 }
 
