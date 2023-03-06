@@ -3,7 +3,6 @@
 ## Index
 
 <!--toc:start-->
-
 - [Cookbook.md](#cookbookmd)
   - [Index](#index)
   - [Main concepts](#main-concepts)
@@ -37,12 +36,13 @@
   - [Click it!](#click-it)
   - [TabLine](#tabline)
     - [Bufferline](#bufferline)
-    - [TablinePicker](#tablinepicker) :new:
+      - [Show BufList only when there are multiple buffers](#show-buflist-only-when-there-are-multiple-buffers)
+    - [TablinePicker](#tablinepicker)
     - [TabList](#tablist)
     - [TablineOffset](#tablineoffset)
     - [~~Goodbye Bufferline~~Hello Tabline!](#goodbye-bufferlinehello-tabline)
   - [Theming](#theming)
-  <!--toc:end-->
+<!--toc:end-->
 
 ## Main concepts
 
@@ -1955,6 +1955,30 @@ local BufferLine = utils.make_buflist(
     { provider = "", hl = { fg = "gray" } } -- right trunctation, also optional (defaults to ...... yep, ">")
     -- by the way, open a lot of buffers and try clicking them ;)
 )
+```
+
+#### Show BufList only when there are multiple buffers
+
+```lua
+local buflist = {} -- initilaize the handle for the buflist cache
+local BufferLine = utils.make_buflist(
+    TablineBufferBlock,
+    { provider = "", hl = { fg = "gray" } },
+    { provider = "", hl = { fg = "gray" } },
+    nil,
+    buflist
+)
+
+-- check how many buffers are to be listed in the tabline
+vim.api.nvim_create_autocmd({"BufAdd", "BufDelete"}, {
+    callback = function()
+        if #buflist > 1 then
+            vim.o.showtabline = 2
+        else
+            vim.o.showtabline = 1
+        end
+    end
+})
 ```
 
 ### TablinePicker
