@@ -1997,40 +1997,49 @@ local BufferLine = utils.make_buflist(
 #### Show BufList only when there are multiple buffers
 
 ```lua
--- this is the default function to retrieve buffers
+-- this is the default function used to retrieve buffers
 local get_bufs = function()
     return vim.tbl_filter(function(bufnr)
         return vim.api.nvim_buf_get_option(bufnr, "buflisted")
     end, vim.api.nvim_list_bufs())
 end
 
-local buflist = {} -- initilaize the handle for the buflist cache
-local BufferLine = utils.make_buflist(
-    TablineBufferBlock,
-    { provider = "", hl = { fg = "gray" } },
-    { provider = "", hl = { fg = "gray" } },
-    get_bufs,
-    buflist
-)
+-- initialize the buflist cache
+local buflist_cache = {}
 
-vim.o.showtabline == 2
-vim.api.nvim_create_autocmd({"BufAdd", "BufDelete"}, {
+-- setup an autocmd that updates the buflist_cache every time that buffers are added/removed
+vim.api.nvim_create_autocmd({ "BufAdd", "BufDelete" }, {
     callback = function()
         vim.schedule(function()
-            -- if tabline is shown, check how many buffers we have in the cache
-            if vim.o.showtabline == 2 or #vim.api.nvim_list_tabpages() > 1 then
-                if #buf_cache < 2 then
-                    vim.o.showtabline = 1
-                end
+            local buffers = get_bufs()
+            for i, v in ipairs(buffers) do
+                buflist_cache[i] = v
+            end
+            for i = #buffers + 1, #buflist_cache do
+                buflist_cache[i] = nil
+            end
+
+            -- check how many buffers we have and set showtabline accordingly
+            if #buflist_cache > 1 then
+                vim.o.showtabline = 2 -- always
             else
-            -- otherwise, we need to manally see how may (listed) buffers are there
-                if #get_bufs() > 1 then
-                    vim.o.showtabline = 2
-                end
+                vim.o.showtabline = 1 -- only when #tabpages > 1
             end
         end)
     end,
 })
+
+local BufferLine = utils.make_buflist(
+    TablineBufferBlock,
+    { provider = " ", hl = { fg = "gray" } },
+    { provider = " ", hl = { fg = "gray" } },
+    -- out buf_func simply returns the buflist_cache
+    function()
+        return buflist_cache
+    end,
+    -- no cache, as we're handling everything ourselves
+    false
+)
 ```
 
 ### TablinePicker
