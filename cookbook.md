@@ -28,6 +28,7 @@
     - [Help FileName](#help-filename)
     - [Snippets Indicator](#snippets-indicator)
     - [Spell](#spell)
+    - [No `'cmdheight'`? No problem! SearchCount and MacroRec](#no-cmdheight-no-problem-searchcount-and-macrorec)
   - [Flexible Components](#flexible-components)
   - [Putting it all together: Conditional Statuslines](#putting-it-all-together-conditional-statuslines)
     - [Lion's finesse](#lions-finesse)
