@@ -220,7 +220,7 @@ local NTABLINES = 0
 ---@param left_trunc? table left truncation marker, shown is buffer list is too long
 ---@param right_trunc? table right truncation marker, shown is buffer list is too long
 ---@param buf_func? function return a list of <integer> bufnr handlers.
----@param buf_cache? table reference to the buflist cache or false to disable caching
+---@param buf_cache? table|boolean reference to the buflist cache or false to disable caching
 ---@return table
 function M.make_buflist(buffer_component, left_trunc, right_trunc, buf_func, buf_cache)
     buf_func = buf_func or get_bufs
