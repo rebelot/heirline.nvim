@@ -24,11 +24,26 @@ end
 local function setup_local_winbar_with_autocmd()
     local augrp_id = vim.api.nvim_create_augroup("Heirline_init_winbar", { clear = true })
     vim.api.nvim_create_autocmd({ "VimEnter", "BufWinEnter" }, {
-        callback = function()
-            if vim.api.nvim_win_get_height(0) > 1 then
-                vim.opt_local.winbar = "%{%v:lua.require'heirline'.eval_winbar()%}"
-                vim.api.nvim_exec_autocmds("User", { pattern = "HeirlineInitWinbar", modeline = false })
+        callback = function(args)
+            -- local data = { ok = true }
+
+            local wins = vim.tbl_filter(function(win)
+                return vim.api.nvim_win_get_buf(win) == args.buf
+            end, vim.api.nvim_list_wins())
+
+            if vim.api.nvim_win_get_config(wins[0] or 0).zindex then
+                return
             end
+
+            -- vim.api.nvim_exec_autocmds("User", { pattern = "HeirlineInitWinbar", modeline = false, data = data })
+
+            -- if not data.ok then
+            --     return
+            -- end
+
+            vim.opt_local.winbar = "%{%v:lua.require'heirline'.eval_winbar()%}"
+
+            vim.api.nvim_exec_autocmds("User", { pattern = "HeirlineInitWinbar", modeline = false, data = data })
         end,
         group = augrp_id,
         desc = "Heirline: set window-local winbar",
@@ -39,7 +54,8 @@ end
 ---@param config {statusline: StatusLine, winbar: StatusLine, tabline: StatusLine, statuscolumn: StatusLine, opts: table}
 function M.setup(config, ...)
     if ... then
-        vim.notify([[
+        vim.notify(
+            [[
 Heirline: setup() takes only one argument: config
 example:
     require('heirline').setup({
@@ -47,7 +63,9 @@ example:
         winbar = ..,
         tabline = ...,
         statuscolumn = ...})
-]], vim.log.levels.ERROR)
+]],
+            vim.log.levels.ERROR
+        )
         return
     end
 
