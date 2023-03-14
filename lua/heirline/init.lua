@@ -23,9 +23,10 @@ end
 
 local function setup_local_winbar_with_autocmd(callback)
     local augrp_id = vim.api.nvim_create_augroup("Heirline_init_winbar", { clear = true })
-    vim.api.nvim_create_autocmd({ "VimEnter", "BufWinEnter" }, {
+    vim.api.nvim_create_autocmd({ "VimEnter", "BufWinEnter", "FileType" }, {
         callback = function(args)
             if callback and callback(args) == true then
+                vim.opt_local.winbar = nil
                 return
             end
 
@@ -39,8 +40,6 @@ local function setup_local_winbar_with_autocmd(callback)
 
             vim.opt_local.winbar = "%{%v:lua.require'heirline'.eval_winbar()%}"
 
-
-            vim.api.nvim_exec_autocmds("User", { pattern = "HeirlineInitWinbar", modeline = false, data = data })
         end,
         group = augrp_id,
         desc = "Heirline: set window-local winbar",
@@ -79,7 +78,7 @@ example:
 
     if config.winbar then
         M.winbar = StatusLine:new(config.winbar)
-        setup_local_winbar_with_autocmd(config.opts.winbar_blacklist_cb)
+        setup_local_winbar_with_autocmd(config.opts.disable_winbar_cb)
     end
 
     if config.tabline then

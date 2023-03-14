@@ -78,6 +78,7 @@ require("heirline").setup({
     winbar = WinBar,
     tabline = TabLine,
     statuscolumn = StatusColumn
+    opts = {...} -- other config parameters, see below
 })
 ```
 
@@ -377,6 +378,15 @@ These functions are accessible via `require'heirline.conditions'` and
   - `self.is_active <bool>`: whether the tabpage is the current tabpage
 - `count_chars(str)`: Returns the character length of `str`. Handles multibyte
   characters (icons) and statusline syntax like `%f`, `%3.10%(...%)`, etc.
+
+## Setup options
+
+Setup options may be passed via the `config.opts` table. Available fields are:
+
+- `disable_winbar_cb`:
+  - Description: Disable winbar on a per-buffer/window basis.
+  - type: `function(args)->boolean`. `args` is the table argument passed to autocommand callbacks.
+    See `:h nvim_create_autocmd()`. [Winbar](#winbar).
 
 ## Recipes
 
@@ -1540,42 +1550,32 @@ local FelineStyle = {
 Everything we talked about for the statusline can be seamlessly applied
 to the new Neovim `winbar`!
 
-**NOTE**: `winbar` is set _locally_ using a `BufWinEnter` autocommand,
+**NOTE**: `winbar` is set _locally_ using a `VimEnter`,`BufWinEnter`,`FileType` autocommand,
 this way, it is possible to disable showing the `winbar` on a per-window basis.
-This can be accomplished directly by Heirline during component evaluation (see example below)
-and/or by hooking into `HeirlineInitWinbar` event using an autocommand.
-
-**_For optimal behavior, it is recommended to set up both methods, as they
-are complementary to each other._**
+This can be accomplished by hooking into the autocmd event via `opts.disable_winbar_cb`.
 
 ```lua
-vim.api.nvim_create_autocmd("User", {
-    pattern = 'HeirlineInitWinbar',
-    callback = function(args)
-        local buf = args.buf
-        local buftype = vim.tbl_contains({ "prompt", "nofile", "help", "quickfix" }, vim.bo[buf].buftype)
-        local filetype = vim.tbl_contains({ "gitcommit", "fugitive" }, vim.bo[buf].filetype)
-        if buftype or filetype then
-            vim.opt_local.winbar = nil
-        end
-    end,
+require("heirline").setup({
+    statusline = {...},
+    winbar = {...},
+    tabline = {...},
+    statuscolumn = {...},
+    opts = {
+        -- if the callback returns true, the winbar will be disabled for that window
+        -- the args parameter corresponds to the table argument passed to autocommand callbacks. :h nvim_lua_create_autocmd()
+        disable_winbar_cb = function(args)
+            local buf = args.buf
+            local buftype = vim.tbl_contains({ "prompt", "nofile", "help", "quickfix" }, vim.bo[buf].buftype)
+            local filetype = vim.tbl_contains({ "gitcommit", "fugitive", "Trouble", "packer" }, vim.bo[buf].filetype)
+            return buftype or filetype
+        end,
+    },
 })
 ```
 
 ```lua
 local WinBars = {
     fallthrough = false,
-    {   -- Hide the winbar for special buffers
-        condition = function()
-            return conditions.buffer_matches({
-                buftype = { "nofile", "prompt", "help", "quickfix" },
-                filetype = { "^git.*", "fugitive" },
-            })
-        end,
-        init = function()
-            vim.opt_local.winbar = nil
-        end
-    },
     {   -- A special winbar for terminals
         condition = function()
             return conditions.buffer_matches({ buftype = { "terminal" } })
