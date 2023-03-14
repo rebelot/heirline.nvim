@@ -14,6 +14,7 @@ end
 ---@param colors table<string, string|integer>
 ---@return nil
 function M.load_colors(colors)
+    colors = type(colors) == 'function' and colors() or colors
     return require("heirline.highlights").load_colors(colors)
 end
 
@@ -69,7 +70,11 @@ example:
     vim.api.nvim_create_augroup("Heirline_update_autocmds", { clear = true })
     M.reset_highlights()
 
-    config.opts = config.opts or {}
+    local opts = config.opts or {}
+
+    if opts.colors then
+        M.load_colors(opts.colors)
+    end
 
     if config.statusline then
         M.statusline = StatusLine:new(config.statusline)
@@ -78,7 +83,7 @@ example:
 
     if config.winbar then
         M.winbar = StatusLine:new(config.winbar)
-        setup_local_winbar_with_autocmd(config.opts.disable_winbar_cb)
+        setup_local_winbar_with_autocmd(opts.disable_winbar_cb)
     end
 
     if config.tabline then

@@ -390,7 +390,7 @@ function M.page_buflist(buflist, maxwidth)
 end
 
 ---ColorScheme callback useful to reset highlights
----@param colors table<string, string|integer>
+---@param colors table|function
 function M.on_colorscheme(colors)
     colors = colors or {}
     require("heirline").reset_highlights()

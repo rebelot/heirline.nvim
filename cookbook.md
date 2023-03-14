@@ -3,7 +3,6 @@
 ## Index
 
 <!--toc:start-->
-
 - [Cookbook.md](#cookbookmd)
   - [Index](#index)
   - [Main concepts](#main-concepts)
@@ -11,6 +10,7 @@
     - [The StatusLine life cycle](#the-statusline-life-cycle)
     - [StatusLine Base Methods and Attributes](#statusline-base-methods-and-attributes)
   - [Builtin functions](#builtin-functions)
+  - [Setup options](#setup-options)
   - [Recipes](#recipes)
     - [Getting started](#getting-started)
     - [Colors, colors, more colors](#colors-colors-more-colors)
@@ -44,7 +44,7 @@
     - [TablineOffset](#tablineoffset)
     - [~~Goodbye Bufferline~~Hello Tabline!](#goodbye-bufferlinehello-tabline)
   - [Theming](#theming)
-  <!--toc:end-->
+<!--toc:end-->
 
 ## Main concepts
 
@@ -313,10 +313,7 @@ explaining the `StatusLine` object base methods and attributes:
 Setup functions:
 
 - `setup(statusline, winbar?, tabline?)`: Instantiate the statusline and optionally the winbar and tabline.
-- `load_colors(colors)`: Define color name aliases. `colors` is a `table` of the form
-  `color_name = color_value`, where `color_value` can be:
-  - `string`: hex code or default color name
-  - `integer`: 24-bit or 8-bit color value depending on the value of `termguicolors` option.
+- `load_colors(colors)`: Load color name aliases. See `colors` in [Setup options](#setup-options).
 - `clear_colors()`: Clear all color aliases.
 - `reset_highlights()`: Clear the cache of dynamically defined highlights.
 
@@ -387,6 +384,12 @@ Setup options may be passed via the `config.opts` table. Available fields are:
   - Description: Disable winbar on a per-buffer/window basis.
   - type: `function(args)->boolean`. `args` is the table argument passed to autocommand callbacks.
     See `:h nvim_create_autocmd()`. [Winbar](#winbar).
+- `colors`:
+  - Description: Define color name aliases.
+  - type: `table` or `function->table` of the form `color_name = color_value`,
+    where `color_value` can be:
+    - `string`: hex code or default color name
+    - `integer`: 24-bit or 8-bit color value depending on the value of `termguicolors` option.
 
 ## Recipes
 
@@ -443,12 +446,26 @@ local colors = require'kanagawa.colors'.setup() -- wink
 ```
 
 Now we can load the colors using `load_colors()` function,
-that will create color name aliases.
+that will create color name aliases. So that, for instance,
+when you use the value `"red"` within the `hl` of some component,
+it will resolve to the value of `utils.get_highlight("DiagnosticError").fg`.
 This _is not_ required (you can always use color values directly),
 but it will be useful.
 
 ```lua
-require('heirline').load_colors(colors)
+require("heirline").load_colors(colors)
+```
+
+or
+
+```lua
+require("heriline").setup({
+    ...,
+    opts = {
+        ...,
+        colors = colors,
+    }
+})
 ```
 
 ### Crash course: the ViMode
@@ -2188,9 +2205,9 @@ vim.cmd([[au FileType * if index(['wipe', 'delete'], &bufhidden) >= 0 | set nobu
 ## Theming
 
 You can change the colors of the statusline automatically whenever you change
-your colorscheme. To do so, you need to set up a `ColorScheme` event autocommand that
-will reset heirline highlights, re-evaluate and load the new colors.
-All of this is nicely wrapped in the utility function `on_colorscheme(colors?)`
+your colorscheme. To do so, you should wrap your color aliases within a function
+that can be re-evaluated on `ColorScheme` events.
+The utility function `on_colorscheme(colors?)` will handle all the boilerplate.
 
 ```lua
 local function setup_colors()
@@ -2214,13 +2231,14 @@ local function setup_colors()
         git_change = utils.get_highlight("diffChanged").fg,
     }
 end
-require('heirline').load_colors(setup_colors())
+
+-- require("heirline").load_colors(setup_colors)
+-- or pass it to config.opts.colors
 
 vim.api.nvim_create_augroup("Heirline", { clear = true })
 vim.api.nvim_create_autocmd("ColorScheme", {
     callback = function()
-        local colors = setup_colors()
-        utils.on_colorscheme(colors)
+        utils.on_colorscheme(setup_colors)
     end,
     group = "Heirline",
 })
