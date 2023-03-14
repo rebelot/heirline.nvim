@@ -483,16 +483,6 @@ local ViMode = {
     -- evaluation and store it as a component attribute
     init = function(self)
         self.mode = vim.fn.mode(1) -- :h mode()
-
-        -- execute this only once, this is required if you want the ViMode
-        -- component to be updated on operator pending mode
-        if not self.once then
-            vim.api.nvim_create_autocmd("ModeChanged", {
-                pattern = "*:*o",
-                command = 'redrawstatus'
-            })
-            self.once = true
-        end
     end,
     -- Now we define some dictionaries to map the output of mode() to the
     -- corresponding string and color. We can put these into `static` to compute
@@ -566,10 +556,13 @@ local ViMode = {
         return { fg = self.mode_colors[mode], bold = true, }
     end,
     -- Re-evaluate the component only on ModeChanged event!
-    -- This is not required in any way, but it's there, and it's a small
-    -- performance improvement.
+    -- Also allorws the statusline to be re-evaluated when entering operator-pending mode
     update = {
         "ModeChanged",
+        pattern = "*:*",
+        callback = vim.schedule_wrap(function()
+            vim.cmd("redrawstatus")
+        end),
     },
 }
 ```
@@ -1259,6 +1252,14 @@ local MacroRec = {
         end,
         hl = { fg = "green", bold = true },
     }),
+    update = {
+        "RecordingEnter",
+        "RecordingLeave",
+        -- redraw the statusline on recording events
+        callback = vim.schedule_wrap(function()
+            vim.cmd("redrawstatus")
+        end),
+    }
 }
 ```
 
@@ -1954,7 +1955,9 @@ local TablineFileNameBlock = {
     on_click = {
         callback = function(_, minwid, _, button)
             if (button == "m") then -- close on mouse middle click
-                vim.api.nvim_buf_delete(minwid, {force = false})
+                vim.schedule(function()
+                    vim.api.nvim_buf_delete(minwid, { force = false })
+                end)
             else
                 vim.api.nvim_win_set_buf(0, minwid)
             end
@@ -1981,7 +1984,10 @@ local TablineCloseButton = {
         hl = { fg = "gray" },
         on_click = {
             callback = function(_, minwid)
-                vim.api.nvim_buf_delete(minwid, { force = false })
+                vim.schedule(function()
+                    vim.api.nvim_buf_delete(minwid, { force = false })
+                end)
+                vim.cmd.redrawtabline()
             end,
             minwid = function(self)
                 return self.bufnr
