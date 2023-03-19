@@ -459,7 +459,7 @@ require("heirline").load_colors(colors)
 or
 
 ```lua
-require("heriline").setup({
+require("heirline").setup({
     ...,
     opts = {
         ...,
