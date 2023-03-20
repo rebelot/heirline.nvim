@@ -820,7 +820,7 @@ local Navic = {
 -- Full nerd (with icon colors and clickable elements)!
 -- works in multi window, but does not support flexible components (yet ...)
 local Navic = {
-    condition = require("nvim-navic").is_available,
+    condition = function() return require("nvim-navic").is_available() end,
     static = {
         -- create a type highlight map
         type_hl = {
