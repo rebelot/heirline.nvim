@@ -393,12 +393,22 @@ end
 ---@param colors table|function
 function M.on_colorscheme(colors)
     colors = colors or {}
-    require("heirline").reset_highlights()
-    require("heirline").clear_colors()
-    require("heirline").load_colors(colors)
-    require("heirline").statusline:broadcast(function(self)
+    local hl = require("heirline")
+    hl.reset_highlights()
+    hl.clear_colors()
+    hl.load_colors(colors)
+    local reset_win_cache = function(self)
         self._win_cache = nil
-    end)
+    end
+    if hl.statusline then
+        hl.statusline:broadcast(reset_win_cache)
+    end
+    if hl.winbar then
+        hl.winbar:broadcast(reset_win_cache)
+    end
+    if hl.tabline then
+        hl.tabline:broadcast(reset_win_cache)
+    end
 end
 
 return M
