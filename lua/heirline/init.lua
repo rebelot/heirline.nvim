@@ -49,22 +49,7 @@ end
 
 ---Setup
 ---@param config {statusline: StatusLine, winbar: StatusLine, tabline: StatusLine, statuscolumn: StatusLine, opts: table}
-function M.setup(config, ...)
-    if ... then
-        vim.notify(
-            [[
-Heirline: setup() takes only one argument: config
-example:
-    require('heirline').setup({
-        statusline = ...,
-        winbar = ..,
-        tabline = ...,
-        statuscolumn = ...})
-]],
-            vim.log.levels.ERROR
-        )
-        return
-    end
+function M.setup(config)
 
     vim.g.qf_disable_statusline = true
     vim.api.nvim_create_augroup("Heirline_update_autocmds", { clear = true })
