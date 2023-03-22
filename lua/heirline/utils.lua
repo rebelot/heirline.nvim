@@ -107,29 +107,6 @@ function M.count_chars(str)
     return nvim_eval_statusline(str, { winid = 0, maxwidth = 0 }).width
 end
 
----Create a flexible component
----@param priority integer
----@vararg table list of components that should evaluate to shorter strings in descending order.
----@return table
-function M.make_flexible_component(priority, ...)
-    vim.notify_once("Heirline: utils.make_flexible_component() is deprecated, flexible components are now builtin; use `my_flexible_component = { flexible = <integer>, ... }` syntax.", vim.log.levels.WARN)
-    local new = M.insert({}, ...)
-
-    new.static = {
-        _priority = priority,
-    }
-    new.init = function(self)
-        if not tbl_contains(self._flexible_components, self) then
-            table.insert(self._flexible_components, self)
-        end
-        self:set_win_attr("_win_child_index", nil, 1)
-        self.pick_child = { self:get_win_attr("_win_child_index") }
-    end
-    new.restrict = { _win_child_index = true }
-
-    return new
-end
-
 local function with_cache(func, cache, au_id)
     cache = cache or {}
     if not au_id then
