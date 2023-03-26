@@ -1,5 +1,4 @@
 local M = {}
-local nvim_get_hl_by_name = vim.api.nvim_get_hl_by_name
 local nvim_eval_statusline = vim.api.nvim_eval_statusline
 local nvim_buf_get_option = vim.api.nvim_buf_get_option
 local nvim_list_bufs = vim.api.nvim_list_bufs
@@ -8,11 +7,8 @@ local tbl_contains = vim.tbl_contains
 local tbl_keys = vim.tbl_keys
 local tbl_filter = vim.tbl_filter
 
----Get highlight properties for a given highlight name
----@param name string
----@return table
-function M.get_highlight(name)
-    local hl = nvim_get_hl_by_name(name, vim.o.termguicolors)
+local function get_highlight_deprecated(name)
+    local hl = vim.api.nvim_get_hl_by_name(name, vim.o.termguicolors)
     if vim.o.termguicolors then
         hl.fg = hl.foreground
         hl.bg = hl.background
@@ -29,6 +25,15 @@ function M.get_highlight(name)
     end
     return hl
 end
+
+local function get_highlight(name)
+    return vim.api.nvim_get_hl(0, { name = name, link = false })
+end
+
+---Get highlight properties for a given highlight name
+---@type fun(name: string): table
+M.get_highlight = vim.fn.exists("*nvim_get_hl") == 1 and get_highlight or get_highlight_deprecated
+
 
 ---Copy the given component, merging its fields with `with`
 ---@param block table
