@@ -8,7 +8,7 @@
 
 ## About
 
-Heirline.nvim is a no-nonsense Neovim plugin made for redenring statusline/winbar/tabline/statuscolumn format strings.
+Heirline.nvim is a no-nonsense Neovim plugin made for rendering statusline/winbar/tabline/statuscolumn format strings.
 It is designed around recursive inheritance to be exceptionally **fast** and **versatile**.
 
 Heirline **does not** provide any defaults, in fact, heirline can be
