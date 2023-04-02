@@ -1252,14 +1252,7 @@ local MacroRec = {
         end,
         hl = { fg = "green", bold = true },
     }),
-    update = {
-        "RecordingEnter",
-        "RecordingLeave",
-        -- redraw the statusline on recording events
-        callback = vim.schedule_wrap(function()
-            vim.cmd("redrawstatus")
-        end),
-    }
+    update = { "RecordingEnter", "RecordingLeave" }
 }
 ```
 
