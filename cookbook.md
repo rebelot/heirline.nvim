@@ -2029,7 +2029,7 @@ end
 local buflist_cache = {}
 
 -- setup an autocmd that updates the buflist_cache every time that buffers are added/removed
-vim.api.nvim_create_autocmd({ "BufAdd", "BufDelete" }, {
+vim.api.nvim_create_autocmd({ "VimEnter", "UIEnter", "BufAdd", "BufDelete" }, {
     callback = function()
         vim.schedule(function()
             local buffers = get_bufs()
