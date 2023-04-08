@@ -556,7 +556,7 @@ local ViMode = {
         return { fg = self.mode_colors[mode], bold = true, }
     end,
     -- Re-evaluate the component only on ModeChanged event!
-    -- Also allorws the statusline to be re-evaluated when entering operator-pending mode
+    -- Also allows the statusline to be re-evaluated when entering operator-pending mode
     update = {
         "ModeChanged",
         pattern = "*:*",
@@ -812,7 +812,7 @@ new children.
 local Navic = {
     condition = function() return require("nvim-navic").is_available() end,
     provider = function()
-        require("nvim-navic").get_location({highlight=true})
+        return require("nvim-navic").get_location({highlight=true})
     end,
     update = 'CursorMoved'
 }
@@ -1256,10 +1256,12 @@ local MacroRec = {
         "RecordingEnter",
         "RecordingLeave",
         -- redraw the statusline on recording events
+        -- Note: this is only required for Neovim < 0.9.0. Newer versions of
+        -- Neovim ensure `statusline` is redrawn on those events.
         callback = vim.schedule_wrap(function()
             vim.cmd("redrawstatus")
         end),
-    }
+     }
 }
 ```
 
