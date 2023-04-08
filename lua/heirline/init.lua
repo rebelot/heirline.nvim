@@ -14,7 +14,7 @@ end
 ---@param colors table<string, string|integer>
 ---@return nil
 function M.load_colors(colors)
-    colors = type(colors) == 'function' and colors() or colors
+    colors = type(colors) == "function" and colors() or colors
     return require("heirline.highlights").load_colors(colors)
 end
 
@@ -24,23 +24,36 @@ end
 
 local function setup_local_winbar_with_autocmd(callback)
     local augrp_id = vim.api.nvim_create_augroup("Heirline_init_winbar", { clear = true })
-    vim.api.nvim_create_autocmd({ "VimEnter", "BufWinEnter", "FileType" }, {
+    vim.api.nvim_create_autocmd({ "VimEnter", "UIEnter", "BufWinEnter", "FileType" }, {
         callback = function(args)
+            if args.event == "VimEnter" or args.event == "UIEnter" then
+                for _, win in ipairs(vim.api.nvim_list_wins()) do
+                    local winbuf = vim.api.nvim_win_get_buf(win)
+                    local new_args = vim.deepcopy(args)
+                    new_args.buf = winbuf
+                    if callback and callback(new_args) == true then
+                        vim.wo[win].winbar = nil
+                    else
+                        vim.wo[win].winbar = "%{%v:lua.require'heirline'.eval_winbar()%}"
+                    end
+                end
+            end
             if callback and callback(args) == true then
                 vim.opt_local.winbar = nil
                 return
             end
 
-            local wins = vim.tbl_filter(function(win)
-                return vim.api.nvim_win_get_buf(win) == args.buf
-            end, vim.api.nvim_list_wins())
+            -- local wins = vim.tbl_filter(function(win)
+            --     return vim.api.nvim_win_get_buf(win) == args.buf
+            -- end, vim.api.nvim_list_wins())
 
-            if vim.api.nvim_win_get_config(wins[0] or 0).zindex then
-                return
-            end
+            -- if vim.api.nvim_win_get_config(wins[0] or 0).zindex then
+            -- if vim.api.nvim_win_get_config(0).zindex then
+            --     vim.opt_local.winbar = nil
+            --     return
+            -- end
 
             vim.opt_local.winbar = "%{%v:lua.require'heirline'.eval_winbar()%}"
-
         end,
         group = augrp_id,
         desc = "Heirline: set window-local winbar",
@@ -50,7 +63,6 @@ end
 ---Setup
 ---@param config {statusline: StatusLine, winbar: StatusLine, tabline: StatusLine, statuscolumn: StatusLine, opts: table}
 function M.setup(config)
-
     vim.g.qf_disable_statusline = true
     vim.api.nvim_create_augroup("Heirline_update_autocmds", { clear = true })
     M.reset_highlights()
