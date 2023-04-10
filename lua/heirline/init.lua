@@ -53,7 +53,9 @@ local function setup_local_winbar_with_autocmd(callback)
             --     return
             -- end
 
-            vim.opt_local.winbar = "%{%v:lua.require'heirline'.eval_winbar()%}"
+            if vim.api.nvim_win_get_height(0) > 1 then
+                vim.opt_local.winbar = "%{%v:lua.require'heirline'.eval_winbar()%}"
+            end
         end,
         group = augrp_id,
         desc = "Heirline: set window-local winbar",
