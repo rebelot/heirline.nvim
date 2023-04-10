@@ -24,7 +24,7 @@ end
 
 local function setup_local_winbar_with_autocmd(callback)
     local augrp_id = vim.api.nvim_create_augroup("Heirline_init_winbar", { clear = true })
-    vim.api.nvim_create_autocmd({ "VimEnter", "UIEnter", "BufWinEnter", "FileType" }, {
+    vim.api.nvim_create_autocmd({ "VimEnter", "UIEnter", "BufWinEnter", "FileType", "TermOpen" }, {
         callback = function(args)
             if args.event == "VimEnter" or args.event == "UIEnter" then
                 for _, win in ipairs(vim.api.nvim_list_wins()) do
