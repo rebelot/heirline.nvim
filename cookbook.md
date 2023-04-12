@@ -326,10 +326,11 @@ These functions are accessible via `require'heirline.conditions'` and
 
 - `is_active()`: returns true if the statusline's window is the active window.
 - `is_not_active()`: returns true if the statusline's window is _not_ the active window.
-- `buffer_matches(patterns)`: Returns true whenever a buffer attribute
+- `buffer_matches(patterns, bufnr?)`: Returns true whenever a buffer attribute
   (`filetype`,`buftype` or `bufname`) matches any of the lua patterns in the
   corresponding list.
   - `patterns`: table of the form `{filetype = {...}, buftype = {...}, bufname = {...}}` where each field is a list of lua patterns.
+  - `bufnr?`: buffer number, defaults to `0` (current buffer).
 - `width_percent_below(N, threshold, is_winbar)`: returns true if `(N / current_window_width) <= threshold`
   (eg.: `width_percent_below(#mystring, 0.33)`). This function checks the value
   of `vim.o.laststatus` to determine the statusline draw space, if `is_winbar == true` only the current window width will be considered.
@@ -1584,10 +1585,10 @@ require("heirline").setup({
         -- if the callback returns true, the winbar will be disabled for that window
         -- the args parameter corresponds to the table argument passed to autocommand callbacks. :h nvim_lua_create_autocmd()
         disable_winbar_cb = function(args)
-            local buf = args.buf
-            local buftype = vim.tbl_contains({ "prompt", "nofile", "help", "quickfix" }, vim.bo[buf].buftype)
-            local filetype = vim.tbl_contains({ "gitcommit", "fugitive", "Trouble", "packer" }, vim.bo[buf].filetype)
-            return buftype or filetype
+            return conditions.buffer_matches({
+                buftype = { "nofile", "prompt", "help", "quickfix" },
+                filetype = { "^git.*", "fugitive", "Trouble", "dashboard" },
+            }, args.buf)
         end,
     },
 })

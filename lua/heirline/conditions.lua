@@ -10,7 +10,7 @@ function M.is_not_active()
     return not M.is_active()
 end
 
-local function pattern_list_match(str, pattern_list)
+local function pattern_list_matches(str, pattern_list)
     for _, pattern in ipairs(pattern_list) do
         if str:find(pattern) then
             return true
@@ -20,24 +20,21 @@ local function pattern_list_match(str, pattern_list)
 end
 
 local buf_matchers = {
-    filetype = function(pattern_list)
-        local ft = vim.bo.filetype
-        return pattern_list_match(ft, pattern_list)
+    filetype = function(bufnr)
+        return vim.bo[bufnr].filetype
     end,
-    buftype = function(pattern_list)
-        local bt = vim.bo.buftype
-        return pattern_list_match(bt, pattern_list)
+    buftype = function(bufnr)
+        return vim.bo[bufnr].buftype
     end,
-    bufname = function(pattern_list)
-        local bn = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":t")
-        return pattern_list_match(bn, pattern_list)
+    bufname = function(bufnr)
+        return vim.fn.fnamemodify(vim.api.nvim_buf_get_name(bufnr), ":t")
     end,
 }
 
-
-function M.buffer_matches(patterns)
+function M.buffer_matches(patterns, bufnr)
+    bufnr = bufnr or 0
     for kind, pattern_list in pairs(patterns) do
-        if buf_matchers[kind](pattern_list) then
+        if pattern_list_matches(buf_matchers[kind](bufnr), pattern_list) then
             return true
         end
     end
@@ -66,6 +63,5 @@ end
 function M.lsp_attached()
     return next(vim.lsp.buf_get_clients()) ~= nil
 end
-
 
 return M
