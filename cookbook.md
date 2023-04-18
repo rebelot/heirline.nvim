@@ -1223,6 +1223,8 @@ local Spell = {
 
 ### No `'cmdheight'`? No problem! SearchCount, MacroRec and ShowCmd
 
+<img width="250" alt="heirline_showcmd_macrorec" src=https://user-images.githubusercontent.com/36300441/232829021-23172947-2b17-4009-9d6b-e4832aa046b5.mov>
+
 ```lua
 local SearchCount = {
     condition = function()
