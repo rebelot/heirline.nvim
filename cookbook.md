@@ -3,6 +3,7 @@
 ## Index
 
 <!--toc:start-->
+
 - [Cookbook.md](#cookbookmd)
   - [Index](#index)
   - [Main concepts](#main-concepts)
@@ -29,7 +30,7 @@
     - [Help FileName](#help-filename)
     - [Snippets Indicator](#snippets-indicator)
     - [Spell](#spell)
-    - [No `'cmdheight'`? No problem! SearchCount and MacroRec](#no-cmdheight-no-problem-searchcount-and-macrorec)
+    - [No `'cmdheight'`? No problem! SearchCount, MacroRec and ShowCmd](#no-cmdheight-no-problem-searchcount-macrorec-and-showcmd)
   - [Flexible Components](#flexible-components)
   - [Putting it all together: Conditional Statuslines](#putting-it-all-together-conditional-statuslines)
     - [Lion's finesse](#lions-finesse)
@@ -44,7 +45,7 @@
     - [TablineOffset](#tablineoffset)
     - [~~Goodbye Bufferline~~Hello Tabline!](#goodbye-bufferlinehello-tabline)
   - [Theming](#theming)
-<!--toc:end-->
+  <!--toc:end-->
 
 ## Main concepts
 
@@ -1220,7 +1221,7 @@ local Spell = {
 }
 ```
 
-### No `'cmdheight'`? No problem! SearchCount and MacroRec
+### No `'cmdheight'`? No problem! SearchCount, MacroRec and ShowCmd
 
 ```lua
 local SearchCount = {
@@ -1263,6 +1264,15 @@ local MacroRec = {
             vim.cmd("redrawstatus")
         end),
      }
+}
+```
+
+```lua
+local ShowCmd = {
+    condition = function()
+        return vim.o.cmdheight == 0
+    end,
+    provider = ":%3.5(%S%)",
 }
 ```
 
