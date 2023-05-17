@@ -1264,6 +1264,7 @@ local MacroRec = {
 ```
 
 ```lua
+vim.opt.showcmdloc = 'statusline'
 local ShowCmd = {
     condition = function()
         return vim.o.cmdheight == 0
