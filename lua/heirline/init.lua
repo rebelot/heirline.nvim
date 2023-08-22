@@ -149,7 +149,8 @@ end
 --
 ---@return string
 function M.eval_statuscolumn()
-    return M.statuscolumn:eval()
+    local winnr = vim.api.nvim_win_get_number(0)
+    return _eval(M.statuscolumn, winnr, true)
 end
 
 local function timeit(func, args)
