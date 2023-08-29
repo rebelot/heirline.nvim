@@ -26,20 +26,25 @@ local function setup_local_winbar_with_autocmd(callback)
     local augrp_id = vim.api.nvim_create_augroup("Heirline_init_winbar", { clear = true })
     vim.api.nvim_create_autocmd({ "VimEnter", "UIEnter", "BufWinEnter", "FileType", "TermOpen" }, {
         callback = function(args)
+            local heirline_winbar = "%{%v:lua.require'heirline'.eval_winbar()%}"
             if args.event == "VimEnter" or args.event == "UIEnter" then
                 for _, win in ipairs(vim.api.nvim_list_wins()) do
                     local winbuf = vim.api.nvim_win_get_buf(win)
                     local new_args = vim.deepcopy(args)
                     new_args.buf = winbuf
                     if callback and callback(new_args) == true then
-                        vim.wo[win].winbar = nil
+                        if vim.wo[win].winbar == heirline_winbar then
+                            vim.wo[win].winbar = nil
+                        end
                     else
-                        vim.wo[win].winbar = "%{%v:lua.require'heirline'.eval_winbar()%}"
+                        vim.wo[win].winbar = heirline_winbar
                     end
                 end
             end
             if callback and callback(args) == true then
-                vim.opt_local.winbar = nil
+                if vim.opt_local.winbar:get() == heirline_winbar then
+                    vim.opt_local.winbar = nil
+                end
                 return
             end
 
@@ -54,7 +59,7 @@ local function setup_local_winbar_with_autocmd(callback)
             -- end
 
             if vim.api.nvim_win_get_height(0) > 1 then
-                vim.opt_local.winbar = "%{%v:lua.require'heirline'.eval_winbar()%}"
+                vim.opt_local.winbar = heirline_winbar
             end
         end,
         group = augrp_id,
