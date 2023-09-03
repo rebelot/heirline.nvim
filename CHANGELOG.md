@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/rebelot/heirline.nvim/compare/v1.0.0...v1.0.1) (2023-09-03)
+
+
+### Bug Fixes
+
+* **cookbook:** avoid resetting showtabline if already at default value ([daf91db](https://github.com/rebelot/heirline.nvim/commit/daf91dbf9a975f078a6764d537da7aa28ca0c519))
+
 ## 1.0.0 (2023-07-05)
 
 
