@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/rebelot/heirline.nvim/compare/v1.0.1...v1.0.2) (2023-11-29)
+
+
+### Bug Fixes
+
+* **winbar:** don't modify winbar for disabled buffers ([7ee3553](https://github.com/rebelot/heirline.nvim/commit/7ee355330b9c6c3d4a43c6f22bc78364ea9acac7))
+
 ## [1.0.1](https://github.com/rebelot/heirline.nvim/compare/v1.0.0...v1.0.1) (2023-09-03)
 
 
