@@ -1926,18 +1926,18 @@ local TablineFileName = {
 local TablineFileFlags = {
     {
         condition = function(self)
-            return vim.api.nvim_buf_get_option(self.bufnr, "modified")
+            return vim.api.nvim_get_option_value("modified", { buf = self.bufnr })
         end,
         provider = "[+]",
         hl = { fg = "green" },
     },
     {
         condition = function(self)
-            return not vim.api.nvim_buf_get_option(self.bufnr, "modifiable")
-                or vim.api.nvim_buf_get_option(self.bufnr, "readonly")
+            return not vim.api.nvim_get_option_value("modifiable", { buf = self.bufnr })
+                or vim.api.nvim_get_option_value("readonly", { buf = self.bufnr })
         end,
         provider = function(self)
-            if vim.api.nvim_buf_get_option(self.bufnr, "buftype") == "terminal" then
+            if vim.api.nvim_get_option_value("buftype", { buf = self.bufnr }) == "terminal" then
                 return "  "
             else
                 return ""
@@ -1986,7 +1986,7 @@ local TablineFileNameBlock = {
 -- a nice "x" button to close the buffer
 local TablineCloseButton = {
     condition = function(self)
-        return not vim.api.nvim_buf_get_option(self.bufnr, "modified")
+        return not vim.api.nvim_get_option_value("modified", { buf = self.bufnr })
     end,
     { provider = " " },
     {
@@ -2031,7 +2031,7 @@ local BufferLine = utils.make_buflist(
 -- this is the default function used to retrieve buffers
 local get_bufs = function()
     return vim.tbl_filter(function(bufnr)
-        return vim.api.nvim_buf_get_option(bufnr, "buflisted")
+        return vim.api.nvim_get_option_value("buflisted", { buf = bufnr })
     end, vim.api.nvim_list_bufs())
 end
 
