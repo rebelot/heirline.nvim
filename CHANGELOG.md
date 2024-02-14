@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3](https://github.com/rebelot/heirline.nvim/compare/v1.0.2...v1.0.3) (2024-02-12)
+
+
+### Bug Fixes
+
+* **cookbook:** migrate from `nvim_buf_get_option` to `nvim_get_option_value` ([512ff09](https://github.com/rebelot/heirline.nvim/commit/512ff096d427ade3ca11e18f7b0a6f1819095a45))
+
 ## [1.0.2](https://github.com/rebelot/heirline.nvim/compare/v1.0.1...v1.0.2) (2023-11-29)
 
 
