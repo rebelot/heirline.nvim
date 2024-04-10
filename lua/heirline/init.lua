@@ -11,10 +11,9 @@ function M.get_highlights()
 end
 
 ---Load color aliases
----@param colors table<string, string|integer>
+---@param colors table<string, string|integer> | fun():table<string, string|integer>
 ---@return nil
 function M.load_colors(colors)
-    colors = type(colors) == "function" and colors() or colors
     return require("heirline.highlights").load_colors(colors)
 end
 

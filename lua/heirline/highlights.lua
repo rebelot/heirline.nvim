@@ -5,23 +5,17 @@ local tbl_concat = table.concat
 
 local defined_highlights = {}
 
-local loaded_colors = {}
-
 function M.reset_highlights()
     defined_highlights = {}
 end
 
+---@param colors table<string, string|integer> | fun():table<string, string|integer>
 function M.load_colors(colors)
-    for c, v in pairs(colors) do
-        loaded_colors[c] = v
-    end
-end
-
-function M.clear_colors()
-    loaded_colors = {}
+    require("heirline.colors").load(colors)
 end
 
 function M.get_loaded_colors()
+    local loaded_colors = require("heirline.colors").get()
     return vim.tbl_extend("force", loaded_colors, {})
 end
 
@@ -74,6 +68,7 @@ local function hex(val)
 end
 
 local function get_color(val)
+    local loaded_colors = require("heirline.colors").get()
     if type(val) == "string" then
         return loaded_colors[val] or val
     else
