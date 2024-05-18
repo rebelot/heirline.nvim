@@ -61,7 +61,13 @@ function M.has_diagnostics()
 end
 
 function M.lsp_attached()
-    return next(vim.lsp.buf_get_clients()) ~= nil
+    local clients
+    if vim.lsp.get_clients then
+        clients = vim.lsp.get_clients({ bufnr = vim.api.nvim_get_current_buf() })
+    else
+        clients = vim.lsp.buf_get_clients()
+    end
+    return next(clients) ~= nil
 end
 
 return M
