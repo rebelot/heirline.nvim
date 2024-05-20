@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4](https://github.com/rebelot/heirline.nvim/compare/v1.0.3...v1.0.4) (2024-05-20)
+
+
+### Bug Fixes
+
+* remove deprecated functions + some annotation fixes ([2423ce2](https://github.com/rebelot/heirline.nvim/commit/2423ce2de6de8f6a037334c46405e0ebb4ef5ea5))
+
 ## [1.0.3](https://github.com/rebelot/heirline.nvim/compare/v1.0.2...v1.0.3) (2024-02-12)
 
 
