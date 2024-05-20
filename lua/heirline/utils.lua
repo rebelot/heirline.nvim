@@ -1,39 +1,16 @@
 local M = {}
 local nvim_eval_statusline = vim.api.nvim_eval_statusline
-local nvim_buf_get_option = vim.api.nvim_buf_get_option
+local nvim_get_option_value = vim.api.nvim_buf_get_option_value
 local nvim_list_bufs = vim.api.nvim_list_bufs
 local nvim_buf_is_valid = vim.api.nvim_buf_is_valid
 local tbl_contains = vim.tbl_contains
 local tbl_keys = vim.tbl_keys
 local tbl_filter = vim.tbl_filter
 
-local function get_highlight_deprecated(name)
-    local hl = vim.api.nvim_get_hl_by_name(name, vim.o.termguicolors)
-    if vim.o.termguicolors then
-        hl.fg = hl.foreground
-        hl.bg = hl.background
-        hl.sp = hl.special
-        hl.foreground = nil
-        hl.background = nil
-        hl.special = nil
-    else
-        hl.ctermfg = hl.foreground
-        hl.ctermbg = hl.background
-        hl.foreground = nil
-        hl.background = nil
-        hl.special = nil
-    end
-    return hl
-end
-
-local function get_highlight(name)
+---@type fun(name: string): table
+function M.get_highlight(name)
     return vim.api.nvim_get_hl(0, { name = name, link = false })
 end
-
----Get highlight properties for a given highlight name
----@type fun(name: string): table
-M.get_highlight = vim.fn.exists("*nvim_get_hl") == 1 and get_highlight or get_highlight_deprecated
-
 
 ---Copy the given component, merging its fields with `with`
 ---@param block table
@@ -143,7 +120,7 @@ end
 
 local function get_bufs()
     return tbl_filter(function(bufnr)
-        return nvim_buf_get_option(bufnr, "buflisted")
+        return nvim_get_option_value("buflisted", { buf = bufnr })
     end, nvim_list_bufs())
 end
 
@@ -271,6 +248,8 @@ function M.make_buflist(buffer_component, left_trunc, right_trunc, buf_func, buf
                 return nvim_buf_is_valid(bufnr)
             end, buf_func())
             local visible_buffers = bufs_in_tab()
+            self.buffers = bufs
+            self.visible_buffers = visible_buffers
 
             for i, bufnr in ipairs(bufs) do
                 local child = self[i]

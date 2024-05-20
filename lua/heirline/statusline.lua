@@ -52,12 +52,12 @@ local default_restrict = {
 ---@field cterm? HeirlineCtermStyle  The special style for cterm
 ---@field force? boolean  Control whether the parent's hl fields will override child's hl
 
----@alias HeirlineOnClickCallback fun(self: StatusLine, minwid: integer, nclicks: integer, button: "l"|"m"|"r", mods: string)
+---@alias HeirlineOnClickCallback string|fun(self: StatusLine, minwid: integer, nclicks: integer, button: "l"|"m"|"r", mods: string)
 ---@class HeirlineOnClick
----@field callback? string|HeirlineOnClickCallback
----@field name? string|fun():string
+---@field callback string|HeirlineOnClickCallback
+---@field name string|fun(self?: StatusLine):string
 ---@field update? boolean
----@field minwid? number|fun():integer
+---@field minwid? number|fun(self: StatusLine):integer
 
 ---@class StatusLine
 ---@field condition? fun(self: StatusLine): any
@@ -128,7 +128,7 @@ function StatusLine:new(child, index)
 
     local restrict = tbl_extend("force", default_restrict, self.restrict or {})
     setmetatable(new, self)
-    self.__index = function(t, v)
+    self.__index = function(_, v)
         if not restrict[v] then
             return self[v]
         end
@@ -613,4 +613,5 @@ function StatusLine:expand_or_contract_flexible_components(full_width, out)
         end
     end
 end
+
 return StatusLine
