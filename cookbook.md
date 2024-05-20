@@ -583,7 +583,7 @@ are absolutely free to omit that if you're not an icon person.
 ```lua
 
 local FileNameBlock = {
-    -- let's first set up some attributes needed by this component and it's children
+    -- let's first set up some attributes needed by this component and its children
     init = function(self)
         self.filename = vim.api.nvim_buf_get_name(0)
     end,
@@ -730,7 +730,7 @@ Here's some classics!
 https://user-images.githubusercontent.com/36300441/187189451-519e5d2b-115b-4f36-bfb3-7d4ec50bec05.mov
 
 ```lua
--- We're getting minimalists here!
+-- We're getting minimalist here!
 local Ruler = {
     -- %l = current line number
     -- %L = number of lines in the buffer
@@ -741,7 +741,7 @@ local Ruler = {
 ```
 
 ```lua
--- I take no credits for this! :lion:
+-- I take no credits for this! 🦁
 local ScrollBar ={
     static = {
         sbar = { '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█' }
@@ -760,13 +760,12 @@ local ScrollBar ={
 
 ### LSP
 
-Nice work! You made it ~~jumped right~~ to the main courses! The finest rice is
+Nice work! You ~~jumped right~~ made it to the main courses! The finest rice is
 here.
 
 <img width="398" alt="heirline_lsp" src="https://user-images.githubusercontent.com/36300441/187190679-b2860e44-cde6-484a-967e-3d48c479e471.png">
 
 ```lua
-
 local LSPActive = {
     condition = conditions.lsp_attached,
     update = {'LspAttach', 'LspDetach'},
@@ -775,7 +774,7 @@ local LSPActive = {
     -- provider = " [LSP]",
 
     -- Or complicate things a bit and get the servers names
-    provider  = function()
+    provider = function()
         local names = {}
         for i, server in pairs(vim.lsp.get_active_clients({ bufnr = 0 })) do
             table.insert(names, server.name)
@@ -861,7 +860,7 @@ local Navic = {
         dec = function(c)
             local line = bit.rshift(c, 16)
             local col = bit.band(bit.rshift(c, 6), 1023)
-            local winnr = bit.band(c,  63)
+            local winnr = bit.band(c, 63)
             return line, col, winnr
         end
     },
@@ -1926,18 +1925,18 @@ local TablineFileName = {
 local TablineFileFlags = {
     {
         condition = function(self)
-            return vim.api.nvim_buf_get_option(self.bufnr, "modified")
+            return vim.api.nvim_get_option_value("modified", { buf = self.bufnr })
         end,
         provider = "[+]",
         hl = { fg = "green" },
     },
     {
         condition = function(self)
-            return not vim.api.nvim_buf_get_option(self.bufnr, "modifiable")
-                or vim.api.nvim_buf_get_option(self.bufnr, "readonly")
+            return not vim.api.nvim_get_option_value("modifiable", { buf = self.bufnr })
+                or vim.api.nvim_get_option_value("readonly", { buf = self.bufnr })
         end,
         provider = function(self)
-            if vim.api.nvim_buf_get_option(self.bufnr, "buftype") == "terminal" then
+            if vim.api.nvim_get_option_value("buftype", { buf = self.bufnr }) == "terminal" then
                 return "  "
             else
                 return ""
@@ -1986,7 +1985,7 @@ local TablineFileNameBlock = {
 -- a nice "x" button to close the buffer
 local TablineCloseButton = {
     condition = function(self)
-        return not vim.api.nvim_buf_get_option(self.bufnr, "modified")
+        return not vim.api.nvim_get_option_value("modified", { buf = self.bufnr })
     end,
     { provider = " " },
     {
@@ -2031,7 +2030,7 @@ local BufferLine = utils.make_buflist(
 -- this is the default function used to retrieve buffers
 local get_bufs = function()
     return vim.tbl_filter(function(bufnr)
-        return vim.api.nvim_buf_get_option(bufnr, "buflisted")
+        return vim.api.nvim_get_option_value("buflisted", { buf = bufnr })
     end, vim.api.nvim_list_bufs())
 end
 
