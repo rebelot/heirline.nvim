@@ -1,6 +1,6 @@
 local M = {}
 local nvim_eval_statusline = vim.api.nvim_eval_statusline
-local nvim_get_option_value = vim.api.nvim_buf_get_option_value
+local nvim_get_option_value = vim.api.nvim_get_option_value
 local nvim_list_bufs = vim.api.nvim_list_bufs
 local nvim_buf_is_valid = vim.api.nvim_buf_is_valid
 local tbl_contains = vim.tbl_contains
