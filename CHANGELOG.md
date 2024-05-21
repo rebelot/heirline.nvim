@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.5](https://github.com/rebelot/heirline.nvim/compare/v1.0.4...v1.0.5) (2024-05-20)
+
+
+### Bug Fixes
+
+* **util:** fix nvim_get_option_value; fix [#195](https://github.com/rebelot/heirline.nvim/issues/195) ([7ce5c35](https://github.com/rebelot/heirline.nvim/commit/7ce5c35f5f1f61baffafbf063e8354e104b7e28c))
+
 ## [1.0.4](https://github.com/rebelot/heirline.nvim/compare/v1.0.3...v1.0.4) (2024-05-20)
 
 
