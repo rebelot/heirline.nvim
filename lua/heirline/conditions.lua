@@ -61,7 +61,7 @@ function M.has_diagnostics()
 end
 
 function M.lsp_attached()
-    return next(vim.lsp.buf_get_clients()) ~= nil
+    return next(vim.lsp.get_clients({ bufnr = 0 })) ~= nil
 end
 
 return M
