@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.6](https://github.com/rebelot/heirline.nvim/compare/v1.0.5...v1.0.6) (2024-05-21)
+
+
+### Bug Fixes
+
+* **conditions:** remove deprecated get_active_clients ([d70c5d6](https://github.com/rebelot/heirline.nvim/commit/d70c5d691db606d9b3b2727d2c60b69acb7b7ca1))
+
 ## [1.0.5](https://github.com/rebelot/heirline.nvim/compare/v1.0.4...v1.0.5) (2024-05-20)
 
 
