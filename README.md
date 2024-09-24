@@ -60,7 +60,7 @@ use({
     -- to make sure all required plugins and colorschemes are loaded before setup
     -- event = "UiEnter",
     config = function()
-        require("heirline").setup({...})
+        require("heirline").setup({...} --[[@as HeirlineConfig]])
     end
 })
 ```
@@ -73,7 +73,7 @@ require("heirline").setup({
     winbar = {...},
     tabline = {...},
     statuscolumn = {...},
-})
+} --[[@as HeirlineConfig]])
 ```
 
 Calling `setup` will load your statusline(s). To learn how to write a StatusLine, see the [docs](cookbook.md).
