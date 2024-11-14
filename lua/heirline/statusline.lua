@@ -60,24 +60,24 @@ local default_restrict = {
 ---@field minwid? number|fun(self: StatusLine):integer
 
 ---@class StatusLine
----@field condition? fun(self: StatusLine): any
----@field init? fun(self: StatusLine): any
----@field provider? string|number|fun(self: StatusLine):string|number|nil
----@field hl? HeirlineHighlight|string|fun(self: StatusLine): HeirlineHighlight|string|nil  controls the colors of what is printed by the component's provider, or by any of its descendants.
----@field restrict? table<string, boolean>
----@field after? fun(self: StatusLine): any
----@field update? table|string|fun(self: StatusLine): boolean
----@field on_click? HeirlineOnClickCallback|HeirlineOnClick
----@field id integer[]
----@field winnr integer
----@field fallthrough boolean
----@field flexible integer
----@field _win_cache? table
----@field _au_id? integer
----@field _tree table
----@field _updatable_components table
----@field _flexible_components table
----@field pick_child? integer[]
+---@field condition (fun(self: StatusLine): any)|nil
+---@field init (fun(self: StatusLine): any)|nil
+---@field provider string|number|nil|fun(self: StatusLine):string|number|nil
+---@field hl HeirlineHighlight|string|nil|fun(self: StatusLine): HeirlineHighlight|string|nil  controls the colors of what is printed by the component's provider, or by any of its descendants.
+---@field restrict (table<string, boolean>)|nil
+---@field after (fun(self: StatusLine): any)|nil
+---@field update (table|string|fun(self: StatusLine): boolean)|nil
+---@field on_click (HeirlineOnClickCallback|HeirlineOnClick)|nil
+---@field id (integer[])|nil
+---@field winnr (integer)|nil
+---@field fallthrough boolean?
+---@field flexible integer?
+---@field _win_cache table?
+---@field _au_id integer?
+---@field _tree table?
+---@field _updatable_components table?
+---@field _flexible_components table?
+---@field pick_child (integer[])|nil
 local StatusLine = {}
 
 ---Initialize a new statusline object
