@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.7](https://github.com/rebelot/heirline.nvim/compare/v1.0.6...v1.0.7) (2024-09-23)
+
+
+### Bug Fixes
+
+* **cookbook:** migrate from `vim.lsp.get_active_clients` to `vim.lsp.get_clients` ([bc5cd63](https://github.com/rebelot/heirline.nvim/commit/bc5cd63660fcf18b3a455209db440217a04d0624))
+
 ## [1.0.6](https://github.com/rebelot/heirline.nvim/compare/v1.0.5...v1.0.6) (2024-05-21)
 
 
