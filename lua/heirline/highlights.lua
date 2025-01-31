@@ -56,9 +56,7 @@ local function get_hl_style(hl)
 end
 
 local function name_rgb_hl(hl)
-    local hl_name, _ =
-    str_format("Stl%s_%s_%s_%s", hl.fg or "", hl.bg or "", get_hl_style(hl), hl.sp or ""):gsub("#", "")
-    return hl_name
+    return (str_format("Stl%s_%s_%s_%s", hl.fg or "", hl.bg or "", get_hl_style(hl), hl.sp or ""):gsub("#", ""))
 end
 
 local function name_cterm_hl(hl)
@@ -93,6 +91,7 @@ local function normalize_hl(hl)
 end
 
 function M.eval_hl(hl)
+    assert(type(hl) == 'table')
     if vim.tbl_isempty(hl) or hl[true] then
         return "", ""
     end

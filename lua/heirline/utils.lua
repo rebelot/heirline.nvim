@@ -9,7 +9,7 @@ local tbl_filter = vim.tbl_filter
 
 ---@type fun(name: string): table
 function M.get_highlight(name)
-    return vim.api.nvim_get_hl(0, { name = name, link = false })
+    return vim.api.nvim_get_hl(0, { name = name, link = false, create = false })
 end
 
 ---Copy the given component, merging its fields with `with`
