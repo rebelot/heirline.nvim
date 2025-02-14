@@ -68,7 +68,7 @@ local default_restrict = {
 ---@field after (fun(self: StatusLine): any)|nil
 ---@field update (table|string|fun(self: StatusLine): boolean)|nil
 ---@field on_click (HeirlineOnClickCallback|HeirlineOnClick)|nil
----@field id (integer[])|nil
+---@field id? integer[]
 ---@field winnr (integer)|nil
 ---@field fallthrough boolean?
 ---@field flexible integer?
