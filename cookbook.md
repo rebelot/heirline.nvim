@@ -925,13 +925,31 @@ See how much you've messed up...
 local Diagnostics = {
 
     condition = conditions.has_diagnostics,
+    -- Example of defining custom LSP diagnostic icons, you can copypaste in your config:
+    --vim.diagnostic.config({
+    --  signs = {
+    --    text = {
+    --      [vim.diagnostic.severity.ERROR] = '',
+    --      [vim.diagnostic.severity.WARN] = '',
+    --      [vim.diagnostic.severity.INFO] = '󰋇',
+    --      [vim.diagnostic.severity.HINT] = '󰌵',
+    --    },
+    --  },
+    --})
+    -- Fetching custom diagnostic icons
+    error_icon = vim.diagnostic.config()['signs']['text'][vim.diagnostic.severity.ERROR],
+    warn_icon = vim.diagnostic.config()['signs']['text'][vim.diagnostic.severity.WARN],
+    info_icon = vim.diagnostic.config()['signs']['text'][vim.diagnostic.severity.INFO],
+    hint_icon = vim.diagnostic.config()['signs']['text'][vim.diagnostic.severity.HINT],
 
-    static = {
-        error_icon = vim.fn.sign_getdefined("DiagnosticSignError")[1].text,
-        warn_icon = vim.fn.sign_getdefined("DiagnosticSignWarn")[1].text,
-        info_icon = vim.fn.sign_getdefined("DiagnosticSignInfo")[1].text,
-        hint_icon = vim.fn.sign_getdefined("DiagnosticSignHint")[1].text,
-    },
+    -- If you defined custom LSP diagnostics with vim.fn.sign_define(), use this instead
+    -- Note defining custom LSP diagnostic this way its deprecated, though
+    --static = {
+    --    error_icon = vim.fn.sign_getdefined("DiagnosticSignError")[1].text,
+    --    warn_icon = vim.fn.sign_getdefined("DiagnosticSignWarn")[1].text,
+    --    info_icon = vim.fn.sign_getdefined("DiagnosticSignInfo")[1].text,
+    --    hint_icon = vim.fn.sign_getdefined("DiagnosticSignHint")[1].text,
+    --},
 
     init = function(self)
         self.errors = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.ERROR })
