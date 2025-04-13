@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.8](https://github.com/rebelot/heirline.nvim/compare/v1.0.7...v1.0.8) (2025-04-13)
+
+
+### Bug Fixes
+
+* **get_highlight:** avoid creating hl during lookup if it does not exist; fix [#221](https://github.com/rebelot/heirline.nvim/issues/221) ([af3f441](https://github.com/rebelot/heirline.nvim/commit/af3f441ea10f96105e1af14cd37bf213533812d2))
+
 ## [1.0.7](https://github.com/rebelot/heirline.nvim/compare/v1.0.6...v1.0.7) (2024-09-23)
 
 
