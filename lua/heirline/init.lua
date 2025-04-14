@@ -11,7 +11,7 @@ function M.get_highlights()
 end
 
 ---Load color aliases
----@param colors table<string, string|integer>
+---@param colors table<string, string|integer>|fun():table<string, string|integer>
 ---@return nil
 function M.load_colors(colors)
     colors = type(colors) == "function" and colors() or colors
@@ -67,8 +67,21 @@ local function setup_local_winbar_with_autocmd(callback)
     })
 end
 
+---@class HeirlineInnerOpts
+---@field colors table<string, string|integer>|fun():table<string, string|integer> Define color name aliases.
+---Disable winbar on a per-buffer/window basis.
+---`args` is the table argument passed to autocommand callbacks. See `:h nvim_create_autocmd()`.
+---@field disable_winbar_cb fun(args):boolean
+
+---@class HeirlineConfig
+---@field statusline StatusLine?
+---@field winbar StatusLine?
+---@field tabline StatusLine?
+---@field statuscolumn StatusLine?
+---@field opts HeirlineInnerOpts?
+
 ---Setup
----@param config {statusline: StatusLine, winbar: StatusLine, tabline: StatusLine, statuscolumn: StatusLine, opts: table}
+---@param config HeirlineConfig
 function M.setup(config)
     vim.g.qf_disable_statusline = true
     vim.api.nvim_create_augroup("Heirline_update_autocmds", { clear = true })
