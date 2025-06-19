@@ -431,10 +431,10 @@ local colors = {
     orange = utils.get_highlight("Constant").fg,
     purple = utils.get_highlight("Statement").fg,
     cyan = utils.get_highlight("Special").fg,
-    diag_warn = utils.get_highlight("DiagnosticWarn").fg,
-    diag_error = utils.get_highlight("DiagnosticError").fg,
+    diag_WARN = utils.get_highlight("DiagnosticWarn").fg,
+    diag_ERROR = utils.get_highlight("DiagnosticError").fg,
     diag_hint = utils.get_highlight("DiagnosticHint").fg,
-    diag_info = utils.get_highlight("DiagnosticInfo").fg,
+    diag_INFO = utils.get_highlight("DiagnosticInfo").fg,
     git_del = utils.get_highlight("diffDeleted").fg,
     git_add = utils.get_highlight("diffAdded").fg,
     git_change = utils.get_highlight("diffChanged").fg,
@@ -968,19 +968,19 @@ local Diagnostics = {
             -- 0 is just another output, we can decide to print it or not!
             return self.errors > 0 and (self.error_icon .. self.errors .. " ")
         end,
-        hl = { fg = "diag_error" },
+        hl = { fg = "diag_ERROR" },
     },
     {
         provider = function(self)
             return self.warnings > 0 and (self.warn_icon .. self.warnings .. " ")
         end,
-        hl = { fg = "diag_warn" },
+        hl = { fg = "diag_WARN" },
     },
     {
         provider = function(self)
             return self.info > 0 and (self.info_icon .. self.info .. " ")
         end,
-        hl = { fg = "diag_info" },
+        hl = { fg = "diag_INFO" },
     },
     {
         provider = function(self)
@@ -1003,7 +1003,7 @@ actual count. Just replace the children with something like this.
         condition = function(self) return self.errors > 0 end,
         {
             provider = function(self) return self.error_icon end,
-            hl = { fg = "diag_error" },
+            hl = { fg = "diag_ERROR" },
         },
         {
             provider = function(self) return self.errors .. " " end,
@@ -2255,10 +2255,10 @@ local function setup_colors()
         orange = utils.get_highlight("Constant").fg,
         purple = utils.get_highlight("Statement").fg,
         cyan = utils.get_highlight("Special").fg,
-        diag_warn = utils.get_highlight("DiagnosticWarn").fg,
-        diag_error = utils.get_highlight("DiagnosticError").fg,
+        diag_WARN = utils.get_highlight("DiagnosticWarn").fg,
+        diag_ERROR = utils.get_highlight("DiagnosticError").fg,
         diag_hint = utils.get_highlight("DiagnosticHint").fg,
-        diag_info = utils.get_highlight("DiagnosticInfo").fg,
+        diag_INFO = utils.get_highlight("DiagnosticInfo").fg,
         git_del = utils.get_highlight("diffDeleted").fg,
         git_add = utils.get_highlight("diffAdded").fg,
         git_change = utils.get_highlight("diffChanged").fg,
